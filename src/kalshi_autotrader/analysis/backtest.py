@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import yaml
@@ -396,7 +395,6 @@ def replay_scenario(
                 )
 
             best_yes_bid = record.orderbook.best_yes_bid
-            price_cents = best_yes_bid if best_yes_bid is not None else 50
             market_dict = _serialize_market(record.market)
             intent = edge_engine.build_intent(
                 market_dict,

@@ -26,7 +26,6 @@ class PostTradeAnalytics:
         for entry in entries:
             market = entry.get("market") or {}
             research = entry.get("research") or {}
-            fusion = entry.get("fusion") or {}
             decision = entry.get("decision") or {}
             intent_payload = decision.get("intent") if isinstance(decision, dict) else None
             intent: Dict[str, Any] = intent_payload or {}

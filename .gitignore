@@ -9,3 +9,4 @@ artifacts/shadow/**/
 artifacts/analytics/shadow/**/
 artifacts/analytics/backtests/**/
 .env
+.DS_Store

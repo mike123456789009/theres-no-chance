@@ -1,4 +1,3 @@
-import asyncio
 import copy
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
@@ -9,7 +8,7 @@ from kalshi_autotrader.config.models import AppConfig
 from kalshi_autotrader.data.models import Market
 from kalshi_autotrader.runner import TradingApp
 from kalshi_autotrader.services.research_agent import ResearchResult
-from kalshi_autotrader.data.models import OrderBook, OrderSide
+from kalshi_autotrader.data.models import OrderBook
 
 
 class StubScanner:

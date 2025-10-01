@@ -1,6 +1,3 @@
-import asyncio
-from datetime import datetime, timezone
-
 import pytest
 
 from kalshi_autotrader.config.models import ExecutionConfig

@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 from kalshi_autotrader.services.quant_fusion import (
