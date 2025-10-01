@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 from urllib import request
+from urllib.parse import urlparse
 
 from ..config.models import AlertChannelConfig
 
@@ -89,6 +90,10 @@ class SlackAlertChannel(AlertChannel):
         payload = event.to_payload()
         if not self._webhook:
             logger.warning("Slack alert fallback -> %s", json.dumps(payload))
+            return
+        parsed = urlparse(self._webhook)
+        if parsed.scheme not in {"http", "https"}:
+            logger.error("Blocked Slack alert due to unsupported scheme: %s", parsed.scheme)
             return
         data = json.dumps({"text": f"[{event.severity}] {event.message}", "blocks": []}).encode("utf-8")
         req = request.Request(self._webhook, data=data, headers={"Content-Type": "application/json"})

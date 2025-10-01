@@ -241,7 +241,7 @@ class TelemetryConfig(BaseModel):
     enable_metrics: bool = True
     metrics_endpoint: Optional[str] = None
     metrics_host: str = Field(
-        "0.0.0.0",
+        "127.0.0.1",
         description="Host interface to bind the Prometheus metrics HTTP server.",
     )
     metrics_port: int = Field(
