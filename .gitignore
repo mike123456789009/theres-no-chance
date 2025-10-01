@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+artifacts/logs/
+artifacts/alerts/
+artifacts/audit/trading_audit.jsonl
+artifacts/orderbooks/**/
+artifacts/shadow/**/
+artifacts/analytics/shadow/**/
+artifacts/analytics/backtests/**/
+.env

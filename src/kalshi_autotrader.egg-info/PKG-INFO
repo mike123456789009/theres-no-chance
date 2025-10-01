@@ -1,0 +1,92 @@
+Metadata-Version: 2.4
+Name: kalshi-autotrader
+Version: 0.1.0
+Summary: Autonomous Kalshi trading system scaffold with LLM research pipeline
+Author-email: Your Team <trading@example.com>
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: httpx>=0.26.0
+Requires-Dist: websockets>=12.0
+Requires-Dist: pydantic>=2.8.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: rich>=13.7.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: asyncpg>=0.29.0
+Requires-Dist: tenacity>=8.2.0
+Requires-Dist: cryptography>=43.0.0
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: scikit-learn>=1.5.0
+Requires-Dist: pandas>=2.2.0
+Requires-Dist: python-dateutil>=2.8.2
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: prometheus-client>=0.20.0
+Requires-Dist: python-json-logger>=2.0.7
+Provides-Extra: research
+Requires-Dist: openai>=1.40.0; extra == "research"
+Requires-Dist: langchain>=0.2.0; extra == "research"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: ruff>=0.5.0; extra == "dev"
+Requires-Dist: testcontainers[postgresql]>=4.5.0; extra == "dev"
+Provides-Extra: secrets
+Requires-Dist: hvac>=2.2.0; extra == "secrets"
+
+# Kalshi Autotrader with LLM Research (v1.0)
+
+This repository is a scaffold for an autonomous Kalshi trading system that aligns with the provided product specification. It focuses on demo-environment operation by default and is structured as a set of composable services coordinated through an event-driven pipeline.
+
+## High-Level Components
+
+- `MarketScannerService`: Discovers events and markets via REST, maintains streaming order books via WebSockets, and emits triggers when relevant changes occur. Configure keyword/volume filters in `scanner` (see `config/demo.yml` or `config/production.yml`) to focus on high-value macro and election markets.
+- `ResearchAgentService`: Uses pluggable adapters (news, economic calendar, polling, Kalshi rulebook) with built-in rate limiting and caching to gather structured facts, then orchestrates LLM calls with fallback routing and confidence guardrails.
+- `QuantFusionService`: Calibrates the research probability output using statistical priors and calibration curves (e.g., isotonic regression stubs).
+- `QuantFusionService`: Calibrates probability forecasts with isotonic regression, beta shrinkage, and persistent calibration data (see `scripts/backtest.py` for offline evaluation).
+- `EdgeEngineService`: Computes fee-adjusted expected value, applies decision thresholds, and produces order intents with Kelly-capped sizing.
+- `RiskManager`: Enforces per-market/theme caps, daily loss & drawdown stop-outs, cooldowns, and persists telemetry/ledger risk snapshots with P&L tracking.
+- `ExecutionService`: Supports pegged/iceberg smart orders, cancellation throttling, fill reconciliation, and ledger-synced position updates with self-trade prevention.
+- `StateRepository`: Persists research artifacts, decisions, orders, fills, and positions through a storage backend abstraction (PostgreSQL integration stubbed).
+- `Telemetry`: Emits metrics, logs, and alerts for critical operational signals.
+
+## Operational Tooling
+
+- `scripts/control_panel.py overrides add KXTICKER` toggles manual overrides (the runner hot-reloads overrides from disk).
+- `scripts/control_panel.py unwind KXTICKER 50 --side yes` queues an unwind command processed during the next trading loop.
+- `scripts/control_panel.py research --limit 5` reviews recent research runs stored in the ledger.
+- `ops/runbook.md` documents job scheduling, health checks, and escalation paths.
+
+## Observability & Alerting
+
+- Emit structured logs with correlation IDs, success/error codes; ship to centralized logging.
+- Integrate metrics (latency, P&L, fill rate) with Prometheus/Grafana and configure paging alerts (Slack, email).
+- Containerize the app with reproducible builds, pinned dependencies, and health endpoints.
+- Set up CI/CD with linting, tests, security scans, and deployment approvals.
+- Plan failover, state backups, and disaster recovery scenarios.
+- Conduct live shadow trading before enabling capital; compare against benchmarks.
+- Continuously refine research prompts, signal weighting, and hedging tactics based on post-trade analytics.
+- Maintain audit logs of research, decisions, and trade reasons (`src/kalshi_autotrader/runner.py:103`).
+
+## Security & Secrets
+
+Secrets are resolved through the `SecretManager` abstraction. References like `secret://env/KALSHI_API_KEY_ID` read the value from the environment, while `secret://vault/kv/path#field` (requires the optional `secrets` extra) pulls credentials from HashiCorp Vault. Append `?optional=true` or `?default=value` for soft lookups. Review `config/demo.yml` and `config/production.yml` for example usage and required keys.
+
+## Getting Started
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -e .
+# Optional dev extras
+pip install -e .[dev,research,secrets]
+```
+
+Then configure your environment (e.g., `.env`) with the necessary Kalshi and LLM credentials before running `scripts/demo_runner.py`.
+
+- Select an environment via `KALSHI_AUTOTRADER_ENV` (`demo` by default) or set `KALSHI_AUTOTRADER_CONFIG` to a custom YAML path.
+- Provide `KALSHI_API_KEY_ID`, `OPENAI_API_KEY`, and (for live trading) `KALSHI_PRIVATE_KEY_PEM` or a Vault path before running in production mode.
+- Keep the demo profile (`config/demo.yml`) while testing; switch to `config/production.yml` when you are ready to calibrate risk and disable `dry_run`.
+
+## Status
+
+The current revision delivers a functional skeleton with placeholder implementations for external integrations. Fill in the adapter logic, database repositories, and production-grade orchestration before trading live capital.

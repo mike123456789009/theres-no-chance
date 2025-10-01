@@ -1,0 +1,13 @@
+.git
+__pycache__
+.pytest_cache
+.venv
+artifacts
+tests
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.log
+backups
+.DS_Store
