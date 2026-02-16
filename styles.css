@@ -119,14 +119,14 @@ body[data-render-mode="boot"] .svg-render-host {
 
 .fallback-words .w-slash {
   position: absolute;
-  left: clamp(13.8rem, 31vw, 31rem);
+  left: clamp(14.4rem, 33vw, 33rem);
   top: 42%;
   opacity: 0.68;
 }
 
 .fallback-words .w-a {
   position: absolute;
-  left: clamp(16.6rem, 36vw, 36.4rem);
+  left: clamp(18.8rem, 42vw, 41rem);
   top: 42%;
   opacity: 0.18;
   pointer-events: auto;
