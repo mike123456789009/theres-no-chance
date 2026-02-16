@@ -480,7 +480,7 @@ function layout(font) {
       if (renderMode === "webgl") suffixMesh.castShadow = true;
 
       const suffixGap =
-        suffixWord.key === "slash" ? clamp(W * 0.05, 24, 56) : clamp(W * 0.045, 22, 48);
+        suffixWord.key === "slash" ? clamp(W * 0.058, 30, 66) : clamp(W * 0.055, 28, 62);
       const suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScale;
       const suffixY = rowOffsets[suffixWord.row] ?? 0;
       suffixMesh.position.set(suffixX, suffixY, 0);
