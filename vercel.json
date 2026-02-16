@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.theres-no-chance.com"
+        }
+      ],
+      "destination": "https://theres-no-chance.com/$1",
+      "permanent": true
+    }
+  ]
+}
