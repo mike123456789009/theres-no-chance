@@ -16,7 +16,7 @@ const WORD_CONFIGS = [
   { key: "theres", text: "THERE'S", color: "red", row: 0, segment: [0.0, 0.33], direction: "left" },
   { key: "no", text: "NO", color: "gold", row: 1, segment: [0.33, 0.66], direction: "left" },
   { key: "chance", text: "CHANCE", color: "red", row: 2, segment: [0.66, 0.99], direction: "left" },
-  { key: "a", text: "A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
+  { key: "a", text: "/A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
 ];
 
 const DEFAULT_COLORS = {
@@ -458,8 +458,9 @@ function layout(font) {
     aMesh.scale.setScalar(aScale);
     if (renderMode === "webgl") aMesh.castShadow = true;
 
-    const rightOfTheres = rowRightEdges[0] || -W / 2 + margin;
-    const aX = rightOfTheres - aBox.min.x * aScale;
+    const rightOfNo = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
+    const noToAGap = clamp(W * 0.02, 10, 28);
+    const aX = rightOfNo + noToAGap - aBox.min.x * aScale;
     const aY = rowOffsets[1] ?? 0;
     aMesh.position.set(aX, aY, 0);
 

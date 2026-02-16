@@ -116,7 +116,7 @@ body[data-render-mode="boot"] .svg-render-host {
 
 .fallback-words .w-a {
   position: absolute;
-  right: clamp(1rem, 8vw, 6rem);
+  left: clamp(15rem, 34vw, 34rem);
   top: 42%;
   opacity: 0.18;
 }
