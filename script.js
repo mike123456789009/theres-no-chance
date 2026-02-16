@@ -25,7 +25,7 @@ const DEFAULT_COLORS = {
   redFace: 0xbc595e,
   redSide: 0x955158,
   goldFace: 0xc6a727,
-  goldSide: 0xa88d2c,
+  goldSide: 0xc6a727,
   neutralFace: 0xc9c5b8,
   neutralSide: 0xaba596,
 };
@@ -372,6 +372,13 @@ function layout(font) {
     gold: buildMaterials(themeColors.goldFace, themeColors.goldSide, bumpTex, roughTex),
     neutral: buildMaterials(themeColors.neutralFace, themeColors.neutralSide, bumpTex, roughTex),
   };
+
+  if (renderMode === "webgl") {
+    materialsByColor.gold.forEach((material) => {
+      material.emissive = new THREE.Color(themeColors.goldFace);
+      material.emissiveIntensity = 0.16;
+    });
+  }
 
   const mainWords = WORD_CONFIGS.filter((word) => MAIN_WORD_KEYS.has(word.key));
   const suffixWords = WORD_CONFIGS.filter((word) => !MAIN_WORD_KEYS.has(word.key) && word.row === 1);
