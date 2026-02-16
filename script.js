@@ -474,14 +474,15 @@ function layout(font) {
       suffixGeometry.computeBoundingBox();
       const suffixBox = suffixGeometry.boundingBox;
       const suffixScale = rowScales[suffixWord.row] || wordScales[1] || globalScale;
+      const suffixScaleX = suffixWord.key === "slash" ? suffixScale * 0.82 : suffixScale;
       const suffixMeshMaterials = materialsByColor[suffixWord.color].map((material) => material.clone());
       const suffixMesh = new THREE.Mesh(suffixGeometry, suffixMeshMaterials);
-      suffixMesh.scale.setScalar(suffixScale);
+      suffixMesh.scale.set(suffixScaleX, suffixScale, suffixScale);
       if (renderMode === "webgl") suffixMesh.castShadow = true;
 
       const suffixGap =
         suffixWord.key === "slash" ? clamp(W * 0.058, 30, 66) : clamp(W * 0.055, 28, 62);
-      const suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScale;
+      const suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScaleX;
       const suffixY = rowOffsets[suffixWord.row] ?? 0;
       suffixMesh.position.set(suffixX, suffixY, 0);
 
@@ -489,7 +490,7 @@ function layout(font) {
       const suffixEntry = { ...suffixWord, mesh: suffixMesh, baseX: suffixX };
       words.push(suffixEntry);
       wordMap.set(suffixWord.key, suffixEntry);
-      suffixCursorRight = suffixX + suffixBox.max.x * suffixScale;
+      suffixCursorRight = suffixX + suffixBox.max.x * suffixScaleX;
     }
   }
 
