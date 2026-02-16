@@ -7,6 +7,11 @@
 - Do not keep local-only feature changes.
 - `main` is the production deployment source for Vercel unless explicitly changed by the user.
 
+### 1.1) Vercel Auto-Deploy Source
+- This project is connected to GitHub on Vercel.
+- Pushes to the `main` branch must be treated as production deployment triggers.
+- Feature branches should be merged only when the deployment note is ready.
+
 ### 2) Small, Isolated Feature Releases
 - Ship features one at a time.
 - Do not batch many unrelated changes into a single deployment.
@@ -33,4 +38,3 @@
 ### 5) Safety Rules
 - Never rewrite or remove unrelated work to make a deployment pass.
 - If unexpected repo changes appear, stop and ask for direction before proceeding.
-
