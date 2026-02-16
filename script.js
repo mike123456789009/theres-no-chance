@@ -16,14 +16,18 @@ const WORD_CONFIGS = [
   { key: "theres", text: "THERE'S", color: "red", row: 0, segment: [0.0, 0.33], direction: "left" },
   { key: "no", text: "NO", color: "gold", row: 1, segment: [0.33, 0.66], direction: "left" },
   { key: "chance", text: "CHANCE", color: "red", row: 2, segment: [0.66, 0.99], direction: "left" },
-  { key: "a", text: "/A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
+  { key: "slash", text: "/", color: "neutral", row: 1, segment: [0.33, 0.66], direction: "right" },
+  { key: "a", text: "A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
 ];
+const MAIN_WORD_KEYS = new Set(["theres", "no", "chance"]);
 
 const DEFAULT_COLORS = {
   redFace: 0xbc595e,
   redSide: 0x955158,
   goldFace: 0xc6a727,
   goldSide: 0xa88d2c,
+  neutralFace: 0xc9c5b8,
+  neutralSide: 0xaba596,
 };
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -77,6 +81,8 @@ function syncThemeColors() {
     redSide: getThemeColor("--red-side", DEFAULT_COLORS.redSide),
     goldFace: getThemeColor("--gold-face", DEFAULT_COLORS.goldFace),
     goldSide: getThemeColor("--gold-side", DEFAULT_COLORS.goldSide),
+    neutralFace: getThemeColor("--neutral-face", DEFAULT_COLORS.neutralFace),
+    neutralSide: getThemeColor("--neutral-side", DEFAULT_COLORS.neutralSide),
   };
 }
 
@@ -270,8 +276,13 @@ function setMeshOpacity(mesh, opacity) {
 
 function applySwapState() {
   const noWord = wordMap.get("no");
+  const slashWord = wordMap.get("slash");
   const aWord = wordMap.get("a");
   if (!noWord || !aWord) return;
+
+  if (slashWord) {
+    setMeshOpacity(slashWord.mesh, 0.68);
+  }
 
   if (isAHovered) {
     setMeshOpacity(aWord.mesh, 1);
@@ -359,10 +370,11 @@ function layout(font) {
   const materialsByColor = {
     red: buildMaterials(themeColors.redFace, themeColors.redSide, bumpTex, roughTex),
     gold: buildMaterials(themeColors.goldFace, themeColors.goldSide, bumpTex, roughTex),
+    neutral: buildMaterials(themeColors.neutralFace, themeColors.neutralSide, bumpTex, roughTex),
   };
 
-  const mainWords = WORD_CONFIGS.filter((word) => word.key !== "a");
-  const altAWord = WORD_CONFIGS.find((word) => word.key === "a");
+  const mainWords = WORD_CONFIGS.filter((word) => MAIN_WORD_KEYS.has(word.key));
+  const suffixWords = WORD_CONFIGS.filter((word) => !MAIN_WORD_KEYS.has(word.key) && word.row === 1);
 
   const mainGeos = mainWords.map((word) => {
     const geometry = new TextGeometry(word.text, {
@@ -442,32 +454,36 @@ function layout(font) {
     yCursor -= height * wordScale + gapScaled;
   }
 
-  if (altAWord) {
-    const aGeometry = new TextGeometry(altAWord.text, {
-      font,
-      size,
-      depth,
-      curveSegments: 14,
-      bevelEnabled: false,
-    });
-    aGeometry.computeBoundingBox();
-    const aBox = aGeometry.boundingBox;
-    const aScale = rowScales[1] || wordScales[1] || globalScale;
-    const aMeshMaterials = materialsByColor[altAWord.color].map((material) => material.clone());
-    const aMesh = new THREE.Mesh(aGeometry, aMeshMaterials);
-    aMesh.scale.setScalar(aScale);
-    if (renderMode === "webgl") aMesh.castShadow = true;
+  if (suffixWords.length > 0) {
+    let suffixCursorRight = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
+    for (const suffixWord of suffixWords) {
+      const suffixGeometry = new TextGeometry(suffixWord.text, {
+        font,
+        size,
+        depth,
+        curveSegments: 14,
+        bevelEnabled: false,
+      });
+      suffixGeometry.computeBoundingBox();
+      const suffixBox = suffixGeometry.boundingBox;
+      const suffixScale = rowScales[suffixWord.row] || wordScales[1] || globalScale;
+      const suffixMeshMaterials = materialsByColor[suffixWord.color].map((material) => material.clone());
+      const suffixMesh = new THREE.Mesh(suffixGeometry, suffixMeshMaterials);
+      suffixMesh.scale.setScalar(suffixScale);
+      if (renderMode === "webgl") suffixMesh.castShadow = true;
 
-    const rightOfNo = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
-    const noToAGap = clamp(W * 0.02, 10, 28);
-    const aX = rightOfNo + noToAGap - aBox.min.x * aScale;
-    const aY = rowOffsets[1] ?? 0;
-    aMesh.position.set(aX, aY, 0);
+      const suffixGap =
+        suffixWord.key === "slash" ? clamp(W * 0.038, 18, 42) : clamp(W * 0.03, 14, 34);
+      const suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScale;
+      const suffixY = rowOffsets[suffixWord.row] ?? 0;
+      suffixMesh.position.set(suffixX, suffixY, 0);
 
-    scene.add(aMesh);
-    const aEntry = { ...altAWord, mesh: aMesh, baseX: aX };
-    words.push(aEntry);
-    wordMap.set("a", aEntry);
+      scene.add(suffixMesh);
+      const suffixEntry = { ...suffixWord, mesh: suffixMesh, baseX: suffixX };
+      words.push(suffixEntry);
+      wordMap.set(suffixWord.key, suffixEntry);
+      suffixCursorRight = suffixX + suffixBox.max.x * suffixScale;
+    }
   }
 
   Object.values(materialsByColor)

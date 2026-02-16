@@ -8,6 +8,8 @@
 
   --gold-face: #c6a727;
   --gold-side: #a88d2c;
+  --neutral-face: #c9c5b8;
+  --neutral-side: #aba596;
 }
 
 * {
@@ -93,7 +95,7 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: clamp(0.2rem, 0.9vw, 0.75rem);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 body[data-render-mode="boot"] .fallback-words {
@@ -112,13 +114,22 @@ body[data-render-mode="boot"] .svg-render-host {
   text-transform: uppercase;
   font-size: clamp(4rem, 15vw, 13rem);
   line-height: 0.86;
+  pointer-events: none;
+}
+
+.fallback-words .w-slash {
+  position: absolute;
+  left: clamp(13.8rem, 31vw, 31rem);
+  top: 42%;
+  opacity: 0.68;
 }
 
 .fallback-words .w-a {
   position: absolute;
-  left: clamp(15rem, 34vw, 34rem);
+  left: clamp(16.6rem, 36vw, 36.4rem);
   top: 42%;
   opacity: 0.18;
+  pointer-events: auto;
 }
 
 body[data-render-mode="boot"] .fallback-words .w-a:hover,
@@ -137,6 +148,10 @@ body[data-render-mode="fallback"] .fallback-words:has(.w-a:hover) .w-no {
 
 .fallback-words .w.gold {
   color: var(--gold-face);
+}
+
+.fallback-words .w.neutral {
+  color: var(--neutral-face);
 }
 
 body[data-render-mode="webgl"] #hero-canvas {
