@@ -143,7 +143,9 @@ body[data-render-mode="fallback"] .fallback-words .w-a:hover {
 
 body[data-render-mode="boot"] .fallback-words:has(.w-a:hover) .w-no,
 body[data-render-mode="fallback"] .fallback-words:has(.w-a:hover) .w-no {
-  opacity: 0.22;
+  opacity: 1;
+  color: #e4ddc1;
+  color: color-mix(in srgb, var(--gold-face) 22%, var(--bg));
 }
 
 .fallback-words .w.red {

@@ -23,6 +23,7 @@ const WORD_CONFIGS = [
 const MAIN_WORD_KEYS = new Set(["theres", "no", "chance"]);
 
 const DEFAULT_COLORS = {
+  background: 0xececec,
   redFace: 0xbc595e,
   redSide: 0x955158,
   goldFace: 0xc6a727,
@@ -81,6 +82,7 @@ function getThemeColor(cssVarName, fallbackHex) {
 
 function syncThemeColors() {
   themeColors = {
+    background: getThemeColor("--bg", DEFAULT_COLORS.background),
     redFace: getThemeColor("--red-face", DEFAULT_COLORS.redFace),
     redSide: getThemeColor("--red-side", DEFAULT_COLORS.redSide),
     goldFace: getThemeColor("--gold-face", DEFAULT_COLORS.goldFace),
@@ -271,11 +273,40 @@ function setRendererSize(width, height) {
 }
 
 function setMeshOpacity(mesh, opacity) {
+  const alpha = clamp(opacity, 0, 1);
+  const bgColor = new THREE.Color(themeColors.background);
+  const blendedColor = new THREE.Color();
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
   materials.forEach((material) => {
-    material.transparent = opacity < 0.999;
-    material.opacity = opacity;
-    material.depthWrite = opacity >= 0.999;
+    const userData = material.userData || (material.userData = {});
+
+    if (material.color) {
+      if (userData.baseColorHex == null) {
+        userData.baseColorHex = material.color.getHex();
+      }
+      blendedColor.setHex(userData.baseColorHex).lerp(bgColor, 1 - alpha);
+      material.color.copy(blendedColor);
+    }
+
+    if ("emissive" in material && material.emissive) {
+      if (userData.baseEmissiveHex == null) {
+        userData.baseEmissiveHex = material.emissive.getHex();
+      }
+      if (userData.baseEmissiveIntensity == null && typeof material.emissiveIntensity === "number") {
+        userData.baseEmissiveIntensity = material.emissiveIntensity;
+      }
+
+      blendedColor.setHex(userData.baseEmissiveHex).lerp(bgColor, 1 - alpha);
+      material.emissive.copy(blendedColor);
+
+      if (typeof material.emissiveIntensity === "number") {
+        material.emissiveIntensity = userData.baseEmissiveIntensity * alpha;
+      }
+    }
+
+    material.transparent = false;
+    material.opacity = 1;
+    material.depthWrite = true;
     material.needsUpdate = true;
   });
 }
