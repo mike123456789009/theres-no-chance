@@ -500,3 +500,22 @@ Files/areas touched:
 
 User-visible change:
 - `/markets` no longer crashes for sessions with stale/refreshing auth cookies and should render normally instead of dropping into the temporary-unavailable error panel.
+
+## 2026-02-17 - Markets Full-Width Navigation Refactor + Signal-Dense Header
+Status: completed
+
+Short description:
+- Rebuilt `/markets` top navigation into a full-width horizontal product header (no boxed shell) with brand, search, category strip, and account context.
+- Added top-right discovery context similar to trading surfaces: `Portfolio`, `Cash`, and a `Deposit` CTA, with wallet-aware values for authenticated users and guest-safe placeholders otherwise.
+- Reduced excessive shadowing across controls and navigation while keeping depth where it matters (primary CTA buttons and market cards).
+- Preserved existing guest/public guardrails and added extra page-level try/catch handling so unexpected discovery load failures render in-page instead of bubbling to a digest crash page.
+
+Files/areas touched:
+- Markets page structure and safety handling: `app/(app)/markets/page.tsx`
+- Markets discovery styling and responsive behavior: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets` now reads as a more navigable, high-density product page with a full-width top bar and category navigation.
+- The header now surfaces portfolio/cash/deposit context and cleaner controls.
+- The page keeps functioning gracefully even when discovery data calls fail unexpectedly.

@@ -5,6 +5,7 @@ import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/mark
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
 import {
   MarketCardDTO,
+  type MarketViewerContext,
   getMarketViewerContext,
   listDiscoveryMarketCards,
   parseMarketDiscoveryQuery,
@@ -42,14 +43,39 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
 
 const QUICK_FILTERS: Array<{ label: string; query?: string }> = [
   { label: "All" },
+  { label: "Breaking", query: "breaking" },
+  { label: "New", query: "new" },
   { label: "Politics", query: "politics" },
   { label: "Sports", query: "sports" },
   { label: "Crypto", query: "bitcoin" },
+  { label: "Finance", query: "finance" },
   { label: "Economy", query: "economy" },
+  { label: "World", query: "world" },
   { label: "Local", query: "city" },
   { label: "Education", query: "school" },
   { label: "Weather", query: "weather" },
 ];
+
+const PRIMARY_NAV_ITEMS: Array<{ label: string; query?: string }> = [
+  { label: "Trending" },
+  { label: "Breaking", query: "breaking" },
+  { label: "New", query: "new" },
+  { label: "Politics", query: "politics" },
+  { label: "Sports", query: "sports" },
+  { label: "Crypto", query: "bitcoin" },
+  { label: "Finance", query: "finance" },
+  { label: "Geopolitics", query: "geopolitics" },
+  { label: "Tech", query: "tech" },
+  { label: "Culture", query: "culture" },
+  { label: "World", query: "world" },
+  { label: "Economy", query: "economy" },
+  { label: "Climate & Science", query: "climate" },
+];
+
+type WalletAccountSummaryRow = {
+  available_balance: number | string | null;
+  reserved_balance: number | string | null;
+} | null;
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -71,6 +97,14 @@ function formatPool(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return value.toFixed(0);
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function formatStatus(value: string): string {
@@ -101,6 +135,58 @@ function shouldWarnAccess(market: MarketCardDTO): boolean {
   return market.accessRequiresLogin;
 }
 
+function parseNumberish(value: number | string | null | undefined, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+async function getViewerWalletSummary(options: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  viewer: MarketViewerContext;
+}): Promise<{ portfolioUsd: number | null; cashUsd: number | null }> {
+  const { supabase, viewer } = options;
+
+  if (!viewer.isAuthenticated || !viewer.userId) {
+    return {
+      portfolioUsd: null,
+      cashUsd: null,
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("wallet_accounts")
+      .select("available_balance, reserved_balance")
+      .eq("user_id", viewer.userId)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        portfolioUsd: null,
+        cashUsd: null,
+      };
+    }
+
+    const wallet = data as WalletAccountSummaryRow;
+    const cashUsd = Math.max(0, parseNumberish(wallet?.available_balance, 0));
+    const reservedUsd = Math.max(0, parseNumberish(wallet?.reserved_balance, 0));
+
+    return {
+      portfolioUsd: cashUsd + reservedUsd,
+      cashUsd,
+    };
+  } catch {
+    return {
+      portfolioUsd: null,
+      cashUsd: null,
+    };
+  }
+}
+
 export default async function MarketsPage({
   searchParams,
 }: Readonly<{ searchParams?: SearchParamsInput }>) {
@@ -127,70 +213,150 @@ export default async function MarketsPage({
   const query = parseMarketDiscoveryQuery(search);
 
   const supabase = await createClient();
-  const viewer = await getMarketViewerContext(supabase);
-  const result = await listDiscoveryMarketCards({
-    supabase,
-    viewer,
-    query,
-  });
+  let viewer: MarketViewerContext = {
+    userId: null,
+    isAuthenticated: false,
+  };
+  let result: Awaited<ReturnType<typeof listDiscoveryMarketCards>> = {
+    markets: [],
+    error: null,
+    schemaMissing: false,
+  };
+  let walletSummary: { portfolioUsd: number | null; cashUsd: number | null } = {
+    portfolioUsd: null,
+    cashUsd: null,
+  };
+  let loadError: string | null = null;
+
+  try {
+    viewer = await getMarketViewerContext(supabase);
+    walletSummary = await getViewerWalletSummary({ supabase, viewer });
+    result = await listDiscoveryMarketCards({
+      supabase,
+      viewer,
+      query,
+    });
+  } catch (caught) {
+    loadError = caught instanceof Error ? caught.message : "Unknown discovery load error.";
+  }
 
   return (
     <main className="markets-product-page">
-      <div className="markets-product-wrap">
-        <header className="markets-product-header" aria-label="Markets toolbar">
+      <header className="markets-product-header" aria-label="Markets navigation">
+        <div className="markets-header-inner">
           <div className="markets-brand-row">
-            <p className="markets-product-kicker">Prediction markets</p>
-            <div className="markets-brand-links">
-              <Link href="/">Landing</Link>
-              <Link href="/create">Create</Link>
-              {viewer.isAuthenticated ? null : <Link href="/login">Log in</Link>}
-              {viewer.isAuthenticated ? null : <Link href="/signup">Sign up</Link>}
+            <div className="markets-brand-block">
+              <p className="markets-product-kicker">THERE&apos;S NO CHANCE</p>
+              <p className="markets-product-subtitle">Prediction markets</p>
+            </div>
+
+            <form className="markets-search-row" action="/markets" method="get">
+              <label className="markets-search-field">
+                <span className="sr-only">Search markets</span>
+                <input type="search" name="q" defaultValue={query.search} placeholder="Search markets..." />
+              </label>
+              <input type="hidden" name="status" value={query.status} />
+              <input type="hidden" name="access" value={query.access} />
+              <input type="hidden" name="sort" value={query.sort} />
+              <button className="markets-search-submit" type="submit">
+                Search
+              </button>
+            </form>
+
+            <div className="markets-account-strip">
+              <p className="markets-account-metric">
+                <span>Portfolio</span>
+                <strong>
+                  {walletSummary.portfolioUsd === null
+                    ? viewer.isAuthenticated
+                      ? "$0.00"
+                      : "Guest"
+                    : formatCurrency(walletSummary.portfolioUsd)}
+                </strong>
+              </p>
+              <p className="markets-account-metric">
+                <span>Cash</span>
+                <strong>
+                  {walletSummary.cashUsd === null
+                    ? viewer.isAuthenticated
+                      ? "$0.00"
+                      : "--"
+                    : formatCurrency(walletSummary.cashUsd)}
+                </strong>
+              </p>
+              <Link className="markets-deposit-button" href={viewer.isAuthenticated ? "/wallet" : "/signup"}>
+                Deposit
+              </Link>
+              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/portfolio" : "/login"}>
+                {viewer.isAuthenticated ? "Portfolio" : "Log in"}
+              </Link>
+              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/wallet" : "/signup"}>
+                {viewer.isAuthenticated ? "Wallet" : "Sign up"}
+              </Link>
             </div>
           </div>
 
-          <form className="markets-toolbar" action="/markets" method="get">
-            <label className="markets-search-field">
-              <span className="sr-only">Search markets</span>
-              <input type="search" name="q" defaultValue={query.search} placeholder="Search markets" />
-            </label>
+          <nav className="markets-primary-nav" aria-label="Market categories">
+            {PRIMARY_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.label}
+                href={buildQuickFilterHref(search, item.query)}
+                className={isQuickFilterActive(query.search, item.query) ? "markets-primary-link is-active" : "markets-primary-link"}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
-            <label className="markets-select-field">
-              <span>Status</span>
-              <select name="status" defaultValue={query.status}>
-                {STATUS_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="markets-toolbar-row">
+            <form className="markets-toolbar" action="/markets" method="get">
+              <input type="hidden" name="q" value={query.search} />
 
-            <label className="markets-select-field">
-              <span>Access</span>
-              <select name="access" defaultValue={query.access}>
-                {ACCESS_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="markets-select-field">
+                <span>Status</span>
+                <select name="status" defaultValue={query.status}>
+                  {STATUS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="markets-select-field">
-              <span>Sort</span>
-              <select name="sort" defaultValue={query.sort}>
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="markets-select-field">
+                <span>Access</span>
+                <select name="access" defaultValue={query.access}>
+                  {ACCESS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <button className="markets-toolbar-apply" type="submit">
-              Apply
-            </button>
-          </form>
+              <label className="markets-select-field">
+                <span>Sort</span>
+                <select name="sort" defaultValue={query.sort}>
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button className="markets-toolbar-apply" type="submit">
+                Apply
+              </button>
+            </form>
+
+            <div className="markets-inline-links">
+              <Link href="/">Landing</Link>
+              <Link href="/create">Create</Link>
+              {!viewer.isAuthenticated ? <Link href="/login">Log in</Link> : null}
+              {!viewer.isAuthenticated ? <Link href="/signup">Sign up</Link> : null}
+            </div>
+          </div>
 
           <nav className="markets-quick-filters" aria-label="Quick filters">
             {QUICK_FILTERS.map((filter) => (
@@ -203,8 +369,10 @@ export default async function MarketsPage({
               </Link>
             ))}
           </nav>
-        </header>
+        </div>
+      </header>
 
+      <div className="markets-product-wrap">
         {!viewer.isAuthenticated ? (
           <p className="markets-access-note">
             Guest mode: view public markets now. Institution-specific markets require login. Trading actions require an
@@ -212,24 +380,30 @@ export default async function MarketsPage({
           </p>
         ) : null}
 
-        {result.schemaMissing ? (
+        {loadError ? (
+          <p className="markets-error-state">
+            Unable to load markets right now. Retry in a moment. <code>{loadError}</code>
+          </p>
+        ) : null}
+
+        {!loadError && result.schemaMissing ? (
           <p className="markets-empty-state">
             Market tables are not provisioned in this environment yet. Discovery UI is ready and will populate once data
             is available.
           </p>
         ) : null}
 
-        {!result.schemaMissing && result.error ? (
+        {!loadError && !result.schemaMissing && result.error ? (
           <p className="markets-error-state">
             Unable to load markets: <code>{result.error}</code>
           </p>
         ) : null}
 
-        {!result.schemaMissing && !result.error && result.markets.length === 0 ? (
+        {!loadError && !result.schemaMissing && !result.error && result.markets.length === 0 ? (
           <p className="markets-empty-state">No markets found for this filter set.</p>
         ) : null}
 
-        {!result.schemaMissing && !result.error && result.markets.length > 0 ? (
+        {!loadError && !result.schemaMissing && !result.error && result.markets.length > 0 ? (
           <section className="markets-card-grid" role="list" aria-label="Markets grid">
             {result.markets.map((market) => (
               <article
