@@ -648,7 +648,7 @@ function handlePendingAuthReturn() {
   markLandingVisited();
 
   if (!consumeForceLandingTopFlag()) {
-    return false;
+    return "none";
   }
 
   if ("scrollRestoration" in history) {
@@ -657,11 +657,11 @@ function handlePendingAuthReturn() {
 
   if (isBackForwardNavigation()) {
     window.location.reload();
-    return true;
+    return "reload";
   }
 
   forceLandingTopAndRender();
-  return true;
+  return "handled";
 }
 
 function render() {
@@ -736,7 +736,8 @@ function initSectionReveals() {
 }
 
 async function main() {
-  if (handlePendingAuthReturn()) {
+  const authReturnAction = handlePendingAuthReturn();
+  if (authReturnAction === "reload") {
     return;
   }
 
@@ -771,14 +772,16 @@ async function main() {
     );
 
     window.addEventListener("pageshow", () => {
-      if (handlePendingAuthReturn()) {
+      const action = handlePendingAuthReturn();
+      if (action === "reload" || action === "handled") {
         return;
       }
       syncSceneToScrollPosition();
     });
 
     window.addEventListener("popstate", () => {
-      if (handlePendingAuthReturn()) {
+      const action = handlePendingAuthReturn();
+      if (action === "reload" || action === "handled") {
         return;
       }
       syncSceneToScrollPosition();
@@ -786,14 +789,16 @@ async function main() {
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") return;
-      if (handlePendingAuthReturn()) {
+      const action = handlePendingAuthReturn();
+      if (action === "reload" || action === "handled") {
         return;
       }
       syncSceneToScrollPosition();
     });
 
     window.addEventListener("focus", () => {
-      if (handlePendingAuthReturn()) {
+      const action = handlePendingAuthReturn();
+      if (action === "reload" || action === "handled") {
         return;
       }
       syncSceneToScrollPosition();

@@ -101,7 +101,7 @@ body {
 }
 
 body[data-render-mode="boot"] .fallback-words {
-  display: flex;
+  display: none;
 }
 
 body[data-render-mode="boot"] #hero-canvas,

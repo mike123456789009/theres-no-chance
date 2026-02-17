@@ -16,7 +16,7 @@ export function AuthBackNavFlag() {
 
       const onPopState = () => {
         window.sessionStorage.setItem(FORCE_LANDING_TOP_KEY, "1");
-        window.location.assign("/?auth_return=1");
+        window.location.assign("/");
       };
 
       window.addEventListener("popstate", onPopState);

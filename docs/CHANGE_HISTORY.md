@@ -242,3 +242,21 @@ Files/areas touched:
 
 User-visible change:
 - Pressing the browser back button from `/login`, `/signup`, or `/reset` after visiting landing now consistently returns to the top of a fully rendered landing page.
+
+## 2026-02-17 - Back-Nav Regression Hotfix (Boot Fallback Visibility)
+Status: completed
+
+Short description:
+- Fixed a regression where auth-return handling could leave landing initialization in an incomplete `boot` state and show non-canonical fallback headline text.
+- Updated auth back handling to force clean return to `/` while still allowing landing runtime initialization to proceed.
+- Hid fallback headline markup during `boot` mode so incomplete initialization can no longer display the incorrect giant-text version.
+
+Files/areas touched:
+- Auth back trap behavior: `components/auth/auth-back-nav-flag.tsx`
+- Landing runtime init/back handling: `public/script.js`
+- Landing boot fallback visibility: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Browser back from auth routes now returns to `/` without `?auth_return=1`.
+- The non-canonical fallback headline rendering you reported will no longer appear during landing boot.
