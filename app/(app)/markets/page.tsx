@@ -43,7 +43,6 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
 
 const PRIMARY_NAV_ITEMS: Array<{ label: string; query?: string }> = [
   { label: "Trending" },
-  { label: "Breaking", query: "breaking" },
   { label: "New", query: "new" },
   { label: "Politics", query: "politics" },
   { label: "Sports", query: "sports" },

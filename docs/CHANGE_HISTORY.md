@@ -551,3 +551,20 @@ Files/areas touched:
 
 User-visible change:
 - Header is cleaner and less redundant: no extra `Landing` link beside `Create/Log in/Sign up`, and no duplicate filter row under the main nav.
+
+## 2026-02-17 - Markets Nav Simplification + Form Control Text-Clipping Fix
+Status: completed
+
+Short description:
+- Removed `Breaking` from the primary markets category nav to avoid redundancy with `Trending` and `New`.
+- Updated text input/select sizing and typography in auth, onboarding, create, and markets controls to prevent clipped text in form fields and dropdowns.
+- Replaced fixed-height markets search/select controls with min-height + improved line-height and box sizing for reliable cross-browser rendering.
+
+Files/areas touched:
+- Markets category nav: `app/(app)/markets/page.tsx`
+- Form control sizing/typography: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `Breaking` no longer appears in the top nav categories.
+- Dropdown and textbox labels/content (including `Closing soon`) render fully without cut-off descenders.
