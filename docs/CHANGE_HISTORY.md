@@ -305,3 +305,19 @@ Files/areas touched:
 
 User-visible change:
 - Clicking `← Back to landing` from auth pages now returns to a fully rendered landing page instead of a blank screen.
+
+## 2026-02-17 - Hero Word Spacing Adjustment (`NO` vs `/ A`)
+Status: completed
+
+Short description:
+- Increased the horizontal spacing between `NO` and the `/ A` cluster in the hero composition.
+- Added right-edge anchoring behavior so `A` remains slightly left of the right edge of `THERE'S`/`CHANCE` instead of drifting too far inward.
+- Updated fallback text positioning to mirror the same wider visual separation when 3D rendering is unavailable.
+
+Files/areas touched:
+- Hero layout logic: `public/script.js`
+- Hero fallback positioning: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The hero now shows a much larger gap between `NO` and `/ A`, while `A` still sits just left of the right edge of the top and bottom words.

@@ -555,6 +555,13 @@ function layout(font) {
     yCursor -= height * wordScale + gapScaled;
   }
 
+  const mainStackRightEdge = Math.max(
+    rowRightEdges[0] ?? Number.NEGATIVE_INFINITY,
+    rowRightEdges[2] ?? Number.NEGATIVE_INFINITY,
+    rowRightEdges[1] ?? Number.NEGATIVE_INFINITY
+  );
+  const aRightInset = clamp(W * 0.02, 14, 30);
+
   if (suffixWords.length > 0) {
     let suffixCursorRight = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
     for (const suffixWord of suffixWords) {
@@ -575,8 +582,15 @@ function layout(font) {
       if (renderMode === "webgl") suffixMesh.castShadow = true;
 
       const suffixGap =
-        suffixWord.key === "slash" ? clamp(W * 0.068, 38, 82) : clamp(W * 0.066, 36, 80);
-      const suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScaleX;
+        suffixWord.key === "slash" ? clamp(W * 0.13, 110, 220) : clamp(W * 0.036, 24, 56);
+      let suffixX = suffixCursorRight + suffixGap - suffixBox.min.x * suffixScaleX;
+
+      if (suffixWord.key === "a" && Number.isFinite(mainStackRightEdge)) {
+        const targetRightEdge = mainStackRightEdge - aRightInset;
+        const targetX = targetRightEdge - suffixBox.max.x * suffixScaleX;
+        suffixX = Math.max(suffixX, targetX);
+      }
+
       const suffixY = rowOffsets[suffixWord.row] ?? 0;
       suffixMesh.position.set(suffixX, suffixY, 0);
 
