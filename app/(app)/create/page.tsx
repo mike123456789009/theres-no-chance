@@ -22,7 +22,7 @@ export default async function CreateMarketPage() {
             Missing env vars: <code>{missingEnv.join(", ")}</code>
           </p>
           <p className="create-copy">
-            Continue to <Link href="/">home</Link>
+            Continue to <a href="/">home</a>
           </p>
         </section>
       </main>
@@ -54,7 +54,7 @@ export default async function CreateMarketPage() {
         <CreateMarketForm />
 
         <p className="create-copy">
-          Need to check criteria first? Return to <Link href="/">home</Link>.
+          Need to check criteria first? Return to <a href="/">home</a>.
         </p>
       </section>
     </main>

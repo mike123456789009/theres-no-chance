@@ -568,3 +568,19 @@ Files/areas touched:
 User-visible change:
 - `Breaking` no longer appears in the top nav categories.
 - Dropdown and textbox labels/content (including `Closing soon`) render fully without cut-off descenders.
+
+## 2026-02-17 - Force Hard Reload On All Landing Return Links
+Status: completed
+
+Short description:
+- Replaced all landing-return `Link` routes (`href="/"`) with plain anchor navigation (`<a href="/">...`) to force full document reloads.
+- This ensures returns to landing always do a full document reload instead of client-side route transitions.
+- Applied to markets logo return, error/fallback return links, and home-return links across create/admin/onboarding/detail flows.
+
+Files/areas touched:
+- Landing-return links: `app/(app)/markets/page.tsx`, `app/(app)/markets/error.tsx`, `app/(app)/markets/[marketId]/page.tsx`
+- Home-return links: `app/(app)/create/page.tsx`, `app/(app)/admin/page.tsx`, `app/(app)/onboarding/page.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Clicking any link intended to return to landing now performs a hard refresh of `/`, preventing blank client-transition states.

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminReviewQueue } from "@/components/admin/admin-review-queue";
@@ -80,7 +79,7 @@ export default async function AdminPage() {
             Missing env vars: <code>{missingEnv.join(", ")}</code>
           </p>
           <p className="admin-copy">
-            Continue to <Link href="/">home</Link>
+            Continue to <a href="/">home</a>
           </p>
         </section>
       </main>
@@ -115,7 +114,7 @@ export default async function AdminPage() {
             Configure <code>ADMIN_ALLOWLIST_EMAILS</code> with a comma-separated email list to grant admin access.
           </p>
           <p className="admin-copy">
-            Continue to <Link href="/">home</Link>
+            Continue to <a href="/">home</a>
           </p>
         </section>
       </main>
@@ -137,7 +136,7 @@ export default async function AdminPage() {
             Missing env vars: <code>{missingEnv.join(", ")}</code>
           </p>
           <p className="admin-copy">
-            Continue to <Link href="/">home</Link>
+            Continue to <a href="/">home</a>
           </p>
         </section>
       </main>

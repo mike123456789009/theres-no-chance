@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 
 export default function OnboardingPage() {
@@ -15,7 +13,7 @@ export default function OnboardingPage() {
         <OnboardingForm />
 
         <p className="onboarding-meta-links">
-          Already set? Continue to <Link href="/">home</Link>
+          Already set? Continue to <a href="/">home</a>
         </p>
       </section>
     </main>

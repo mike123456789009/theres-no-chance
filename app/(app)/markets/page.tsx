@@ -185,7 +185,7 @@ export default async function MarketsPage({
             Missing environment values: <code>{missingEnv.join(", ")}</code>
           </p>
           <p>
-            Return to <Link href="/">landing</Link>
+            Return to <a href="/">landing</a>
           </p>
         </section>
       </main>
@@ -229,11 +229,11 @@ export default async function MarketsPage({
       <header className="markets-product-header" aria-label="Markets navigation">
         <div className="markets-header-inner">
           <div className="markets-brand-row">
-            <Link className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
+            <a className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
               <span className="logo-letter red">T</span>
               <span className="logo-letter gold">N</span>
               <span className="logo-letter red">C</span>
-            </Link>
+            </a>
 
             <form className="markets-search-row" action="/markets" method="get">
               <label className="markets-search-field">

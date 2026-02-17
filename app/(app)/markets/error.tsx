@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function MarketsErrorPage({
   error,
   reset,
@@ -27,7 +25,7 @@ export default function MarketsErrorPage({
           </button>
         </p>
         <p>
-          <Link href="/">Back to landing</Link>
+          <a href="/">Back to landing</a>
         </p>
       </section>
     </main>

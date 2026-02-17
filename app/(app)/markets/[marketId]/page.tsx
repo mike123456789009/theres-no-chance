@@ -126,7 +126,7 @@ export default async function MarketDetailPage({
       <section className="market-detail-shell" aria-label="Market detail">
         <div className="market-detail-top-links">
           <Link href="/markets">← Back to markets</Link>
-          <Link href="/">Landing</Link>
+          <a href="/">Landing</a>
           {viewer.isAuthenticated ? <Link href="/create">Create market</Link> : <Link href="/signup">Create account</Link>}
         </div>
 
