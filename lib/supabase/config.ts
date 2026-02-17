@@ -4,7 +4,13 @@ export type SupabasePublicConfig = {
 };
 
 function clean(value: string | undefined): string {
-  return typeof value === "string" ? value.trim() : "";
+  if (typeof value !== "string") return "";
+
+  return value
+    .replace(/\\r\\n/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\\r/g, "")
+    .trim();
 }
 
 export function resolveSupabasePublicConfigFromEnv(env: NodeJS.ProcessEnv = process.env): SupabasePublicConfig | null {

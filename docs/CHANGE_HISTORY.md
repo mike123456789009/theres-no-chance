@@ -178,6 +178,7 @@ Short description:
 - Added shared Supabase public config resolution that supports both `NEXT_PUBLIC_SUPABASE_*` and legacy `SUPABASE_*` naming.
 - Injected safe runtime public config into the HTML shell so client auth forms can initialize even when build-time public env injection is unavailable.
 - Updated client, server, and service Supabase helpers to use unified config resolution and clearer missing-config errors.
+- Added sanitization for malformed env payloads containing escaped newline suffixes (for example `\\n`).
 
 Files/areas touched:
 - Config utility: `lib/supabase/config.ts`

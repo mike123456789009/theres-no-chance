@@ -11,13 +11,23 @@ declare global {
   }
 }
 
+function clean(value: string | undefined): string {
+  if (typeof value !== "string") return "";
+
+  return value
+    .replace(/\\r\\n/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\\r/g, "")
+    .trim();
+}
+
 function resolveBrowserSupabaseConfig() {
   const fromEnvUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const fromEnvKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   const fromWindow = typeof window !== "undefined" ? window.__TNC_PUBLIC_CONFIG__ : undefined;
-  const url = (fromEnvUrl || fromWindow?.supabaseUrl || "").trim();
-  const publishableKey = (fromEnvKey || fromWindow?.supabasePublishableKey || "").trim();
+  const url = clean(fromEnvUrl) || clean(fromWindow?.supabaseUrl);
+  const publishableKey = clean(fromEnvKey) || clean(fromWindow?.supabasePublishableKey);
 
   if (!url || !publishableKey) {
     throw new Error(
