@@ -226,3 +226,19 @@ Files/areas touched:
 User-visible change:
 - Browser back from `/login`, `/signup`, or `/reset` now reliably returns to a fully rendered landing page.
 - New signup and password reset emails now use There&apos;s No Chance branding and route users to `https://theres-no-chance.com` paths instead of localhost URLs.
+
+## 2026-02-17 - Auth Browser Back Determinism Patch
+Status: completed
+
+Short description:
+- Added auth-route browser history trapping for users who arrived from the landing page, so pressing browser back from auth routes deterministically returns to a fresh landing load.
+- Expanded landing auth-return handling to prime return flags from landing auth link clicks and recover on multiple browser lifecycle events.
+- Verified with repeated automated browser-level runs of landing -> login -> browser back, including top-scroll and landing DOM checks.
+
+Files/areas touched:
+- Auth back trap: `components/auth/auth-back-nav-flag.tsx`
+- Landing runtime back-flow handling: `public/script.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Pressing the browser back button from `/login`, `/signup`, or `/reset` after visiting landing now consistently returns to the top of a fully rendered landing page.

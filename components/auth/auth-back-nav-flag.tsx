@@ -8,9 +8,21 @@ const FORCE_LANDING_TOP_KEY = "tnc-force-landing-top";
 export function AuthBackNavFlag() {
   useEffect(() => {
     try {
-      if (window.sessionStorage.getItem(LANDING_VISITED_KEY) === "1") {
+      const cameFromLanding = window.sessionStorage.getItem(LANDING_VISITED_KEY) === "1";
+      if (!cameFromLanding) return;
+
+      window.sessionStorage.setItem(FORCE_LANDING_TOP_KEY, "1");
+      window.history.pushState({ tncAuthBackTrap: true }, "", window.location.href);
+
+      const onPopState = () => {
         window.sessionStorage.setItem(FORCE_LANDING_TOP_KEY, "1");
-      }
+        window.location.assign("/?auth_return=1");
+      };
+
+      window.addEventListener("popstate", onPopState);
+      return () => {
+        window.removeEventListener("popstate", onPopState);
+      };
     } catch (error) {
       console.warn("Unable to persist auth back-navigation flag.", error);
     }

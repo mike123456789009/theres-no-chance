@@ -68,6 +68,19 @@ function markLandingVisited() {
   setSessionValue(LANDING_VISITED_KEY, "1");
 }
 
+function primeAuthReturnFlagOnAuthNav() {
+  const authLinks = document.querySelectorAll('a[href="/login"], a[href="/signup"], a[href="/reset"]');
+  authLinks.forEach((link) => {
+    link.addEventListener(
+      "click",
+      () => {
+        setSessionValue(FORCE_LANDING_TOP_KEY, "1");
+      },
+      { capture: true }
+    );
+  });
+}
+
 function consumeForceLandingTopFlag() {
   const shouldForceTop = getSessionValue(FORCE_LANDING_TOP_KEY) === "1";
   if (shouldForceTop) {
@@ -631,6 +644,26 @@ function forceLandingTopAndRender() {
   syncSceneToScrollPosition();
 }
 
+function handlePendingAuthReturn() {
+  markLandingVisited();
+
+  if (!consumeForceLandingTopFlag()) {
+    return false;
+  }
+
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+
+  if (isBackForwardNavigation()) {
+    window.location.reload();
+    return true;
+  }
+
+  forceLandingTopAndRender();
+  return true;
+}
+
 function render() {
   if (!renderer || !scene || !camera || !needsRender) return;
   needsRender = false;
@@ -703,22 +736,12 @@ function initSectionReveals() {
 }
 
 async function main() {
-  markLandingVisited();
-  const forceTopFromAuth = consumeForceLandingTopFlag();
-  if (forceTopFromAuth && isBackForwardNavigation()) {
-    if ("scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
-    }
-    window.location.reload();
+  if (handlePendingAuthReturn()) {
     return;
   }
 
-  if (forceTopFromAuth) {
-    if ("scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
-    }
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }
+  markLandingVisited();
+  primeAuthReturnFlagOnAuthNav();
 
   initSectionReveals();
 
@@ -748,9 +771,29 @@ async function main() {
     );
 
     window.addEventListener("pageshow", () => {
-      markLandingVisited();
-      if (consumeForceLandingTopFlag()) {
-        forceLandingTopAndRender();
+      if (handlePendingAuthReturn()) {
+        return;
+      }
+      syncSceneToScrollPosition();
+    });
+
+    window.addEventListener("popstate", () => {
+      if (handlePendingAuthReturn()) {
+        return;
+      }
+      syncSceneToScrollPosition();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      if (handlePendingAuthReturn()) {
+        return;
+      }
+      syncSceneToScrollPosition();
+    });
+
+    window.addEventListener("focus", () => {
+      if (handlePendingAuthReturn()) {
         return;
       }
       syncSceneToScrollPosition();
