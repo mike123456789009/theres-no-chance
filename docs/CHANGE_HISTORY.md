@@ -112,3 +112,22 @@ Files/areas touched:
 
 User-visible change:
 - `/admin` now enforces allowlist-based access control and displays guarded admin shell content for authorized users.
+
+## 2026-02-17 - Market Creation Wizard v1 (Step 7)
+Status: completed
+
+Short description:
+- Added a protected market creation route with a full draft/review wizard for question setup, resolution rules, metadata, and sources.
+- Added `POST /api/markets` with request validation for draft/review submission mode, source constraints, tags, risk flags, and market timings.
+- Added shared market payload validation utilities to enforce source and field guardrails before insert.
+
+Files/areas touched:
+- Create route: `app/(app)/create/page.tsx`
+- Create form UI: `components/markets/create-market-form.tsx`
+- Markets API: `app/api/markets/route.ts`
+- Validation utility: `lib/markets/create-market.ts`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Authenticated users can now visit `/create` to save market drafts or submit markets into review status using validated tags and source definitions.
