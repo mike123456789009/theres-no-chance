@@ -564,6 +564,9 @@ function layout(font) {
 
   if (suffixWords.length > 0) {
     let suffixCursorRight = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
+    let slashPlacement = null;
+    let aPlacement = null;
+
     for (const suffixWord of suffixWords) {
       const suffixGeometry = new TextGeometry(suffixWord.text, {
         font,
@@ -598,7 +601,25 @@ function layout(font) {
       const suffixEntry = { ...suffixWord, mesh: suffixMesh, baseX: suffixX };
       words.push(suffixEntry);
       wordMap.set(suffixWord.key, suffixEntry);
+
+      const leftEdge = suffixX + suffixBox.min.x * suffixScaleX;
+      const rightEdge = suffixX + suffixBox.max.x * suffixScaleX;
+      if (suffixWord.key === "slash") {
+        slashPlacement = { entry: suffixEntry, box: suffixBox, scaleX: suffixScaleX };
+      } else if (suffixWord.key === "a") {
+        aPlacement = { leftEdge };
+      }
+
       suffixCursorRight = suffixX + suffixBox.max.x * suffixScaleX;
+    }
+
+    if (slashPlacement && aPlacement) {
+      const noRightEdge = rowRightEdges[1] || rowRightEdges[0] || -W / 2 + margin;
+      const slashWidth = (slashPlacement.box.max.x - slashPlacement.box.min.x) * slashPlacement.scaleX;
+      const centeredLeft = noRightEdge + (aPlacement.leftEdge - noRightEdge - slashWidth) / 2;
+      const centeredSlashX = centeredLeft - slashPlacement.box.min.x * slashPlacement.scaleX;
+      slashPlacement.entry.mesh.position.x = centeredSlashX;
+      slashPlacement.entry.baseX = centeredSlashX;
     }
   }
 

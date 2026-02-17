@@ -321,3 +321,17 @@ Files/areas touched:
 
 User-visible change:
 - The hero now shows a much larger gap between `NO` and `/ A`, while `A` still sits just left of the right edge of the top and bottom words.
+
+## 2026-02-17 - Hero Slash Centering Hotfix
+Status: completed
+
+Short description:
+- Updated the hero suffix placement logic so `/` is centered between the right edge of `NO` and the left edge of `A`.
+- Preserved the previously widened spacing and right-edge anchoring for `A`.
+
+Files/areas touched:
+- Hero layout logic: `public/script.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The `/` now renders centered within the widened `NO` to `A` gap.
