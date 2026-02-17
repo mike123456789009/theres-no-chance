@@ -7,6 +7,7 @@ import { SVGRenderer } from "three/addons/renderers/SVGRenderer.js";
 const stage = document.querySelector("[data-stage]");
 const logo = document.querySelector(".tnc-logo");
 const scrollCue = document.querySelector(".scroll-cue");
+const heroTransitionCta = document.querySelector(".hero-transition-cta");
 const canvas = document.getElementById("hero-canvas");
 const wrap = document.getElementById("hero3d");
 
@@ -34,6 +35,7 @@ const DEFAULT_COLORS = {
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const segProgress = (p, s, e) => (p <= s ? 0 : p >= e ? 1 : (p - s) / (e - s));
+const smoothstep = (t) => t * t * (3 - 2 * t);
 
 let renderer = null;
 let scene = null;
@@ -519,6 +521,14 @@ function applyScroll(progress) {
   logo.classList.toggle("is-visible", progress > 0.05);
   if (scrollCue) {
     scrollCue.classList.toggle("is-hidden", progress > 0.06);
+  }
+
+  if (heroTransitionCta) {
+    const ctaStart = 0.985;
+    const ctaEnd = 1;
+    const ctaRaw = segProgress(progress, ctaStart, ctaEnd);
+    const ctaProgress = prefersReduced ? (progress >= ctaStart ? 1 : 0) : smoothstep(ctaRaw);
+    heroTransitionCta.style.setProperty("--hero-cta-progress", ctaProgress.toFixed(4));
   }
 
   if (!prefersReduced) {
