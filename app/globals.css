@@ -1216,6 +1216,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   box-shadow: 3px 3px 0 var(--ink);
   background: #fff;
   color: #111;
+  box-sizing: border-box;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   text-transform: uppercase;
   font-size: 0.71rem;
@@ -1267,6 +1268,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   background: #8db8e8;
   color: #111;
   text-decoration: none;
+  box-sizing: border-box;
   text-transform: uppercase;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.67rem;
@@ -1275,6 +1277,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   line-height: 1;
   padding: 0 0.66rem;
   min-height: var(--markets-control-h);
+  height: var(--markets-control-h);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1386,6 +1389,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   box-shadow: 3px 3px 0 var(--ink);
   background: var(--gold-face);
   color: #111;
+  box-sizing: border-box;
   text-transform: uppercase;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.71rem;
