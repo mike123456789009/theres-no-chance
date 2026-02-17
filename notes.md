@@ -1,71 +1,39 @@
-# Notes: Mistakes and How To Avoid Them
+# Notes (Mistakes + Prevention)
 
-## Purpose
-This file records mistakes that caused user frustration and the exact behavior rules to prevent repeats.
+## 1) Do Not Add Visual Fallbacks
+- Mistake:
+  - I allowed/introduced a visually different "fallback" render path on the landing experience.
+  - You explicitly do not want any alternate landing/logo to render "while loading" or "if slow".
+- Rule going forward:
+  - The landing page must either render the real, correct experience or render nothing (or a strictly non-visual loading state), but never a different-looking logo/page.
+- Prevention:
+  - Do not ship any "fallback markup" that can become visible.
+  - Fix the root cause (asset hosting, module loading, renderer selection) instead of hiding it with a fallback UI.
 
-## Mistake 1: Ignored explicit product direction on fallback rendering
-What happened:
-- User explicitly said they did not want fallback text/alternate hero rendering.
-- I still introduced and iterated on fallback UI.
+## 2) Do Not Make Unrequested Visual Changes While Debugging
+- Mistake:
+  - I changed placement/alignment of existing visuals (example: "BET ON REALITY") while trying to fix an unrelated artifact.
+- Rule going forward:
+  - Debug changes must be minimal and scoped to the exact issue.
+  - If I must make an experiment, it must not be committed/deployed unless you asked for it.
+- Prevention:
+  - Use a scratch branch or local-only experiment, then revert before committing.
+  - Before pushing, re-check the exact UI elements you care about (logo placement, hero layout, CTA placement).
 
-Why this was wrong:
-- It violated a direct product requirement and changed brand presentation.
+## 3) Never Ship Multiple Unrelated UI Fixes in One Deploy
+- Mistake:
+  - I bundled changes that were not all required to fix the bug at hand.
+- Rule going forward:
+  - One focused commit per deploy (per `AGENTS.md`), and only for the requested feature/fix.
+- Prevention:
+  - If I notice a second issue while working, I will log it here (or `docs/CHANGE_HISTORY.md`) and ship it in the next deploy.
 
-Never again rule:
-- If user says "no fallback," do not add fallback UI, fallback copy, fallback styles, fallback mode toggles, or fallback badges.
-- Only work on improving the primary path.
+## 4) Confirm "Back To Landing" Behavior With Real Navigation
+- Mistake:
+  - I relied on client-side transitions where you needed a full document reload.
+- Rule going forward:
+  - Any "Back to landing" must do a full navigation to `/` (hard reload) when you ask for it.
+- Prevention:
+  - Prefer `<a href="/">` over Next `<Link>` when the requirement is explicitly "full reload".
+  - Validate using a real browser flow (navigate to `/login` then hit browser back + click logo).
 
-Process guard:
-- Before committing UI changes, compare final diff against user constraints and run this check:
-  - "Did I introduce any alternate visual mode the user explicitly disallowed?"
-
-## Mistake 2: Expanded scope beyond the asked question
-What happened:
-- User asked whether a specific update guaranteed cross-device accessibility.
-- I moved into implementation changes before giving a direct, constrained answer.
-
-Why this was wrong:
-- It delayed the direct answer and reduced trust.
-
-Never again rule:
-- First answer the exact question directly and clearly.
-- Then propose or execute changes only if requested.
-
-Process guard:
-- Start responses with:
-  - "Direct answer"
-  - "What this means"
-  - "Next action (only if requested)"
-
-## Mistake 3: Introduced visual regressions while trying to improve resilience
-What happened:
-- Changes meant to improve reliability changed visual behavior in ways user did not approve.
-
-Why this was wrong:
-- Reliability fixes must preserve canonical visual output unless user requests redesign.
-
-Never again rule:
-- For branding-critical UI, treat visual parity as a hard requirement.
-- If a reliability fix risks visual drift, pause and present options first.
-
-Process guard:
-- Add a release check for brand-critical pages:
-  - "Primary hero visuals unchanged"
-  - "No alternate brand rendering path"
-
-## Mistake 4: Did not treat user anger as a failure signal early enough
-What happened:
-- I continued iterating instead of immediately resetting to user-specified constraints.
-
-Why this was wrong:
-- User frustration indicates requirement mismatch that must be corrected immediately.
-
-Never again rule:
-- If user is upset, stop feature expansion.
-- Re-state requirement, revert conflicting behavior, and ship the constrained fix first.
-
-Process guard:
-- When user expresses frustration:
-  - acknowledge constraint breach
-  - remove conflicting behavior
-  - provide short verification summary
