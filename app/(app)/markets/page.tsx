@@ -41,21 +41,6 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "probability_low", label: "Lowest yes" },
 ];
 
-const QUICK_FILTERS: Array<{ label: string; query?: string }> = [
-  { label: "All" },
-  { label: "Breaking", query: "breaking" },
-  { label: "New", query: "new" },
-  { label: "Politics", query: "politics" },
-  { label: "Sports", query: "sports" },
-  { label: "Crypto", query: "bitcoin" },
-  { label: "Finance", query: "finance" },
-  { label: "Economy", query: "economy" },
-  { label: "World", query: "world" },
-  { label: "Local", query: "city" },
-  { label: "Education", query: "school" },
-  { label: "Weather", query: "weather" },
-];
-
 const PRIMARY_NAV_ITEMS: Array<{ label: string; query?: string }> = [
   { label: "Trending" },
   { label: "Breaking", query: "breaking" },
@@ -352,24 +337,11 @@ export default async function MarketsPage({
             </form>
 
             <div className="markets-inline-links">
-              <Link href="/">Landing</Link>
               <Link href="/create">Create</Link>
               {!viewer.isAuthenticated ? <Link href="/login">Log in</Link> : null}
               {!viewer.isAuthenticated ? <Link href="/signup">Sign up</Link> : null}
             </div>
           </div>
-
-          <nav className="markets-quick-filters" aria-label="Quick filters">
-            {QUICK_FILTERS.map((filter) => (
-              <Link
-                key={filter.label}
-                href={buildQuickFilterHref(search, filter.query)}
-                className={isQuickFilterActive(query.search, filter.query) ? "markets-quick-pill is-active" : "markets-quick-pill"}
-              >
-                {filter.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
 

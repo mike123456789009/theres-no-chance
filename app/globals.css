@@ -1365,36 +1365,6 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   border-bottom-color: var(--ink);
 }
 
-.markets-quick-filters {
-  margin-top: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.42rem;
-  overflow-x: auto;
-  padding: 0.04rem 0 0.06rem;
-}
-
-.markets-quick-pill {
-  border: 1px solid #bdbdbd;
-  background: #f3f2ee;
-  color: #2a2a2a;
-  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.69rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  text-decoration: none;
-  padding: 0.24rem 0.5rem;
-  white-space: nowrap;
-  border-radius: 999px;
-}
-
-.markets-quick-pill.is-active {
-  background: rgba(228, 195, 52, 0.32);
-  border-color: #9d8426;
-  color: #111;
-}
-
 .markets-access-note,
 .markets-empty-state,
 .markets-error-state {

@@ -535,3 +535,19 @@ Files/areas touched:
 
 User-visible change:
 - The markets page now shows the branded landing-style TNC logo in the top-left instead of text labels.
+
+## 2026-02-17 - Markets Header Cleanup (Remove Landing Link + Duplicate Filter Strip)
+Status: completed
+
+Short description:
+- Removed the `Landing` text link from the `/markets` inline header links.
+- Removed the lower quick-filter pill strip because it duplicated category navigation already present above it.
+- Kept the top-left TNC logo as the primary path back to the landing page (`/`).
+
+Files/areas touched:
+- Markets header markup: `app/(app)/markets/page.tsx`
+- Redundant quick-filter styles: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Header is cleaner and less redundant: no extra `Landing` link beside `Create/Log in/Sign up`, and no duplicate filter row under the main nav.
