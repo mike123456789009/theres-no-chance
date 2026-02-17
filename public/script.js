@@ -12,6 +12,8 @@ const canvas = document.getElementById("hero-canvas");
 const wrap = document.getElementById("hero3d");
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LANDING_VISITED_KEY = "tnc-landing-visited";
+const FORCE_LANDING_TOP_KEY = "tnc-force-landing-top";
 
 const WORD_CONFIGS = [
   { key: "theres", text: "THERE'S", color: "red", row: 0, segment: [0.0, 0.33], direction: "left" },
@@ -37,6 +39,42 @@ const DEFAULT_COLORS = {
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const segProgress = (p, s, e) => (p <= s ? 0 : p >= e ? 1 : (p - s) / (e - s));
 const smoothstep = (t) => t * t * (3 - 2 * t);
+
+function getSessionValue(key) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setSessionValue(key, value) {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // Ignore storage failures (e.g. private mode restrictions).
+  }
+}
+
+function removeSessionValue(key) {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Ignore storage failures (e.g. private mode restrictions).
+  }
+}
+
+function markLandingVisited() {
+  setSessionValue(LANDING_VISITED_KEY, "1");
+}
+
+function consumeForceLandingTopFlag() {
+  const shouldForceTop = getSessionValue(FORCE_LANDING_TOP_KEY) === "1";
+  if (shouldForceTop) {
+    removeSessionValue(FORCE_LANDING_TOP_KEY);
+  }
+  return shouldForceTop;
+}
 
 let renderer = null;
 let scene = null;
@@ -578,6 +616,16 @@ function applyScroll(progress) {
   needsRender = true;
 }
 
+function syncSceneToScrollPosition() {
+  applyScroll(computeProgress());
+  queueRender();
+}
+
+function forceLandingTopAndRender() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  syncSceneToScrollPosition();
+}
+
 function render() {
   if (!renderer || !scene || !camera || !needsRender) return;
   needsRender = false;
@@ -650,6 +698,11 @@ function initSectionReveals() {
 }
 
 async function main() {
+  markLandingVisited();
+  if (consumeForceLandingTopFlag()) {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
   initSectionReveals();
 
   try {
@@ -666,18 +719,25 @@ async function main() {
 
     window.addEventListener("resize", () => {
       layout(font);
-      applyScroll(computeProgress());
-      queueRender();
+      syncSceneToScrollPosition();
     });
 
     window.addEventListener(
       "scroll",
       () => {
-        applyScroll(computeProgress());
-        queueRender();
+        syncSceneToScrollPosition();
       },
       { passive: true }
     );
+
+    window.addEventListener("pageshow", () => {
+      markLandingVisited();
+      if (consumeForceLandingTopFlag()) {
+        forceLandingTopAndRender();
+        return;
+      }
+      syncSceneToScrollPosition();
+    });
   } catch (error) {
     showFatalFallback(error);
   }

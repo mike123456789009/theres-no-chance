@@ -190,3 +190,21 @@ Files/areas touched:
 
 User-visible change:
 - Signup/login/reset no longer fail with `Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL` when legacy `SUPABASE_*` env names exist.
+
+## 2026-02-17 - Canonical Domain + Auth Back-Nav Top Restore
+Status: completed
+
+Short description:
+- Added production-only canonical host redirect so non-canonical production hosts redirect to `https://theres-no-chance.com`.
+- Added auth-route session marker logic so returning from `/login`, `/signup`, or `/reset` back to landing forces a top-of-page reset.
+- Updated the landing 3D script to consume/reset that marker, restore scroll to top, and re-sync hero render state on browser `pageshow`.
+
+Files/areas touched:
+- Canonical host routing: `middleware.ts`
+- Auth back-nav marker: `components/auth/auth-back-nav-flag.tsx`, `app/(auth)/layout.tsx`
+- Landing runtime behavior: `public/script.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The production app now normalizes to `https://theres-no-chance.com`.
+- Using the browser back button from auth pages now returns users to the top of landing with hero/render state restored.
