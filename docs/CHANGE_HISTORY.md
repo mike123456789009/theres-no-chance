@@ -94,3 +94,21 @@ Files/areas touched:
 
 User-visible change:
 - No immediate UI change; this deploy establishes the backend schema and access-control foundation for auth, trading, billing, and admin flows.
+
+## 2026-02-17 - Admin Bootstrap Guardrails (Step 6)
+Status: completed
+
+Short description:
+- Added allowlist-based admin role utilities powered by `ADMIN_ALLOWLIST_EMAILS`.
+- Added a server-guarded `/admin` route that enforces authenticated allowlisted access.
+- Added an admin session API endpoint for future route-handler guard checks.
+
+Files/areas touched:
+- Admin route: `app/(app)/admin/page.tsx`
+- Admin API: `app/api/admin/session/route.ts`
+- Auth utility: `lib/auth/admin.ts`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/admin` now enforces allowlist-based access control and displays guarded admin shell content for authorized users.

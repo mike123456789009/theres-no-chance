@@ -3,6 +3,16 @@ import { cookies } from "next/headers";
 
 import { requiredEnv } from "@/lib/env";
 
+const REQUIRED_SUPABASE_SERVER_ENV = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"] as const;
+
+export function getMissingSupabaseServerEnv(): string[] {
+  return REQUIRED_SUPABASE_SERVER_ENV.filter((name) => !process.env[name]);
+}
+
+export function isSupabaseServerEnvConfigured(): boolean {
+  return getMissingSupabaseServerEnv().length === 0;
+}
+
 export async function createClient() {
   const cookieStore = await cookies();
 

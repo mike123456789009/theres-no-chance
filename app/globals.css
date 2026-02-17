@@ -872,6 +872,60 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   color: var(--red-face);
 }
 
+.admin-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem) var(--stage-pad);
+  display: grid;
+  align-items: center;
+}
+
+.admin-card {
+  width: min(820px, 100%);
+  margin: 0 auto;
+  border: 6px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+  background: var(--bg);
+  padding: clamp(1rem, 3vw, 1.8rem);
+}
+
+.admin-card-warning {
+  box-shadow: 8px 8px 0 var(--red-face);
+}
+
+.admin-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.7rem, 0.9vw, 0.82rem);
+  letter-spacing: 0.09em;
+  color: #4d4d4d;
+}
+
+.admin-title {
+  margin: 0.55rem 0 0;
+  text-transform: uppercase;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  line-height: 1.08;
+}
+
+.admin-copy {
+  margin: 0.75rem 0 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.8rem, 1.04vw, 0.92rem);
+  line-height: 1.45;
+}
+
+.admin-panel-list {
+  margin-top: 0.95rem;
+  border-left: 3px solid rgba(16, 16, 16, 0.45);
+  padding-left: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.78rem, 0.98vw, 0.88rem);
+  line-height: 1.4;
+}
+
 @keyframes scroll-cue-blink {
   0%,
   40% {
@@ -991,6 +1045,12 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   .onboarding-submit {
     border-width: 3px;
     box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .admin-card,
+  .admin-card-warning {
+    border-width: 4px;
+    box-shadow: 6px 6px 0 var(--ink);
   }
 }
 
