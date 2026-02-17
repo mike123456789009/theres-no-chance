@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { resolveAppBaseUrl } from "@/lib/app/base-url";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +11,12 @@ export function SignupForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const prefilled = new URLSearchParams(window.location.search).get("email")?.trim() ?? "";
+    if (!prefilled) return;
+    setEmail((current) => (current ? current : prefilled));
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

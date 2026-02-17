@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LandingAuthRow } from "@/components/landing/auth-row";
+
 const threeImportMap = {
   imports: {
     three: "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -131,25 +133,7 @@ export default function MarketingPage() {
             </section>
 
             <section className="auth-row-wrap reveal-item" data-reveal-delay="3" aria-label="Login and signup">
-              <div className="auth-row">
-                <Link className="auth-btn auth-btn-login" href="/login">
-                  LOGIN
-                </Link>
-                <Link className="auth-btn auth-btn-signup" href="/signup">
-                  SIGN UP
-                </Link>
-                <label className="sr-only" htmlFor="email-input">
-                  Enter email
-                </label>
-                <input
-                  id="email-input"
-                  className="auth-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="Enter email"
-                />
-              </div>
+              <LandingAuthRow />
             </section>
 
             <section className="faq-wrap reveal-item" data-reveal-delay="4" aria-label="Frequently asked questions">

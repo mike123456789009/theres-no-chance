@@ -260,3 +260,19 @@ Files/areas touched:
 User-visible change:
 - Browser back from auth routes now returns to `/` without `?auth_return=1`.
 - The non-canonical fallback headline rendering you reported will no longer appear during landing boot.
+
+## 2026-02-17 - Landing Email Carryover To Auth Forms
+Status: completed
+
+Short description:
+- Replaced the landing auth row with a client-driven component that carries the typed landing email into auth route links as a query parameter.
+- Updated login and signup forms to auto-prefill the email field from the incoming `email` query parameter.
+
+Files/areas touched:
+- Landing auth row component: `components/landing/auth-row.tsx`
+- Landing page integration: `app/(marketing)/page.tsx`
+- Auth forms: `components/auth/login-form.tsx`, `components/auth/signup-form.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Typing an email in the landing `Enter email` field and then clicking `LOGIN` or `SIGN UP` now auto-populates the email field on the destination auth page.
