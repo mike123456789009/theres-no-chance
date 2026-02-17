@@ -8,6 +8,8 @@
 
   --gold-face: #c6a727;
   --gold-side: #c6a727;
+  --slash-face: #d3d0c5;
+  --slash-side: #bab6ab;
   --neutral-face: #c9c5b8;
   --neutral-side: #aba596;
 }
@@ -121,8 +123,8 @@ body[data-render-mode="boot"] .svg-render-host {
   position: absolute;
   left: clamp(15rem, 35vw, 35rem);
   top: 42%;
-  opacity: 0.68;
-  transform: scaleX(0.84);
+  opacity: 0.62;
+  transform: scaleX(0.72);
   transform-origin: left center;
 }
 
@@ -154,6 +156,10 @@ body[data-render-mode="fallback"] .fallback-words:has(.w-a:hover) .w-no {
 
 .fallback-words .w.neutral {
   color: var(--neutral-face);
+}
+
+.fallback-words .w.slash {
+  color: var(--slash-face);
 }
 
 body[data-render-mode="webgl"] #hero-canvas {

@@ -16,7 +16,7 @@ const WORD_CONFIGS = [
   { key: "theres", text: "THERE'S", color: "red", row: 0, segment: [0.0, 0.33], direction: "left" },
   { key: "no", text: "NO", color: "gold", row: 1, segment: [0.33, 0.66], direction: "left" },
   { key: "chance", text: "CHANCE", color: "red", row: 2, segment: [0.66, 0.99], direction: "left" },
-  { key: "slash", text: "/", color: "neutral", row: 1, segment: [0.33, 0.66], direction: "right" },
+  { key: "slash", text: "/", color: "slash", row: 1, segment: [0.33, 0.66], direction: "right" },
   { key: "a", text: "A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
 ];
 const MAIN_WORD_KEYS = new Set(["theres", "no", "chance"]);
@@ -26,6 +26,8 @@ const DEFAULT_COLORS = {
   redSide: 0x955158,
   goldFace: 0xc6a727,
   goldSide: 0xc6a727,
+  slashFace: 0xd3d0c5,
+  slashSide: 0xbab6ab,
   neutralFace: 0xc9c5b8,
   neutralSide: 0xaba596,
 };
@@ -81,6 +83,8 @@ function syncThemeColors() {
     redSide: getThemeColor("--red-side", DEFAULT_COLORS.redSide),
     goldFace: getThemeColor("--gold-face", DEFAULT_COLORS.goldFace),
     goldSide: getThemeColor("--gold-side", DEFAULT_COLORS.goldSide),
+    slashFace: getThemeColor("--slash-face", DEFAULT_COLORS.slashFace),
+    slashSide: getThemeColor("--slash-side", DEFAULT_COLORS.slashSide),
     neutralFace: getThemeColor("--neutral-face", DEFAULT_COLORS.neutralFace),
     neutralSide: getThemeColor("--neutral-side", DEFAULT_COLORS.neutralSide),
   };
@@ -281,7 +285,7 @@ function applySwapState() {
   if (!noWord || !aWord) return;
 
   if (slashWord) {
-    setMeshOpacity(slashWord.mesh, 0.68);
+    setMeshOpacity(slashWord.mesh, 0.62);
   }
 
   if (isAHovered) {
@@ -370,6 +374,7 @@ function layout(font) {
   const materialsByColor = {
     red: buildMaterials(themeColors.redFace, themeColors.redSide, bumpTex, roughTex),
     gold: buildMaterials(themeColors.goldFace, themeColors.goldSide, bumpTex, roughTex),
+    slash: buildMaterials(themeColors.slashFace, themeColors.slashSide, bumpTex, roughTex),
     neutral: buildMaterials(themeColors.neutralFace, themeColors.neutralSide, bumpTex, roughTex),
   };
 
@@ -474,7 +479,7 @@ function layout(font) {
       suffixGeometry.computeBoundingBox();
       const suffixBox = suffixGeometry.boundingBox;
       const suffixScale = rowScales[suffixWord.row] || wordScales[1] || globalScale;
-      const suffixScaleX = suffixWord.key === "slash" ? suffixScale * 0.82 : suffixScale;
+      const suffixScaleX = suffixWord.key === "slash" ? suffixScale * 0.72 : suffixScale;
       const suffixMeshMaterials = materialsByColor[suffixWord.color].map((material) => material.clone());
       const suffixMesh = new THREE.Mesh(suffixGeometry, suffixMeshMaterials);
       suffixMesh.scale.set(suffixScaleX, suffixScale, suffixScale);
