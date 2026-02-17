@@ -97,9 +97,8 @@ function isBackForwardNavigation() {
 let renderer = null;
 let scene = null;
 let camera = null;
-let renderMode = "fallback";
+let renderMode = "boot";
 let svgHost = null;
-let heroReady = false;
 
 let words = [];
 let activeTextures = [];
@@ -116,16 +115,6 @@ let isAHovered = false;
 function setRenderMode(mode) {
   renderMode = mode;
   document.body.dataset.renderMode = mode;
-  if (mode !== "webgl" && mode !== "svg") {
-    heroReady = false;
-    delete document.body.dataset.heroReady;
-  }
-}
-
-function markHeroReady() {
-  if (heroReady) return;
-  heroReady = true;
-  document.body.dataset.heroReady = "1";
 }
 
 function ensureSvgHost() {
@@ -722,7 +711,6 @@ function render() {
   if (!renderer || !scene || !camera || !needsRender) return;
   needsRender = false;
   renderer.render(scene, camera);
-  markHeroReady();
 }
 
 let rafQueued = false;
@@ -733,25 +721,6 @@ function queueRender() {
     rafQueued = false;
     render();
   });
-}
-
-function showFatalFallback(error) {
-  setRenderMode("fallback");
-  console.error(error);
-
-  if (document.getElementById("render-fallback-note")) return;
-  const badge = document.createElement("div");
-  badge.id = "render-fallback-note";
-  badge.textContent = "3D renderer unavailable";
-  badge.style.position = "fixed";
-  badge.style.right = "12px";
-  badge.style.bottom = "12px";
-  badge.style.padding = "8px 10px";
-  badge.style.background = "rgba(255,255,255,0.92)";
-  badge.style.border = "2px solid #111";
-  badge.style.font = "12px monospace";
-  badge.style.zIndex = "9999";
-  document.body.appendChild(badge);
 }
 
 function initSectionReveals() {
@@ -859,7 +828,7 @@ async function main() {
       syncSceneToScrollPosition();
     });
   } catch (error) {
-    showFatalFallback(error);
+    console.error(error);
   }
 }
 

@@ -640,3 +640,20 @@ Files/areas touched:
 
 User-visible change:
 - Landing page remains readable/loadable on more browsers and network conditions that previously could fail module boot and show a blank hero area.
+
+## 2026-02-17 - Landing Fallback Removal (Owner Direction)
+Status: completed
+
+Short description:
+- Removed all visual fallback wordmark markup/styles from landing hero.
+- Removed JS fallback support branches (`fallback` render mode path, fallback badge, hero-ready fallback toggles).
+- Kept explicit same-origin vendor module loading and primary renderer paths only.
+
+Files/areas touched:
+- Landing markup: `app/(marketing)/page.tsx`
+- Landing styles: `app/globals.css`
+- Landing runtime logic: `public/script.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Landing now renders only the canonical hero renderer output (no alternate fallback wordmark variant).

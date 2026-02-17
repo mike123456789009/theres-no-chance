@@ -90,68 +90,9 @@ body {
   display: block;
 }
 
-.fallback-words {
-  position: absolute;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: clamp(0.18rem, 1.1vw, 0.9rem);
-  padding-left: clamp(0.55rem, 2.4vw, 2rem);
-  pointer-events: none;
-}
-
-.fallback-row {
-  width: 100%;
-}
-
-.fallback-row-mid {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: clamp(4rem, 10vw, 11rem);
-  width: auto;
-}
-
-.fallback-word {
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  line-height: 0.86;
-  font-size: clamp(4rem, 15vw, 13rem);
-  text-shadow: 7px 0 0 rgba(16, 16, 16, 0.12);
-}
-
-.fallback-word.red {
-  color: var(--red-face);
-  text-shadow: 7px 0 0 var(--red-side);
-}
-
-.fallback-word.gold {
-  color: var(--gold-face);
-  text-shadow: 7px 0 0 var(--gold-side);
-}
-
-.fallback-word.slash {
-  color: var(--slash-face);
-  transform: scaleX(0.72);
-  transform-origin: center bottom;
-  text-shadow: 7px 0 0 var(--slash-side);
-}
-
-.fallback-word.neutral {
-  color: var(--neutral-face);
-  text-shadow: 7px 0 0 var(--neutral-side);
-}
-
 body[data-render-mode="boot"] #hero-canvas,
 body[data-render-mode="boot"] .svg-render-host {
   display: none;
-}
-
-body[data-render-mode="boot"] .fallback-words,
-body[data-render-mode="fallback"] .fallback-words {
-  display: flex;
 }
 
 body[data-render-mode="webgl"] #hero-canvas {
@@ -168,16 +109,6 @@ body[data-render-mode="svg"] #hero-canvas {
 
 body[data-render-mode="svg"] .svg-render-host {
   display: block;
-}
-
-body[data-render-mode="webgl"] .fallback-words,
-body[data-render-mode="svg"] .fallback-words {
-  display: flex;
-}
-
-body[data-render-mode="webgl"][data-hero-ready="1"] .fallback-words,
-body[data-render-mode="svg"][data-hero-ready="1"] .fallback-words {
-  display: none;
 }
 
 .tnc-logo {
