@@ -45,3 +45,20 @@ Files/areas touched:
 
 User-visible change:
 - Visitors can expand/collapse a starter FAQ block covering market resolution, disputes, fees, withdrawals, and private/institution markets.
+
+## 2026-02-17 - Auth Pages (Step 3)
+Status: completed
+
+Short description:
+- Added dedicated auth routes for login, signup, and password reset.
+- Implemented Supabase email/password flows for sign in, account creation, reset-link requests, and password update attempts.
+- Added a shared auth shell and styling for consistent UX across auth pages.
+
+Files/areas touched:
+- Routes: `app/(auth)/layout.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/signup/page.tsx`, `app/(auth)/reset/page.tsx`
+- UI components: `components/auth/auth-shell.tsx`, `components/auth/login-form.tsx`, `components/auth/signup-form.tsx`, `components/auth/reset-form.tsx`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Users can now access `/login`, `/signup`, and `/reset` and interact with core account auth forms.
