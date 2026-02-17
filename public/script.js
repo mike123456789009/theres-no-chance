@@ -99,6 +99,7 @@ let scene = null;
 let camera = null;
 let renderMode = "fallback";
 let svgHost = null;
+let heroReady = false;
 
 let words = [];
 let activeTextures = [];
@@ -115,6 +116,16 @@ let isAHovered = false;
 function setRenderMode(mode) {
   renderMode = mode;
   document.body.dataset.renderMode = mode;
+  if (mode !== "webgl" && mode !== "svg") {
+    heroReady = false;
+    delete document.body.dataset.heroReady;
+  }
+}
+
+function markHeroReady() {
+  if (heroReady) return;
+  heroReady = true;
+  document.body.dataset.heroReady = "1";
 }
 
 function ensureSvgHost() {
@@ -711,6 +722,7 @@ function render() {
   if (!renderer || !scene || !camera || !needsRender) return;
   needsRender = false;
   renderer.render(scene, camera);
+  markHeroReady();
 }
 
 let rafQueued = false;

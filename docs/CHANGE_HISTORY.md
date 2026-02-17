@@ -624,6 +624,7 @@ Short description:
 - Removed the landing page import-map boot dependency and switched the hero runtime imports to direct same-origin vendor module URLs.
 - Updated vendored Three.js addon files used by the landing renderer to import `three.module.js` via explicit same-origin path instead of bare `three` specifiers.
 - Added static fallback hero word markup and styles that render during `boot`/`fallback` modes so landing never appears blank if JS module initialization fails.
+- Added hero-ready display guard so fallback words stay visible until the 3D/SVG renderer has successfully painted at least one frame.
 
 Files/areas touched:
 - Landing markup: `app/(marketing)/page.tsx`
