@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { TradeInterface } from "@/components/markets/trade-interface";
 
 export const dynamic = "force-dynamic";
 
@@ -217,9 +218,6 @@ export default async function MarketDetailPage({
   const chartEndLabel = formatShortDate(market.chartPoints[market.chartPoints.length - 1]?.timestamp ?? market.closeTime);
   const impliedNoPrice = formatPercent(market.priceNo, 1);
   const yesPrice = formatPercent(market.priceYes, 1);
-  const sampleOrderUsd = 25;
-  const sampleYesShares = market.priceYes > 0 ? sampleOrderUsd / market.priceYes : 0;
-  const sampleNoShares = market.priceNo > 0 ? sampleOrderUsd / market.priceNo : 0;
 
   return (
     <main className="market-detail-page">
@@ -299,65 +297,19 @@ export default async function MarketDetailPage({
               <span>{chartEndLabel}</span>
             </div>
             <p className="market-detail-chart-note">
-              Trade execution APIs are now live. This panel currently tracks the latest AMM probability across market time
-              bounds until full historical candle rendering is wired in.
+              Live trading interface now active. Quote and execute APIs are fully integrated with real-time price updates.
             </p>
           </article>
 
           <aside className="market-detail-right-rail" aria-label="Action and position rail">
-            <article className="market-detail-action-panel">
-              <h2>Buy / sell module</h2>
-              <div className="market-detail-order-tabs">
-                <button type="button" disabled>
-                  Buy YES
-                </button>
-                <button type="button" disabled>
-                  Buy NO
-                </button>
-                <button type="button" disabled>
-                  Sell YES
-                </button>
-                <button type="button" disabled>
-                  Sell NO
-                </button>
-              </div>
-
-              <div className="market-detail-order-grid">
-                <p>
-                  <span>Order size</span>
-                  <strong>{formatCurrency(sampleOrderUsd)}</strong>
-                </p>
-                <p>
-                  <span>Est. YES shares</span>
-                  <strong>{formatShares(sampleYesShares)}</strong>
-                </p>
-                <p>
-                  <span>Est. NO shares</span>
-                  <strong>{formatShares(sampleNoShares)}</strong>
-                </p>
-                <p>
-                  <span>Slippage + fees</span>
-                  <strong>Live via quote API</strong>
-                </p>
-              </div>
-
-              {market.actionRequired === "create_account" ? (
-                <>
-                  <p>Create an account to execute YES/NO orders.</p>
-                  <div className="market-detail-action-links">
-                    <Link href="/signup">Create account</Link>
-                    <Link href="/login">Log in</Link>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>Your account is market-ready. Quote and execute APIs are now active for live trading calls.</p>
-                  <button className="market-detail-action-button" type="button" disabled>
-                    UI order entry rolls out next
-                  </button>
-                </>
-              )}
-            </article>
+            <TradeInterface
+              marketId={marketId}
+              marketStatus={market.status}
+              currentPriceYes={market.priceYes}
+              currentPriceNo={market.priceNo}
+              viewerUserId={viewer.userId ?? undefined}
+              isAuthenticated={viewer.isAuthenticated}
+            />
 
             <article className="market-detail-position-panel">
               <h2>Your position</h2>
