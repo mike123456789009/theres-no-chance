@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const threeImportMap = {
   imports: {
     three: "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -130,12 +132,12 @@ export default function MarketingPage() {
 
             <section className="auth-row-wrap reveal-item" data-reveal-delay="3" aria-label="Login and signup">
               <div className="auth-row">
-                <button type="button" className="auth-btn auth-btn-login">
+                <Link className="auth-btn auth-btn-login" href="/login">
                   LOGIN
-                </button>
-                <button type="button" className="auth-btn auth-btn-signup">
+                </Link>
+                <Link className="auth-btn auth-btn-signup" href="/signup">
                   SIGN UP
-                </button>
+                </Link>
                 <label className="sr-only" htmlFor="email-input">
                   Enter email
                 </label>

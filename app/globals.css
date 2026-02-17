@@ -498,9 +498,13 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .auth-btn {
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.74rem 1.05rem;
   text-transform: uppercase;
   font-weight: 700;
+  text-decoration: none;
 }
 
 .auth-btn-login {

@@ -155,3 +155,18 @@ Files/areas touched:
 
 User-visible change:
 - Allowlisted admins can now process review-queue markets and halt open markets from `/admin`, with each action captured in the admin audit log.
+
+## 2026-02-17 - Landing Auth Navigation Fix
+Status: completed
+
+Short description:
+- Replaced non-functional landing auth buttons with real navigation links to auth routes.
+- Preserved existing button styling while ensuring link semantics for reliable route transitions.
+
+Files/areas touched:
+- Landing route: `app/(marketing)/page.tsx`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `LOGIN` and `SIGN UP` controls on `/` now correctly navigate to `/login` and `/signup`.
