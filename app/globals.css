@@ -247,11 +247,14 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 .hero-transition-cta {
   --hero-cta-progress: 0;
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin-inline: auto;
   bottom: clamp(1.5rem, 4.6vh, 3.2rem);
   margin: 0;
   opacity: var(--hero-cta-progress);
-  transform: translate(-50%, calc((1 - var(--hero-cta-progress)) * 145%));
+  transform: translateY(calc((1 - var(--hero-cta-progress)) * 145%));
   pointer-events: none;
   z-index: 4;
   will-change: transform, opacity;

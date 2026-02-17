@@ -366,3 +366,17 @@ Files/areas touched:
 
 User-visible change:
 - The landing hero no longer contains or displays the separate fallback text layer.
+
+## 2026-02-17 - CTA Border Seam Rendering Fix
+Status: completed
+
+Short description:
+- Fixed the `BET ON REALITY` CTA positioning to avoid subpixel horizontal transforms that caused a non-black seam on the border in some rasterized states.
+- Switched horizontal centering from `translateX(-50%)` to layout-based centering using `left/right` plus auto margins.
+
+Files/areas touched:
+- CTA positioning styles: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The CTA border now renders consistently black without the thin off-color pixel line.
