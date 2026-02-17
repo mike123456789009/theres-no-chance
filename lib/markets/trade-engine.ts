@@ -1,4 +1,5 @@
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { logger, performanceMonitor, metricsCollector, errorTracker } from "@/lib/monitoring";
 
 export const TRADE_SIDES = ["yes", "no"] as const;
 export const TRADE_ACTIONS = ["buy", "sell"] as const;
@@ -248,6 +249,7 @@ function normalizeExecuteResult(raw: unknown): TradeExecuteRpcResult | null {
 
 export function validateTradeQuotePayload(raw: unknown): TradeValidationResult<ValidatedTradeQuotePayload> {
   if (!isRecord(raw)) {
+    logger.warn("Invalid trade quote payload: not an object", { payload: raw });
     return {
       ok: false,
       errors: ["Invalid request body."],
@@ -277,8 +279,21 @@ export function validateTradeQuotePayload(raw: unknown): TradeValidationResult<V
   }
 
   if (errors.length > 0) {
+    logger.warn("Trade quote validation failed", {
+      side: sideRaw,
+      action: actionRaw,
+      shares: sharesValue,
+      errors,
+    });
     return { ok: false, errors };
   }
+
+  logger.debug("Trade quote payload validated", {
+    side: sideRaw,
+    action: actionRaw,
+    shares: sharesValue,
+    maxSlippageBps,
+  });
 
   return {
     ok: true,
@@ -308,8 +323,17 @@ export function validateTradeExecutePayload(raw: unknown): TradeValidationResult
   }
 
   if (errors.length > 0) {
+    logger.warn("Trade execute validation failed", {
+      idempotencyKey: idempotencyKey ? "[REDACTED]" : "missing",
+      errors,
+    });
     return { ok: false, errors };
   }
+
+  logger.debug("Trade execute payload validated", {
+    ...quoteValidation.data,
+    idempotencyKey: "[REDACTED]",
+  });
 
   return {
     ok: true,
@@ -327,46 +351,137 @@ export async function quoteMarketTrade(input: {
   shares: number;
   maxSlippageBps: number;
 }): Promise<ServiceCallResult<TradeQuoteRpcResult>> {
+  const requestId = `quote-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  performanceMonitor.startTimer("quote_market_trade", requestId);
+
+  logger.info("Quote request initiated", {
+    requestId,
+    marketId: input.marketId,
+    side: input.side,
+    action: input.action,
+    shares: input.shares,
+    maxSlippageBps: input.maxSlippageBps,
+  });
+
   if (!isSupabaseServiceEnvConfigured()) {
+    const missingEnv = getMissingSupabaseServiceEnv();
+    logger.error("Quote request failed: Supabase not configured", {
+      requestId,
+      missingEnv,
+    });
+    performanceMonitor.endTimer("quote_market_trade", requestId, { success: false });
     return {
       ok: false,
       status: 503,
       error: "Trade quote unavailable: missing service role configuration.",
-      missingEnv: getMissingSupabaseServiceEnv(),
+      missingEnv,
     };
   }
 
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("quote_market_trade", {
-    p_market_id: input.marketId,
-    p_side: input.side,
-    p_action: input.action,
-    p_shares: input.shares,
-    p_max_slippage_bps: input.maxSlippageBps,
-  });
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("quote_market_trade", {
+      p_market_id: input.marketId,
+      p_side: input.side,
+      p_action: input.action,
+      p_shares: input.shares,
+      p_max_slippage_bps: input.maxSlippageBps,
+    });
 
-  if (error) {
-    const mapped = parseRpcError(error.message);
+    if (error) {
+      const mapped = parseRpcError(error.message);
+      const categorized = errorTracker.categorizeError(error.message, {
+        requestId,
+        marketId: input.marketId,
+        side: input.side,
+        action: input.action,
+      });
+
+      logger.error("Quote request failed: RPC error", {
+        requestId,
+        errorCategory: categorized.category,
+        errorCode: categorized.code,
+        errorMessage: error.message,
+      });
+
+      const durationMs = performanceMonitor.endTimer("quote_market_trade", requestId, { success: false }) || 0;
+      metricsCollector.recordTrade({
+        marketId: input.marketId,
+        side: input.side,
+        action: input.action,
+        shares: input.shares,
+        success: false,
+        errorType: categorized.category,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      });
+
+      return {
+        ok: false,
+        ...mapped,
+      };
+    }
+
+    const normalized = normalizeQuoteResult(data);
+    if (!normalized) {
+      logger.error("Quote request failed: Malformed RPC response", {
+        requestId,
+        rawData: data,
+      });
+      performanceMonitor.endTimer("quote_market_trade", requestId, { success: false });
+      return {
+        ok: false,
+        status: 500,
+        error: "Trade quote unavailable.",
+        detail: "RPC returned malformed quote payload.",
+      };
+    }
+
+    const durationMs = performanceMonitor.endTimer("quote_market_trade", requestId, { success: true }) || 0;
+    metricsCollector.recordTrade({
+      marketId: input.marketId,
+      side: input.side,
+      action: input.action,
+      shares: input.shares,
+      notional: normalized.notional,
+      success: true,
+      durationMs,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info("Quote request completed", {
+      requestId,
+      marketId: normalized.marketId,
+      notional: normalized.notional,
+      slippageBps: normalized.slippageBps,
+      durationMs,
+    });
+
     return {
-      ok: false,
-      ...mapped,
+      ok: true,
+      data: normalized,
     };
-  }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const categorized = errorTracker.categorizeError(errorMessage, {
+      requestId,
+      marketId: input.marketId,
+    });
 
-  const normalized = normalizeQuoteResult(data);
-  if (!normalized) {
+    logger.error("Quote request failed: Unexpected error", {
+      requestId,
+      errorCategory: categorized.category,
+    }, error instanceof Error ? error : undefined);
+
+    performanceMonitor.endTimer("quote_market_trade", requestId, { success: false });
+
     return {
       ok: false,
       status: 500,
-      error: "Trade quote unavailable.",
-      detail: "RPC returned malformed quote payload.",
+      error: "Trade quote failed due to unexpected error.",
+      detail: errorMessage,
     };
   }
-
-  return {
-    ok: true,
-    data: normalized,
-  };
 }
 
 export async function executeMarketTrade(input: {
@@ -378,46 +493,143 @@ export async function executeMarketTrade(input: {
   maxSlippageBps: number;
   idempotencyKey: string;
 }): Promise<ServiceCallResult<TradeExecuteRpcResult>> {
+  const requestId = `execute-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  performanceMonitor.startTimer("execute_market_trade", requestId);
+
+  logger.info("Execute request initiated", {
+    requestId,
+    marketId: input.marketId,
+    userId: input.userId,
+    side: input.side,
+    action: input.action,
+    shares: input.shares,
+    maxSlippageBps: input.maxSlippageBps,
+    idempotencyKey: "[REDACTED]",
+  });
+
   if (!isSupabaseServiceEnvConfigured()) {
+    const missingEnv = getMissingSupabaseServiceEnv();
+    logger.error("Execute request failed: Supabase not configured", {
+      requestId,
+      missingEnv,
+    });
+    performanceMonitor.endTimer("execute_market_trade", requestId, { success: false });
     return {
       ok: false,
       status: 503,
       error: "Trade execution unavailable: missing service role configuration.",
-      missingEnv: getMissingSupabaseServiceEnv(),
+      missingEnv,
     };
   }
 
-  const service = createServiceClient();
-  const { data, error } = await service.rpc("execute_market_trade", {
-    p_market_id: input.marketId,
-    p_user_id: input.userId,
-    p_side: input.side,
-    p_action: input.action,
-    p_shares: input.shares,
-    p_idempotency_key: input.idempotencyKey,
-    p_max_slippage_bps: input.maxSlippageBps,
-  });
+  try {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("execute_market_trade", {
+      p_market_id: input.marketId,
+      p_user_id: input.userId,
+      p_side: input.side,
+      p_action: input.action,
+      p_shares: input.shares,
+      p_idempotency_key: input.idempotencyKey,
+      p_max_slippage_bps: input.maxSlippageBps,
+    });
 
-  if (error) {
-    const mapped = parseRpcError(error.message);
+    if (error) {
+      const mapped = parseRpcError(error.message);
+      const categorized = errorTracker.categorizeError(error.message, {
+        requestId,
+        marketId: input.marketId,
+        userId: input.userId,
+        side: input.side,
+        action: input.action,
+      });
+
+      logger.error("Execute request failed: RPC error", {
+        requestId,
+        errorCategory: categorized.category,
+        errorCode: categorized.code,
+        errorMessage: error.message,
+        recoverable: categorized.recoverable,
+      });
+
+      const durationMs = performanceMonitor.endTimer("execute_market_trade", requestId, { success: false }) || 0;
+      metricsCollector.recordTrade({
+        marketId: input.marketId,
+        side: input.side,
+        action: input.action,
+        shares: input.shares,
+        success: false,
+        errorType: categorized.category,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      });
+
+      return {
+        ok: false,
+        ...mapped,
+      };
+    }
+
+    const normalized = normalizeExecuteResult(data);
+    if (!normalized) {
+      logger.error("Execute request failed: Malformed RPC response", {
+        requestId,
+        rawData: data,
+      });
+      performanceMonitor.endTimer("execute_market_trade", requestId, { success: false });
+      return {
+        ok: false,
+        status: 500,
+        error: "Trade execution failed.",
+        detail: "RPC returned malformed execution payload.",
+      };
+    }
+
+    const durationMs = performanceMonitor.endTimer("execute_market_trade", requestId, { success: true }) || 0;
+    metricsCollector.recordTrade({
+      marketId: input.marketId,
+      side: input.side,
+      action: input.action,
+      shares: input.shares,
+      notional: normalized.notional,
+      success: true,
+      durationMs,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info("Execute request completed", {
+      requestId,
+      tradeFillId: normalized.tradeFillId,
+      reused: normalized.reused,
+      notional: normalized.notional,
+      slippageBps: normalized.slippageBps,
+      durationMs,
+    });
+
     return {
-      ok: false,
-      ...mapped,
+      ok: true,
+      data: normalized,
     };
-  }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const categorized = errorTracker.categorizeError(errorMessage, {
+      requestId,
+      marketId: input.marketId,
+      userId: input.userId,
+    });
 
-  const normalized = normalizeExecuteResult(data);
-  if (!normalized) {
+    logger.error("Execute request failed: Unexpected error", {
+      requestId,
+      errorCategory: categorized.category,
+    }, error instanceof Error ? error : undefined);
+
+    performanceMonitor.endTimer("execute_market_trade", requestId, { success: false });
+
     return {
       ok: false,
       status: 500,
-      error: "Trade execution failed.",
-      detail: "RPC returned malformed execution payload.",
+      error: "Trade execution failed due to unexpected error.",
+      detail: errorMessage,
     };
   }
-
-  return {
-    ok: true,
-    data: normalized,
-  };
 }
