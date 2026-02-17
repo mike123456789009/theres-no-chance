@@ -517,6 +517,27 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   color: #f6f6f6;
 }
 
+.auth-btn,
+.auth-submit,
+.onboarding-submit,
+.create-source-add,
+.create-source-remove,
+.create-submit,
+.admin-queue-actions button {
+  transition: transform 110ms ease-out, box-shadow 110ms ease-out;
+}
+
+.auth-btn:active,
+.auth-submit:active:not(:disabled),
+.onboarding-submit:active:not(:disabled),
+.create-source-add:active:not(:disabled),
+.create-source-remove:active:not(:disabled),
+.create-submit:active:not(:disabled),
+.admin-queue-actions button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
 .auth-email {
   min-width: clamp(12rem, 25vw, 18rem);
   background: #dddddd;

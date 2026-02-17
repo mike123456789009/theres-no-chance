@@ -335,3 +335,18 @@ Files/areas touched:
 
 User-visible change:
 - The `/` now renders centered within the widened `NO` to `A` gap.
+
+## 2026-02-17 - Shadow Button Press-In Interaction
+Status: completed
+
+Short description:
+- Added a shared active/pressed interaction for shadowed action buttons so they visually depress when clicked or tapped.
+- Applied the behavior across landing auth actions, auth submits, onboarding submit, market creation actions, and admin queue action buttons.
+- Kept toggle controls out of this interaction pattern.
+
+Files/areas touched:
+- UI interaction styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Shadowed action buttons now "press in" on click/tap; toggle-style controls do not.
