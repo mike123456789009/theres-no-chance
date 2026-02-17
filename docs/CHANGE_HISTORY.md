@@ -723,3 +723,29 @@ Files/areas touched:
 
 User-visible change:
 - `/markets/[marketId]` now presents the intended product detail experience: stats strip, chart with timeline axis, action module shell, context/resolution sections, source list, and a right-rail personal position panel (stacked below on mobile).
+
+## 2026-02-17 - Wallet/Deposit Page + Funding Intent Correlation (Upgrade Step 1)
+Status: completed
+
+Short description:
+- Added a real `/wallet` route that surfaces wallet balances, deposit options, and recent ledger history.
+- Added Supabase-backed `funding_intents` records so deposits can be correlated between user initiation and webhook crediting.
+- Updated Stripe/Coinbase checkout/charge creation to create funding intents and redirect back to `/wallet` for status display.
+- Updated Stripe/Coinbase webhooks to mark funding intents as credited once ledger crediting completes (non-fatal if funding intent update fails).
+
+Files/areas touched:
+- Wallet route + UI components:
+  - `app/(app)/wallet/page.tsx`
+  - `components/wallet/deposit-panel.tsx`
+  - `components/wallet/deposit-status-banner.tsx`
+  - `components/wallet/ledger-table.tsx`
+- Funding intent schema: `supabase/migrations/202602170007_step_wallet_funding_intents.sql`
+- Payment creation redirects + metadata:
+  - `lib/payments/stripe.ts`, `app/api/payments/stripe/checkout/route.ts`
+  - `lib/payments/coinbase.ts`, `app/api/payments/coinbase/charge/route.ts`
+- Webhook correlation:
+  - `lib/payments/stripe-webhook.ts`
+  - `lib/payments/coinbase-webhook.ts`
+
+User-visible change:
+- `/wallet` no longer 404s and now supports deposit initiation via Stripe/Coinbase with a pending/credited status banner tied to webhook processing.

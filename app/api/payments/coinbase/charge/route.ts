@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 import {
   COINBASE_CHARGE_INTENTS,
@@ -8,6 +9,7 @@ import {
   parseCoinbaseChargeIntent,
 } from "@/lib/payments/coinbase";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 type ChargeBody = {
   intent?: string;
@@ -18,12 +20,24 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function mergeMissingEnv(serverMissing: string[], serviceMissing: string[]): string[] {
+  return Array.from(new Set([...serverMissing, ...serviceMissing]));
+}
+
+function isSchemaMissingError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized.includes("relation") && normalized.includes("funding_intents");
+}
+
 export async function POST(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
+  const serverEnvReady = isSupabaseServerEnvConfigured();
+  const serviceEnvReady = isSupabaseServiceEnvConfigured();
+
+  if (!serverEnvReady || !serviceEnvReady) {
     return NextResponse.json(
       {
         error: "Coinbase charge creation is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
+        missingEnv: mergeMissingEnv(getMissingSupabaseServerEnv(), getMissingSupabaseServiceEnv()),
       },
       { status: 503 }
     );
@@ -83,12 +97,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    const fundingIntentId = crypto.randomUUID();
+    const service = createServiceClient();
+
+    const { error: intentInsertError } = await service.from("funding_intents").insert({
+      id: fundingIntentId,
+      user_id: user.id,
+      provider: "coinbase",
+      intent,
+      key: item.key,
+      tokens_granted: item.tokensGranted,
+      status: "created",
+    });
+
+    if (intentInsertError) {
+      return NextResponse.json(
+        {
+          error: "Unable to initialize wallet funding intent.",
+          detail: intentInsertError.message,
+        },
+        { status: isSchemaMissingError(intentInsertError.message) ? 503 : 500 }
+      );
+    }
+
     const charge = await createCoinbaseCharge({
       intent,
       item,
       userId: user.id,
       request,
+      fundingIntentId,
     });
+
+    const { error: intentUpdateError } = await service
+      .from("funding_intents")
+      .update({
+        status: "redirected",
+        coinbase_charge_id: charge.id,
+      })
+      .eq("id", fundingIntentId)
+      .eq("user_id", user.id);
 
     return NextResponse.json(
       {
@@ -104,6 +151,8 @@ export async function POST(request: Request) {
           url: charge.hostedUrl,
           expiresAt: charge.expiresAt,
         },
+        fundingIntentId,
+        warning: intentUpdateError ? intentUpdateError.message : null,
       },
       { status: 201 }
     );

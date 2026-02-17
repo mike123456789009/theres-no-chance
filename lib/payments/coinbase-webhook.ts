@@ -64,6 +64,54 @@ function parseUsdCentsFromCharge(charge: Record<string, unknown>, metadata: Reco
   return 0;
 }
 
+function isFundingIntentsSchemaMissing(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    (normalized.includes("relation") && normalized.includes("funding_intents")) ||
+    normalized.includes("could not find the table") ||
+    normalized.includes("schema cache")
+  );
+}
+
+async function markFundingIntentCredited(options: {
+  service: ServiceClient;
+  provider: "coinbase";
+  fundingIntentId: string | null;
+  coinbaseChargeId: string;
+  userId: string;
+  ledgerEntryId: string;
+}): Promise<string | null> {
+  try {
+    const updatePayload = {
+      status: "credited",
+      ledger_entry_id: options.ledgerEntryId,
+      coinbase_charge_id: options.coinbaseChargeId,
+    };
+
+    let request = options.service.from("funding_intents").update(updatePayload).eq("provider", options.provider);
+
+    if (options.fundingIntentId) {
+      request = request.eq("id", options.fundingIntentId).eq("user_id", options.userId);
+    } else {
+      request = request.eq("coinbase_charge_id", options.coinbaseChargeId);
+    }
+
+    const { data, error } = await request.select("id").maybeSingle();
+    if (error) {
+      if (isFundingIntentsSchemaMissing(error.message)) return null;
+      return `Funding intent update failed: ${error.message}`;
+    }
+
+    if (!data) {
+      return "Funding intent not found to mark credited.";
+    }
+
+    return "Funding intent marked credited.";
+  } catch (error) {
+    return error instanceof Error ? `Funding intent update failed: ${error.message}` : "Funding intent update failed.";
+  }
+}
+
 async function getExistingTokenGrant(options: {
   service: ServiceClient;
   ledgerEntryId: string;
@@ -166,6 +214,7 @@ async function processConfirmedCharge(options: {
   const userId = clean(metadata.user_id);
   const tokensGranted = parsePositiveInt(metadata.tokens_granted, 0);
   const amountPaidCents = parseUsdCentsFromCharge(charge, metadata);
+  const fundingIntentId = clean(metadata.funding_intent_id) || clean(metadata.fundingIntentId);
 
   if (!chargeId) {
     return {
@@ -235,6 +284,7 @@ async function processConfirmedCharge(options: {
       key,
       tokensGranted,
       network: "base",
+      fundingIntentId: fundingIntentId || null,
     },
   });
 
@@ -246,10 +296,22 @@ async function processConfirmedCharge(options: {
     ledgerEntryId,
   });
 
+  const fundingIntentNote = await markFundingIntentCredited({
+    service: options.service,
+    provider: "coinbase",
+    fundingIntentId: fundingIntentId || null,
+    coinbaseChargeId: chargeId,
+    userId,
+    ledgerEntryId,
+  });
+
   return {
     processed: true,
     ignored: false,
-    details: [reused ? "Coinbase pack credit reused existing idempotent ledger entry." : "Coinbase pack credit applied."],
+    details: [
+      reused ? "Coinbase pack credit reused existing idempotent ledger entry." : "Coinbase pack credit applied.",
+      ...(fundingIntentNote ? [fundingIntentNote] : []),
+    ],
   };
 }
 

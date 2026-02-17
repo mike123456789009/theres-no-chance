@@ -100,13 +100,16 @@ export async function createStripeCheckoutSession(input: {
   item: StripeCatalogItem;
   userId: string;
   request: Request;
+  fundingIntentId: string;
 }): Promise<StripeCheckoutSessionResult> {
   const secretKey = requiredEnv("STRIPE_SECRET_KEY");
   const baseUrl = getStripeCheckoutBaseUrl(input.request);
-  const successUrl = `${baseUrl}/portfolio?checkout=success&intent=${encodeURIComponent(input.intent)}&key=${encodeURIComponent(
-    input.item.key
-  )}`;
-  const cancelUrl = `${baseUrl}/portfolio?checkout=cancel`;
+  const successUrl = `${baseUrl}/wallet?checkout=success&provider=stripe&intent=${encodeURIComponent(
+    input.intent
+  )}&key=${encodeURIComponent(input.item.key)}&funding_intent_id=${encodeURIComponent(
+    input.fundingIntentId
+  )}&session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${baseUrl}/wallet?checkout=cancel&provider=stripe&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
 
   const params = new URLSearchParams();
   params.set("mode", input.intent === "subscription" ? "subscription" : "payment");
@@ -119,12 +122,14 @@ export async function createStripeCheckoutSession(input: {
   params.set("metadata[key]", input.item.key);
   params.set("metadata[user_id]", input.userId);
   params.set("metadata[tokens_granted]", String(input.item.tokensGranted));
+  params.set("metadata[funding_intent_id]", input.fundingIntentId);
 
   if (input.intent === "subscription") {
     params.set("subscription_data[metadata][intent]", input.intent);
     params.set("subscription_data[metadata][key]", input.item.key);
     params.set("subscription_data[metadata][user_id]", input.userId);
     params.set("subscription_data[metadata][tokens_granted]", String(input.item.tokensGranted));
+    params.set("subscription_data[metadata][funding_intent_id]", input.fundingIntentId);
   }
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {

@@ -54,6 +54,54 @@ function formatPlanDisplayName(key: string): string {
     .join(" ");
 }
 
+function isFundingIntentsSchemaMissing(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    (normalized.includes("relation") && normalized.includes("funding_intents")) ||
+    normalized.includes("could not find the table") ||
+    normalized.includes("schema cache")
+  );
+}
+
+async function markFundingIntentCredited(options: {
+  service: ServiceClient;
+  provider: "stripe";
+  fundingIntentId: string | null;
+  stripeSessionId: string;
+  userId: string;
+  ledgerEntryId: string;
+}): Promise<string | null> {
+  try {
+    const updatePayload = {
+      status: "credited",
+      ledger_entry_id: options.ledgerEntryId,
+      stripe_session_id: options.stripeSessionId,
+    };
+
+    let request = options.service.from("funding_intents").update(updatePayload).eq("provider", options.provider);
+
+    if (options.fundingIntentId) {
+      request = request.eq("id", options.fundingIntentId).eq("user_id", options.userId);
+    } else {
+      request = request.eq("stripe_session_id", options.stripeSessionId);
+    }
+
+    const { data, error } = await request.select("id").maybeSingle();
+    if (error) {
+      if (isFundingIntentsSchemaMissing(error.message)) return null;
+      return `Funding intent update failed: ${error.message}`;
+    }
+
+    if (!data) {
+      return "Funding intent not found to mark credited.";
+    }
+
+    return "Funding intent marked credited.";
+  } catch (error) {
+    return error instanceof Error ? `Funding intent update failed: ${error.message}` : "Funding intent update failed.";
+  }
+}
+
 async function getExistingTokenGrant(options: {
   service: ServiceClient;
   ledgerEntryId: string;
@@ -188,6 +236,7 @@ async function processCheckoutSessionCompleted(options: {
   const customerId = clean(session.customer);
   const amountTotalCents = parseMoneyCents(session.amount_total);
   const tokensGranted = parsePositiveInt(metadata.tokens_granted, 0);
+  const fundingIntentId = clean(metadata.funding_intent_id) || clean(metadata.fundingIntentId);
 
   if (!sessionId) {
     return {
@@ -267,6 +316,7 @@ async function processCheckoutSessionCompleted(options: {
         intent,
         key,
         tokensGranted,
+        fundingIntentId: fundingIntentId || null,
       },
     });
 
@@ -278,10 +328,22 @@ async function processCheckoutSessionCompleted(options: {
       ledgerEntryId,
     });
 
+    const fundingIntentNote = await markFundingIntentCredited({
+      service: options.service,
+      provider: "stripe",
+      fundingIntentId: fundingIntentId || null,
+      stripeSessionId: sessionId,
+      userId,
+      ledgerEntryId,
+    });
+
     return {
       processed: true,
       ignored: false,
-      details: [reused ? "Pack credit reused existing idempotent ledger entry." : "Pack credit applied."],
+      details: [
+        reused ? "Pack credit reused existing idempotent ledger entry." : "Pack credit applied.",
+        ...(fundingIntentNote ? [fundingIntentNote] : []),
+      ],
     };
   }
 
@@ -333,6 +395,7 @@ async function processCheckoutSessionCompleted(options: {
       intent,
       key,
       tokensGranted,
+      fundingIntentId: fundingIntentId || null,
     },
   });
 
@@ -344,10 +407,22 @@ async function processCheckoutSessionCompleted(options: {
     ledgerEntryId,
   });
 
+  const fundingIntentNote = await markFundingIntentCredited({
+    service: options.service,
+    provider: "stripe",
+    fundingIntentId: fundingIntentId || null,
+    stripeSessionId: sessionId,
+    userId,
+    ledgerEntryId,
+  });
+
   return {
     processed: true,
     ignored: false,
-    details: [reused ? "Subscription grant reused existing idempotent ledger entry." : "Subscription grant applied."],
+    details: [
+      reused ? "Subscription grant reused existing idempotent ledger entry." : "Subscription grant applied.",
+      ...(fundingIntentNote ? [fundingIntentNote] : []),
+    ],
   };
 }
 
