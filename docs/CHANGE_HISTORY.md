@@ -616,3 +616,26 @@ Files/areas touched:
 User-visible change:
 - Status/access/sort dropdowns now render at consistent height with proper caret placement.
 - `APPLY` and `CREATE` alignment in the toolbar row is visually balanced and no longer appears offset.
+
+## 2026-02-17 - Landing Cross-Browser Boot Hardening
+Status: completed
+
+Short description:
+- Removed the landing page import-map boot dependency and switched the hero runtime imports to direct same-origin vendor module URLs.
+- Updated vendored Three.js addon files used by the landing renderer to import `three.module.js` via explicit same-origin path instead of bare `three` specifiers.
+- Added static fallback hero word markup and styles that render during `boot`/`fallback` modes so landing never appears blank if JS module initialization fails.
+
+Files/areas touched:
+- Landing markup: `app/(marketing)/page.tsx`
+- Landing styles: `app/globals.css`
+- Landing runtime imports: `public/script.js`
+- Vendored module imports:
+  - `public/vendor/three/examples/jsm/geometries/TextGeometry.js`
+  - `public/vendor/three/examples/jsm/loaders/FontLoader.js`
+  - `public/vendor/three/examples/jsm/loaders/TTFLoader.js`
+  - `public/vendor/three/examples/jsm/renderers/SVGRenderer.js`
+  - `public/vendor/three/examples/jsm/renderers/Projector.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Landing page remains readable/loadable on more browsers and network conditions that previously could fail module boot and show a blank hero area.

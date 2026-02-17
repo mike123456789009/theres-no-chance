@@ -2,7 +2,7 @@ import {
 	FileLoader,
 	Loader,
 	ShapePath
-} from 'three';
+} from '/vendor/three/build/three.module.js';
 
 class FontLoader extends Loader {
 

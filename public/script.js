@@ -1,8 +1,8 @@
-import * as THREE from "three";
-import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
-import { FontLoader } from "three/addons/loaders/FontLoader.js";
-import { TTFLoader } from "three/addons/loaders/TTFLoader.js";
-import { SVGRenderer } from "three/addons/renderers/SVGRenderer.js";
+import * as THREE from "/vendor/three/build/three.module.js";
+import { TextGeometry } from "/vendor/three/examples/jsm/geometries/TextGeometry.js";
+import { FontLoader } from "/vendor/three/examples/jsm/loaders/FontLoader.js";
+import { TTFLoader } from "/vendor/three/examples/jsm/loaders/TTFLoader.js";
+import { SVGRenderer } from "/vendor/three/examples/jsm/renderers/SVGRenderer.js";
 
 const stage = document.querySelector("[data-stage]");
 const logo = document.querySelector(".tnc-logo");

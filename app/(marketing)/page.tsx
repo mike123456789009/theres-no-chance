@@ -1,13 +1,4 @@
-import Link from "next/link";
-
 import { LandingAuthRow } from "@/components/landing/auth-row";
-
-const threeImportMap = {
-  imports: {
-    three: "/vendor/three/build/three.module.js",
-    "three/addons/": "/vendor/three/examples/jsm/",
-  },
-};
 
 export default function MarketingPage() {
   return (
@@ -15,13 +6,6 @@ export default function MarketingPage() {
       <a className="sr-only" href="#main">
         Skip to content
       </a>
-
-      <script
-        type="importmap"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(threeImportMap),
-        }}
-      />
 
       <div className="tnc-logo" aria-hidden="true">
         <span className="logo-letter red">T</span>
@@ -41,6 +25,19 @@ export default function MarketingPage() {
 
             <div className="hero-3d-wrap" id="hero3d">
               <canvas id="hero-canvas" aria-hidden="true"></canvas>
+              <div className="fallback-words" aria-hidden="true">
+                <div className="fallback-row">
+                  <span className="fallback-word red">THERE&apos;S</span>
+                </div>
+                <div className="fallback-row fallback-row-mid">
+                  <span className="fallback-word gold">NO</span>
+                  <span className="fallback-word slash">/</span>
+                  <span className="fallback-word neutral">A</span>
+                </div>
+                <div className="fallback-row">
+                  <span className="fallback-word red">CHANCE</span>
+                </div>
+              </div>
             </div>
 
             <p className="after-box after-box-primary hero-transition-cta" aria-hidden="true">
