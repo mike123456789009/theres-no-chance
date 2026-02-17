@@ -600,3 +600,19 @@ Files/areas touched:
 
 User-visible change:
 - Landing loads reliably on hard refresh and on return-from-app navigation even when external CDN module fetches are blocked or flaky.
+
+## 2026-02-17 - Markets Toolbar Alignment + Control Sizing Normalization
+Status: completed
+
+Short description:
+- Normalized `/markets` toolbar select controls to explicit fixed height with a consistent custom caret so the control box no longer renders oversized or misaligned across browsers.
+- Aligned the toolbar row vertically so `APPLY` and inline links (`CREATE`, `LOG IN`, `SIGN UP`) sit on the same visual center line.
+- Kept the mobile stacked toolbar behavior intact while removing extra desktop-only inline-link height from the compact layout.
+
+Files/areas touched:
+- Markets toolbar/control styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Status/access/sort dropdowns now render at consistent height with proper caret placement.
+- `APPLY` and `CREATE` alignment in the toolbar row is visually balanced and no longer appears offset.
