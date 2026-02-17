@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import type { MarketSourceType } from "@/lib/markets/create-market";
+import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 
 type SourceDraft = {
   id: string;
@@ -15,6 +16,15 @@ const SOURCE_TYPE_OPTIONS: Array<{ value: MarketSourceType; label: string }> = [
   { value: "official", label: "Official" },
   { value: "supporting", label: "Supporting" },
   { value: "rules", label: "Rules" },
+];
+
+const CARD_SHADOW_OPTIONS: Array<{ value: MarketCardShadowTone; label: string }> = [
+  { value: "mint", label: "Mint" },
+  { value: "sky", label: "Sky" },
+  { value: "lemon", label: "Lemon" },
+  { value: "lavender", label: "Lavender" },
+  { value: "peach", label: "Peach" },
+  { value: "rose", label: "Rose" },
 ];
 
 function makeSourceId(): string {
@@ -56,6 +66,7 @@ export function CreateMarketForm() {
   const [feeBps, setFeeBps] = useState("200");
   const [tagsInput, setTagsInput] = useState("");
   const [riskFlagsInput, setRiskFlagsInput] = useState("");
+  const [cardShadowTone, setCardShadowTone] = useState<MarketCardShadowTone>("mint");
   const [sources, setSources] = useState<SourceDraft[]>([
     { id: makeSourceId(), label: "Primary source", url: "", type: "official" },
   ]);
@@ -126,6 +137,10 @@ export function CreateMarketForm() {
     setIsSubmitting(true);
 
     try {
+      const safeCardShadowTone = (MARKET_CARD_SHADOW_TONES as readonly string[]).includes(cardShadowTone)
+        ? cardShadowTone
+        : "mint";
+
       const response = await fetch("/api/markets", {
         method: "POST",
         headers: {
@@ -145,6 +160,9 @@ export function CreateMarketForm() {
           feeBps: Number(feeBps),
           tags: splitListInput(tagsInput),
           riskFlags: splitListInput(riskFlagsInput),
+          accessRules: {
+            cardShadowTone: safeCardShadowTone,
+          },
           sources: sources.map(({ label, url, type }) => ({ label, url, type })),
         }),
       });
@@ -306,6 +324,17 @@ export function CreateMarketForm() {
             onChange={(event) => setRiskFlagsInput(event.target.value)}
             placeholder="source-latency, low-liquidity"
           />
+        </label>
+
+        <label className="create-field">
+          <span>Market card shadow color</span>
+          <select value={cardShadowTone} onChange={(event) => setCardShadowTone(event.target.value as MarketCardShadowTone)}>
+            {CARD_SHADOW_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </label>
       </section>
 

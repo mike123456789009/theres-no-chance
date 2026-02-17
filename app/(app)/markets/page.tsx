@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
+import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
 import {
   MarketCardDTO,
@@ -17,52 +19,86 @@ type SearchParamsInput =
   | Promise<Record<string, string | string[] | undefined>>
   | undefined;
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatNumber(value: number): string {
-  if (value >= 1000) return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
-}
-
-function formatStatus(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 const STATUS_FILTER_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "all", label: "All discoverable" },
+  { value: "all", label: "All status" },
   ...DISCOVERABLE_MARKET_STATUSES.map((status) => ({
     value: status,
-    label: formatStatus(status),
+    label: status.replace(/_/g, " "),
   })),
 ];
 
 const ACCESS_FILTER_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "all", label: "All access types" },
-  { value: "public", label: "Public only" },
-  { value: "institution", label: "Institution/login-gated" },
+  { value: "all", label: "All access" },
+  { value: "public", label: "Public" },
+  { value: "institution", label: "Institution" },
 ];
 
 const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "closing_soon", label: "Closing soon" },
   { value: "newest", label: "Newest" },
-  { value: "probability_high", label: "Highest Yes probability" },
-  { value: "probability_low", label: "Lowest Yes probability" },
+  { value: "probability_high", label: "Highest yes" },
+  { value: "probability_low", label: "Lowest yes" },
 ];
 
-function isAccessBadgeWarning(market: MarketCardDTO): boolean {
-  return market.accessRequiresLogin || market.accessBadge !== "Public";
+const QUICK_FILTERS: Array<{ label: string; query?: string }> = [
+  { label: "All" },
+  { label: "Politics", query: "politics" },
+  { label: "Sports", query: "sports" },
+  { label: "Crypto", query: "bitcoin" },
+  { label: "Economy", query: "economy" },
+  { label: "Local", query: "city" },
+  { label: "Education", query: "school" },
+  { label: "Weather", query: "weather" },
+];
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(0)}%`;
+}
+
+function formatPool(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toFixed(0);
+}
+
+function formatStatus(value: string): string {
+  return value.replace(/_/g, " ");
+}
+
+function toneToColor(tone: MarketCardShadowTone): string {
+  return MARKET_CARD_SHADOW_COLORS[tone];
+}
+
+function buildQuickFilterHref(params: URLSearchParams, query: string | undefined): string {
+  const next = new URLSearchParams(params);
+  if (!query) {
+    next.delete("q");
+  } else {
+    next.set("q", query);
+  }
+  const qs = next.toString();
+  return qs ? `/markets?${qs}` : "/markets";
+}
+
+function isQuickFilterActive(activeQuery: string, filterQuery: string | undefined): boolean {
+  if (!filterQuery) return activeQuery.length === 0;
+  return activeQuery.toLowerCase() === filterQuery.toLowerCase();
+}
+
+function shouldWarnAccess(market: MarketCardDTO): boolean {
+  return market.accessRequiresLogin;
 }
 
 export default async function MarketsPage({
@@ -72,16 +108,14 @@ export default async function MarketsPage({
     const missingEnv = getMissingSupabaseServerEnv();
 
     return (
-      <main className="markets-page">
-        <section className="markets-shell markets-shell-warning" aria-label="Market discovery configuration error">
-          <p className="markets-kicker">Markets</p>
-          <h1 className="markets-title">Market Discovery Unavailable</h1>
-          <p className="markets-copy">Configure Supabase server environment values before using market discovery.</p>
-          <p className="markets-copy">
-            Missing env vars: <code>{missingEnv.join(", ")}</code>
+      <main className="markets-product-page">
+        <section className="markets-product-alert" aria-label="Market discovery configuration error">
+          <h1>Market discovery unavailable</h1>
+          <p>
+            Missing environment values: <code>{missingEnv.join(", ")}</code>
           </p>
-          <p className="markets-copy">
-            Continue to <Link href="/">home</Link>
+          <p>
+            Return to <Link href="/">landing</Link>
           </p>
         </section>
       </main>
@@ -89,7 +123,8 @@ export default async function MarketsPage({
   }
 
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
-  const query = parseMarketDiscoveryQuery(toUrlSearchParams(resolvedSearchParams));
+  const search = toUrlSearchParams(resolvedSearchParams);
+  const query = parseMarketDiscoveryQuery(search);
 
   const supabase = await createClient();
   const viewer = await getMarketViewerContext(supabase);
@@ -99,140 +134,150 @@ export default async function MarketsPage({
     query,
   });
 
-  const statusValue = STATUS_FILTER_OPTIONS.some((option) => option.value === query.status) ? query.status : "all";
-  const accessValue = ACCESS_FILTER_OPTIONS.some((option) => option.value === query.access) ? query.access : "all";
-  const sortValue = SORT_OPTIONS.some((option) => option.value === query.sort) ? query.sort : "closing_soon";
-
   return (
-    <main className="markets-page">
-      <section className="markets-shell" aria-label="Market discovery">
-        <p className="markets-kicker">Markets</p>
-        <h1 className="markets-title">Discover active and upcoming prediction markets</h1>
-        <p className="markets-copy">
-          Public markets are viewable without login. Institution-gated markets require login. Any trading action requires
-          an account.
-        </p>
+    <main className="markets-product-page">
+      <div className="markets-product-wrap">
+        <header className="markets-product-header" aria-label="Markets toolbar">
+          <div className="markets-brand-row">
+            <p className="markets-product-kicker">Prediction markets</p>
+            <div className="markets-brand-links">
+              <Link href="/">Landing</Link>
+              <Link href="/create">Create</Link>
+              {viewer.isAuthenticated ? null : <Link href="/login">Log in</Link>}
+              {viewer.isAuthenticated ? null : <Link href="/signup">Sign up</Link>}
+            </div>
+          </div>
 
-        <div className="markets-top-links">
-          <Link href="/">Landing</Link>
-          {viewer.isAuthenticated ? <Link href="/create">Create market</Link> : <Link href="/signup">Create account</Link>}
-          {!viewer.isAuthenticated ? <Link href="/login">Log in</Link> : null}
-        </div>
+          <form className="markets-toolbar" action="/markets" method="get">
+            <label className="markets-search-field">
+              <span className="sr-only">Search markets</span>
+              <input type="search" name="q" defaultValue={query.search} placeholder="Search markets" />
+            </label>
+
+            <label className="markets-select-field">
+              <span>Status</span>
+              <select name="status" defaultValue={query.status}>
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="markets-select-field">
+              <span>Access</span>
+              <select name="access" defaultValue={query.access}>
+                {ACCESS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="markets-select-field">
+              <span>Sort</span>
+              <select name="sort" defaultValue={query.sort}>
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button className="markets-toolbar-apply" type="submit">
+              Apply
+            </button>
+          </form>
+
+          <nav className="markets-quick-filters" aria-label="Quick filters">
+            {QUICK_FILTERS.map((filter) => (
+              <Link
+                key={filter.label}
+                href={buildQuickFilterHref(search, filter.query)}
+                className={isQuickFilterActive(query.search, filter.query) ? "markets-quick-pill is-active" : "markets-quick-pill"}
+              >
+                {filter.label}
+              </Link>
+            ))}
+          </nav>
+        </header>
 
         {!viewer.isAuthenticated ? (
-          <p className="markets-guest-note">
-            Guest mode: you can browse public markets now. Log in or sign up to view institution-specific markets and
-            place trades when action endpoints are enabled.
+          <p className="markets-access-note">
+            Guest mode: view public markets now. Institution-specific markets require login. Trading actions require an
+            account.
           </p>
         ) : null}
 
-        <form className="markets-filter-form" action="/markets" method="get">
-          <label className="markets-filter-field">
-            <span>Search</span>
-            <input type="search" name="q" defaultValue={query.search} placeholder="Search by question" />
-          </label>
-
-          <label className="markets-filter-field">
-            <span>Status</span>
-            <select name="status" defaultValue={statusValue}>
-              {STATUS_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="markets-filter-field">
-            <span>Access</span>
-            <select name="access" defaultValue={accessValue}>
-              {ACCESS_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="markets-filter-field">
-            <span>Sort</span>
-            <select name="sort" defaultValue={sortValue}>
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button className="markets-filter-submit" type="submit">
-            Apply filters
-          </button>
-        </form>
-
         {result.schemaMissing ? (
-          <p className="markets-empty">
-            Market tables are not provisioned in this environment yet. Public discovery shell is live, and cards will
-            appear once database migrations are applied.
+          <p className="markets-empty-state">
+            Market tables are not provisioned in this environment yet. Discovery UI is ready and will populate once data
+            is available.
           </p>
         ) : null}
 
         {!result.schemaMissing && result.error ? (
-          <p className="markets-error">
+          <p className="markets-error-state">
             Unable to load markets: <code>{result.error}</code>
           </p>
         ) : null}
 
         {!result.schemaMissing && !result.error && result.markets.length === 0 ? (
-          <p className="markets-empty">No markets matched this filter set. Try broadening status or access filters.</p>
+          <p className="markets-empty-state">No markets found for this filter set.</p>
         ) : null}
 
         {!result.schemaMissing && !result.error && result.markets.length > 0 ? (
-          <div className="markets-grid" role="list" aria-label="Market results">
+          <section className="markets-card-grid" role="list" aria-label="Markets grid">
             {result.markets.map((market) => (
-              <article key={market.id} className="market-card" role="listitem">
-                <div className="market-card-head">
-                  <p className={isAccessBadgeWarning(market) ? "market-card-badge market-card-badge-warn" : "market-card-badge"}>
-                    {market.accessBadge}
-                  </p>
-                  <p className="market-card-status">{formatStatus(market.status)}</p>
+              <article
+                key={market.id}
+                role="listitem"
+                className={shouldWarnAccess(market) ? "market-tile market-tile-restricted" : "market-tile"}
+                style={
+                  {
+                    "--market-tile-shadow": toneToColor(market.cardShadowTone),
+                  } as CSSProperties
+                }
+              >
+                <div className="market-tile-head">
+                  <p className="market-tile-access">{market.accessBadge}</p>
+                  <p className="market-tile-status">{formatStatus(market.status)}</p>
                 </div>
 
-                <h2 className="market-card-question">
+                <h2 className="market-tile-question">
                   <Link href={`/markets/${market.id}`}>{market.question}</Link>
                 </h2>
 
-                <div className="market-card-metrics">
-                  <p>
-                    YES: <strong>{formatPercent(market.priceYes)}</strong>
-                  </p>
-                  <p>
-                    NO: <strong>{formatPercent(market.priceNo)}</strong>
-                  </p>
-                  <p>
-                    Pool shares: <strong>{formatNumber(market.poolShares)}</strong>
-                  </p>
-                  <p>
-                    Closes: <strong>{formatDate(market.closeTime)}</strong>
-                  </p>
+                <div className="market-tile-probability">
+                  <p className="market-tile-prob-yes">YES {formatPercent(market.priceYes)}</p>
+                  <p className="market-tile-prob-no">NO {formatPercent(market.priceNo)}</p>
                 </div>
 
-                {market.tags.length > 0 ? <p className="market-card-tags">Tags: {market.tags.join(", ")}</p> : null}
+                <div className="market-tile-meta">
+                  <p>Pool {formatPool(market.poolShares)}</p>
+                  <p>Closes {formatDate(market.closeTime)}</p>
+                </div>
 
-                <p className="market-card-action-note">
-                  {market.actionRequired === "create_account"
-                    ? "Create an account to take action on this market."
-                    : "Account ready: action endpoints are unlocked in the trading engine step."}
-                </p>
+                {market.tags.length > 0 ? <p className="market-tile-tags">{market.tags.slice(0, 4).join(" · ")}</p> : null}
 
-                <Link className="market-card-link" href={`/markets/${market.id}`}>
-                  View market detail
-                </Link>
+                <div className="market-tile-foot">
+                  <p>
+                    {market.actionRequired === "create_account"
+                      ? "Create account to take action"
+                      : "Account ready for trading actions"}
+                  </p>
+                  <Link className="market-tile-open" href={`/markets/${market.id}`}>
+                    Open
+                  </Link>
+                </div>
               </article>
             ))}
-          </div>
+          </section>
         ) : null}
-      </section>
+      </div>
     </main>
   );
 }

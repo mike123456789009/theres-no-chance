@@ -436,3 +436,37 @@ Files/areas touched:
 
 User-visible change:
 - `/markets` and market detail flows now render guidance instead of crashing when the Supabase market schema has not been applied in an environment.
+
+## 2026-02-17 - Market Discovery Product UI Redesign + Card Shadow Customization
+Status: completed
+
+Short description:
+- Reworked `/markets` into a denser product-style experience with a compact sticky top toolbar, quick category pills, and a 4-column desktop market grid inspired by modern trading discovery layouts.
+- Reduced excess top/side whitespace and removed the centered oversized shell so discovery uses screen real estate efficiently.
+- Added market-card drop-shadow color themes (`mint`, `sky`, `lemon`, `lavender`, `peach`, `rose`) that can be selected by market creators.
+- Added market presentation utilities and deterministic fallback shadow tone selection for existing markets without an explicit tone.
+
+Files/areas touched:
+- Discovery UI: `app/(app)/markets/page.tsx`
+- Discovery and card styling: `app/globals.css`
+- Market creation customization: `components/markets/create-market-form.tsx`
+- Market read projection: `lib/markets/read-markets.ts`, `lib/markets/presentation.ts`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets` now looks and behaves like a dense product discovery surface instead of a sparse centered page.
+- Market cards now display with light rectangular style and color-tinted drop shadows.
+- New markets can choose their card shadow tone in the creation flow.
+
+## 2026-02-17 - Supabase Step 5 Migration Applied To Production Project
+Status: completed
+
+Short description:
+- Linked Supabase CLI to project `ynuyfchtajpmnbcpbagb` in a clean workdir and pushed `202602170001_step5_core_schema.sql` directly to remote.
+- Verified `public.markets` endpoint availability after migration.
+
+Files/areas touched:
+- Remote infrastructure state only (no repository file changes).
+
+User-visible change:
+- Market APIs can now query `public.markets` without schema-missing failures.

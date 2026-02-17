@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import {
   DISCOVERABLE_MARKET_STATUSES,
   canViewerSeeMarket,
@@ -38,6 +39,7 @@ export type MarketCardDTO = {
   priceYes: number;
   priceNo: number;
   poolShares: number;
+  cardShadowTone: MarketCardShadowTone;
   actionRequired: "create_account" | "account_ready";
 };
 
@@ -71,6 +73,7 @@ export type MarketDetailDTO = {
   noShares: number;
   liquidityParameter: number;
   sources: MarketSourceDTO[];
+  cardShadowTone: MarketCardShadowTone;
   actionRequired: "create_account" | "account_ready";
 };
 
@@ -175,6 +178,39 @@ function normalizeAmmState(raw: MarketAmmStateRow | MarketAmmStateRow[] | null):
 function normalizeTags(raw: string[] | null): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter((tag) => typeof tag === "string" && tag.trim().length > 0);
+}
+
+function hashId(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function fallbackCardShadowToneFromId(marketId: string): MarketCardShadowTone {
+  const toneIndex = hashId(marketId) % MARKET_CARD_SHADOW_TONES.length;
+  return MARKET_CARD_SHADOW_TONES[toneIndex];
+}
+
+function toCardShadowTone(value: unknown): MarketCardShadowTone | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if ((MARKET_CARD_SHADOW_TONES as readonly string[]).includes(normalized)) {
+    return normalized as MarketCardShadowTone;
+  }
+  return null;
+}
+
+function resolveCardShadowTone(accessRules: Record<string, unknown> | null, marketId: string): MarketCardShadowTone {
+  const explicitTone =
+    toCardShadowTone(accessRules?.cardShadowTone) ??
+    toCardShadowTone(accessRules?.card_shadow_tone) ??
+    toCardShadowTone(accessRules?.cardShadowColor) ??
+    toCardShadowTone(accessRules?.card_shadow_color);
+
+  return explicitTone ?? fallbackCardShadowToneFromId(marketId);
 }
 
 function parseSort(value: string): MarketDiscoverySort {
@@ -344,6 +380,7 @@ export async function listDiscoveryMarketCards(options: {
         priceYes,
         priceNo,
         poolShares: yesShares + noShares,
+        cardShadowTone: resolveCardShadowTone(accessRules, row.id),
         actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
       } as MarketCardDTO;
     })
@@ -461,6 +498,7 @@ export async function getMarketDetail(options: {
         url: source.source_url,
         type: source.source_type,
       })),
+      cardShadowTone: resolveCardShadowTone(accessRules, row.id),
       actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
     },
   };
