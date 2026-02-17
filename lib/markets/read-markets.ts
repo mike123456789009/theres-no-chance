@@ -318,7 +318,20 @@ export async function listDiscoveryMarketCards(options: {
     request = request.order("close_time", { ascending: true });
   }
 
-  const { data, error } = await request;
+  let data: unknown = null;
+  let error: { message: string } | null = null;
+
+  try {
+    const result = await request;
+    data = result.data;
+    error = result.error;
+  } catch (caught) {
+    return {
+      markets: [],
+      error: caught instanceof Error ? caught.message : "Unknown market discovery error.",
+      schemaMissing: false,
+    };
+  }
 
   if (error) {
     return {
@@ -408,13 +421,26 @@ export async function getMarketDetail(options: {
 }): Promise<MarketDetailFetchResult> {
   const { supabase, viewer, marketId } = options;
 
-  const { data, error } = await supabase
-    .from("markets")
-    .select(
-      "id, question, description, resolves_yes_if, resolves_no_if, status, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
-    )
-    .eq("id", marketId)
-    .maybeSingle();
+  let data: unknown = null;
+  let error: { message: string; code?: string } | null = null;
+
+  try {
+    const result = await supabase
+      .from("markets")
+      .select(
+        "id, question, description, resolves_yes_if, resolves_no_if, status, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
+      )
+      .eq("id", marketId)
+      .maybeSingle();
+
+    data = result.data;
+    error = result.error;
+  } catch (caught) {
+    return {
+      kind: "error",
+      message: caught instanceof Error ? caught.message : "Unknown market detail error.",
+    };
+  }
 
   if (error) {
     if (error.code === "PGRST116") {

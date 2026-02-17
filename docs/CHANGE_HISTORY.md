@@ -470,3 +470,18 @@ Files/areas touched:
 
 User-visible change:
 - Market APIs can now query `public.markets` without schema-missing failures.
+
+## 2026-02-17 - Markets Route Crash Guard Hotfix
+Status: completed
+
+Short description:
+- Added defensive catch handling around markets discovery/detail Supabase reads to prevent thrown request exceptions from crashing server rendering.
+- Added route-level `app/(app)/markets/error.tsx` boundary so unexpected runtime exceptions render a recoverable retry screen instead of the generic Next.js app error page.
+
+Files/areas touched:
+- Market read service hardening: `lib/markets/read-markets.ts`
+- Route error boundary: `app/(app)/markets/error.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets` now fails gracefully with a retryable error panel if a transient server error occurs, instead of showing the raw application error digest screen.
