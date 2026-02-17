@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit --max=8",
     "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit --max=3",
     "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run --max=8",
@@ -30,12 +33,18 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.1.0",
     "@types/node": "^25.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
+    "jsdom": "^25.0.1",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.8"
   }
 }
