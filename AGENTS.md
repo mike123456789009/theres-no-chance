@@ -37,4 +37,6 @@
 
 ### 5) Safety Rules
 - Never rewrite or remove unrelated work to make a deployment pass.
-- If unexpected repo changes appear, stop and ask for direction before proceeding.
+- If unexpected local/repo changes appear, keep going with the task.
+- Always push/deploy only the specific changes you made for the current task.
+- Do not worry about other unrelated changes in the repo; leave them alone and do not modify or revert them.
