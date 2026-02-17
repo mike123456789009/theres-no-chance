@@ -584,3 +584,19 @@ Files/areas touched:
 
 User-visible change:
 - Clicking any link intended to return to landing now performs a hard refresh of `/`, preventing blank client-transition states.
+
+## 2026-02-17 - Landing Renderer Dependency Hardening (Local Three.js Vendor)
+Status: completed
+
+Short description:
+- Removed landing hero dependence on third-party CDN module resolution during boot.
+- Vendored Three.js runtime modules used by `public/script.js` into same-origin static paths under `public/vendor/three`.
+- Updated the landing import map to load `three` and `three/addons/*` from local `/vendor/three/...` URLs.
+
+Files/areas touched:
+- Landing import map source: `app/(marketing)/page.tsx`
+- Local vendor modules: `public/vendor/three/build/three.module.js`, `public/vendor/three/examples/jsm/*`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Landing loads reliably on hard refresh and on return-from-app navigation even when external CDN module fetches are blocked or flaky.

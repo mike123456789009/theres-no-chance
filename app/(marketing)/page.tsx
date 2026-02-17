@@ -4,8 +4,8 @@ import { LandingAuthRow } from "@/components/landing/auth-row";
 
 const threeImportMap = {
   imports: {
-    three: "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+    three: "/vendor/three/build/three.module.js",
+    "three/addons/": "/vendor/three/examples/jsm/",
   },
 };
 
