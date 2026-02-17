@@ -276,3 +276,18 @@ Files/areas touched:
 
 User-visible change:
 - Typing an email in the landing `Enter email` field and then clicking `LOGIN` or `SIGN UP` now auto-populates the email field on the destination auth page.
+
+## 2026-02-17 - Auth Password Visibility Toggle
+Status: completed
+
+Short description:
+- Added password visibility toggles to auth forms so users can reveal or hide password input while typing.
+- Applied the same interaction pattern to login, signup, and reset new-password flows.
+
+Files/areas touched:
+- Auth forms: `components/auth/login-form.tsx`, `components/auth/signup-form.tsx`, `components/auth/reset-form.tsx`
+- Auth styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Users can now click `SHOW`/`HIDE` next to password fields on `/login`, `/signup`, and `/reset`.

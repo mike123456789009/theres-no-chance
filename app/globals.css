@@ -660,6 +660,34 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   font-size: clamp(0.8rem, 1vw, 0.92rem);
 }
 
+.auth-password-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.46rem;
+  align-items: stretch;
+}
+
+.auth-password-row input {
+  width: 100%;
+}
+
+.auth-password-toggle {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: #dedede;
+  color: #111;
+  padding: 0.62rem 0.68rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-password-toggle:hover {
+  background: #d3d3d3;
+}
+
 .auth-submit {
   justify-self: start;
   border: 4px solid var(--ink);

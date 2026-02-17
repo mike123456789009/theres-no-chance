@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,14 +67,24 @@ export function SignupForm() {
 
       <label className="auth-field">
         <span>Password</span>
-        <input
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
+        <div className="auth-password-row">
+          <input
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+          <button
+            type="button"
+            className="auth-password-toggle"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "HIDE" : "SHOW"}
+          </button>
+        </div>
       </label>
 
       <button className="auth-submit" type="submit" disabled={isSubmitting}>

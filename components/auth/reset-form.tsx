@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 export function ResetForm() {
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -89,14 +90,24 @@ export function ResetForm() {
         <h2 className="auth-section-title">Set new password</h2>
         <label className="auth-field">
           <span>New password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            minLength={8}
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            required
-          />
+          <div className="auth-password-row">
+            <input
+              type={showNewPassword ? "text" : "password"}
+              autoComplete="new-password"
+              minLength={8}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="auth-password-toggle"
+              onClick={() => setShowNewPassword((current) => !current)}
+              aria-label={showNewPassword ? "Hide password" : "Show password"}
+            >
+              {showNewPassword ? "HIDE" : "SHOW"}
+            </button>
+          </div>
         </label>
         <button className="auth-submit" type="submit" disabled={isUpdating}>
           {isUpdating ? "UPDATING..." : "UPDATE PASSWORD"}
