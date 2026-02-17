@@ -79,3 +79,18 @@ Files/areas touched:
 
 User-visible change:
 - Users can complete initial onboarding at `/onboarding` with local context and institution verification inputs.
+
+## 2026-02-17 - Core Schema Migration (Step 5)
+Status: completed
+
+Short description:
+- Added a comprehensive Supabase SQL migration with all required enums and core product tables.
+- Added baseline indexes, `updated_at` triggers, admin-role helper function, and base RLS policies across the schema.
+- Included billing, ledger, webhook, trading, and moderation objects required for subsequent backend features.
+
+Files/areas touched:
+- Migration: `supabase/migrations/202602170001_step5_core_schema.sql`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- No immediate UI change; this deploy establishes the backend schema and access-control foundation for auth, trading, billing, and admin flows.
