@@ -519,3 +519,19 @@ User-visible change:
 - `/markets` now reads as a more navigable, high-density product page with a full-width top bar and category navigation.
 - The header now surfaces portfolio/cash/deposit context and cleaner controls.
 - The page keeps functioning gracefully even when discovery data calls fail unexpectedly.
+
+## 2026-02-17 - Markets Header Brand Swap To Landing TNC Logo
+Status: completed
+
+Short description:
+- Replaced the `/markets` top-left text brand block with the same `T/N/C` logo motif used on the landing page.
+- Tuned logo sizing for the markets header while preserving the landing logo color/border treatment.
+- Removed no-longer-used markets brand text CSS definitions.
+
+Files/areas touched:
+- Markets header markup: `app/(app)/markets/page.tsx`
+- Markets header styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The markets page now shows the branded landing-style TNC logo in the top-left instead of text labels.

@@ -1152,27 +1152,22 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 0.72rem;
 }
 
-.markets-brand-block {
-  display: grid;
-  gap: 0.02rem;
+.markets-brand-logo {
+  display: inline-flex;
+  gap: 0.14rem;
+  align-items: center;
+  text-decoration: none;
 }
 
-.markets-product-kicker {
-  margin: 0;
-  text-transform: uppercase;
-  font-family: "Bungee", "Arial Black", sans-serif;
-  font-size: clamp(0.88rem, 1.05vw, 1.14rem);
-  letter-spacing: 0.03em;
-  color: var(--red-face);
+.markets-brand-logo .logo-letter {
+  font-size: clamp(0.92rem, 1.15vw, 1.22rem);
+  padding: 0.12em 0.18em;
+  border-width: 3px;
 }
 
-.markets-product-subtitle {
-  margin: 0;
-  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  text-transform: uppercase;
-  font-size: 0.64rem;
-  letter-spacing: 0.06em;
-  color: #5a5a5a;
+.markets-brand-logo:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .markets-search-row {
@@ -2181,6 +2176,11 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
   .markets-brand-row {
     gap: 0.48rem;
+  }
+
+  .markets-brand-logo .logo-letter {
+    border-width: 2px;
+    padding: 0.1em 0.16em;
   }
 
   .markets-search-row {

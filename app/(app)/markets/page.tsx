@@ -245,10 +245,11 @@ export default async function MarketsPage({
       <header className="markets-product-header" aria-label="Markets navigation">
         <div className="markets-header-inner">
           <div className="markets-brand-row">
-            <div className="markets-brand-block">
-              <p className="markets-product-kicker">THERE&apos;S NO CHANCE</p>
-              <p className="markets-product-subtitle">Prediction markets</p>
-            </div>
+            <Link className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
+              <span className="logo-letter red">T</span>
+              <span className="logo-letter gold">N</span>
+              <span className="logo-letter red">C</span>
+            </Link>
 
             <form className="markets-search-row" action="/markets" method="get">
               <label className="markets-search-field">
