@@ -10,10 +10,10 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["lib/**/*.ts"],
       exclude: [
-        "lib/**/*.d.ts",
-        "lib/**/index.ts",
+        "node_modules/**",
         "**/*.test.ts",
         "**/*.spec.ts",
+        "lib/supabase/**",
       ],
     },
   },
