@@ -350,3 +350,19 @@ Files/areas touched:
 
 User-visible change:
 - Shadowed action buttons now "press in" on click/tap; toggle-style controls do not.
+
+## 2026-02-17 - Landing Fallback Text Removal
+Status: completed
+
+Short description:
+- Removed the static fallback headline text block from the landing hero markup.
+- Removed associated fallback-text CSS rules and fallback-text display states.
+- Kept the primary WebGL/SVG rendering paths unchanged.
+
+Files/areas touched:
+- Landing hero markup: `app/(marketing)/page.tsx`
+- Landing renderer styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- The landing hero no longer contains or displays the separate fallback text layer.

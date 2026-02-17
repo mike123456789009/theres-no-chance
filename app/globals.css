@@ -90,86 +90,16 @@ body {
   display: block;
 }
 
-.fallback-words {
-  position: absolute;
-  inset: 0;
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(0.2rem, 0.9vw, 0.75rem);
-  pointer-events: auto;
-}
-
-body[data-render-mode="boot"] .fallback-words {
-  display: none;
-}
-
 body[data-render-mode="boot"] #hero-canvas,
 body[data-render-mode="boot"] .svg-render-host {
   display: none;
-}
-
-.fallback-words .w {
-  width: max-content;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  font-size: clamp(4rem, 15vw, 13rem);
-  line-height: 0.86;
-  pointer-events: none;
-}
-
-.fallback-words .w-slash {
-  position: absolute;
-  left: clamp(19.5rem, 46vw, 44rem);
-  top: 42%;
-  opacity: 0.62;
-  transform: scaleX(0.72);
-  transform-origin: left center;
-}
-
-.fallback-words .w-a {
-  position: absolute;
-  left: clamp(27.8rem, 60vw, 56rem);
-  top: 42%;
-  opacity: 0.18;
-  pointer-events: auto;
-}
-
-body[data-render-mode="boot"] .fallback-words .w-a:hover,
-body[data-render-mode="fallback"] .fallback-words .w-a:hover {
-  opacity: 1;
-}
-
-body[data-render-mode="boot"] .fallback-words:has(.w-a:hover) .w-no,
-body[data-render-mode="fallback"] .fallback-words:has(.w-a:hover) .w-no {
-  opacity: 1;
-  color: #e4ddc1;
-  color: color-mix(in srgb, var(--gold-face) 22%, var(--bg));
-}
-
-.fallback-words .w.red {
-  color: var(--red-face);
-}
-
-.fallback-words .w.gold {
-  color: var(--gold-face);
-}
-
-.fallback-words .w.neutral {
-  color: var(--neutral-face);
-}
-
-.fallback-words .w.slash {
-  color: var(--slash-face);
 }
 
 body[data-render-mode="webgl"] #hero-canvas {
   display: block;
 }
 
-body[data-render-mode="webgl"] .svg-render-host,
-body[data-render-mode="webgl"] .fallback-words {
+body[data-render-mode="webgl"] .svg-render-host {
   display: none;
 }
 
@@ -179,19 +109,6 @@ body[data-render-mode="svg"] #hero-canvas {
 
 body[data-render-mode="svg"] .svg-render-host {
   display: block;
-}
-
-body[data-render-mode="svg"] .fallback-words {
-  display: none;
-}
-
-body[data-render-mode="fallback"] #hero-canvas,
-body[data-render-mode="fallback"] .svg-render-host {
-  display: none;
-}
-
-body[data-render-mode="fallback"] .fallback-words {
-  display: flex;
 }
 
 .tnc-logo {

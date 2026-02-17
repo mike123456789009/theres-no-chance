@@ -41,14 +41,6 @@ export default function MarketingPage() {
 
             <div className="hero-3d-wrap" id="hero3d">
               <canvas id="hero-canvas" aria-hidden="true"></canvas>
-
-              <div className="fallback-words" aria-hidden="true">
-                <div className="w red">THERE&apos;S</div>
-                <div className="w gold w-no">NO</div>
-                <div className="w slash w-slash">/</div>
-                <div className="w gold w-a">A</div>
-                <div className="w red">CHANCE</div>
-              </div>
             </div>
 
             <p className="after-box after-box-primary hero-transition-cta" aria-hidden="true">
