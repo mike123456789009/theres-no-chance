@@ -246,15 +246,15 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .hero-transition-cta {
   --hero-cta-progress: 0;
+  --hero-cta-offset: calc((1 - var(--hero-cta-progress)) * 145%);
   position: absolute;
-  left: 0;
-  right: 0;
-  width: fit-content;
-  margin-inline: auto;
+  left: 50%;
   bottom: clamp(1.5rem, 4.6vh, 3.2rem);
   margin: 0;
   opacity: var(--hero-cta-progress);
-  transform: translateY(calc((1 - var(--hero-cta-progress)) * 145%));
+  transform: translate(-50%, var(--hero-cta-offset));
+  border-color: #000;
+  box-shadow: 8px 8px 0 #000;
   pointer-events: none;
   z-index: 4;
   will-change: transform, opacity;

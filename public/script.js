@@ -651,6 +651,14 @@ function applyScroll(progress) {
     const ctaRaw = segProgress(progress, ctaStart, ctaEnd);
     const ctaProgress = prefersReduced ? (progress >= ctaStart ? 1 : 0) : smoothstep(ctaRaw);
     heroTransitionCta.style.setProperty("--hero-cta-progress", ctaProgress.toFixed(4));
+
+    const ctaHeight = heroTransitionCta.getBoundingClientRect().height;
+    if (ctaHeight > 0) {
+      const ctaOffsetPx = Math.round((1 - ctaProgress) * ctaHeight * 1.45);
+      heroTransitionCta.style.setProperty("--hero-cta-offset", `${ctaOffsetPx}px`);
+    } else {
+      heroTransitionCta.style.removeProperty("--hero-cta-offset");
+    }
   }
 
   if (!prefersReduced) {

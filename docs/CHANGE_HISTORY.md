@@ -380,3 +380,19 @@ Files/areas touched:
 
 User-visible change:
 - The CTA border now renders consistently black without the thin off-color pixel line.
+
+## 2026-02-17 - CTA Recenter + Pixel-Snapped Motion Fix
+Status: completed
+
+Short description:
+- Restored `BET ON REALITY` to true centered horizontal positioning in the hero.
+- Replaced smooth fractional vertical movement with pixel-snapped offset values computed in the landing runtime to prevent subpixel seam artifacts during CTA reveal.
+- Set CTA border and drop shadow to pure black for consistent edge rendering.
+
+Files/areas touched:
+- CTA layout and styling: `app/globals.css`
+- CTA reveal offset logic: `public/script.js`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `BET ON REALITY` is centered again and no longer shows the gray single-pixel seam during reveal.
