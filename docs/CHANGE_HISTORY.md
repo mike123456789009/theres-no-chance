@@ -18,3 +18,15 @@ Files/areas touched:
 
 User-visible change:
 - `/` is now served through Next.js while maintaining the same hero, animation, and marketing content structure.
+
+## 2026-02-17 - Deployment Config Fix (Step 1 follow-up)
+Status: completed
+
+Short description:
+- Fixed Vercel framework detection so production serves the Next.js app output instead of `public/` static output fallback.
+
+Files/areas touched:
+- Deployment config: `vercel.json`
+
+User-visible change:
+- Resolves production `404 NOT_FOUND` on `https://theres-no-chance.com` caused by framework misconfiguration.
