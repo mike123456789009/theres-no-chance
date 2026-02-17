@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminReviewQueue } from "@/components/admin/admin-review-queue";
+import { AdminResolutionQueue } from "@/components/admin/admin-resolution-queue";
 import { listRecentResearchRunsForAdmin } from "@/lib/automation/market-research/db";
 import { getAdminAllowlistEmails, isEmailAllowlisted } from "@/lib/auth/admin";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
@@ -30,6 +31,30 @@ type MarketRow = {
 };
 
 type AdminResearchRunCard = Awaited<ReturnType<typeof listRecentResearchRunsForAdmin>>[number];
+
+type ResolutionMarket = {
+  id: string;
+  question: string;
+  status: string;
+  closeTime: string;
+  resolvedAt: string | null;
+  resolutionOutcome: string | null;
+  creatorId: string;
+  tags: string[];
+};
+
+type ResolutionMarketRow = {
+  id: string;
+  question: string;
+  status: string;
+  close_time: string;
+  resolved_at: string | null;
+  resolution_outcome: string | null;
+  creator_id: string;
+  tags: string[] | null;
+};
+
+const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
 
 async function loadAdminQueueMarkets() {
   const service = createServiceClient();
@@ -63,6 +88,70 @@ async function loadAdminQueueMarkets() {
   return {
     reviewMarkets: mappedMarkets.filter((market) => market.status === "review"),
     openMarkets: mappedMarkets.filter((market) => market.status === "open"),
+    errorMessage: "",
+  };
+}
+
+function getDisputeWindowHours(): number {
+  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.max(1, Math.floor(parsed));
+  }
+  return DEFAULT_DISPUTE_WINDOW_HOURS;
+}
+
+async function loadResolutionMarkets() {
+  const service = createServiceClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: readyData, error: readyError } = await service
+    .from("markets")
+    .select("id, question, status, close_time, resolved_at, resolution_outcome, creator_id, tags")
+    .in("status", ["open", "trading_halted", "pending_resolution"])
+    .lte("close_time", nowIso)
+    .order("close_time", { ascending: true })
+    .limit(120);
+
+  if (readyError) {
+    return {
+      readyToResolve: [] as ResolutionMarket[],
+      resolvedMarkets: [] as ResolutionMarket[],
+      errorMessage: readyError.message,
+    };
+  }
+
+  const { data: resolvedData, error: resolvedError } = await service
+    .from("markets")
+    .select("id, question, status, close_time, resolved_at, resolution_outcome, creator_id, tags")
+    .eq("status", "resolved")
+    .order("resolved_at", { ascending: false })
+    .limit(120);
+
+  if (resolvedError) {
+    return {
+      readyToResolve: [] as ResolutionMarket[],
+      resolvedMarkets: [] as ResolutionMarket[],
+      errorMessage: resolvedError.message,
+    };
+  }
+
+  const mapRow = (row: ResolutionMarketRow): ResolutionMarket => ({
+    id: row.id,
+    question: row.question,
+    status: row.status,
+    closeTime: row.close_time,
+    resolvedAt: row.resolved_at,
+    resolutionOutcome: row.resolution_outcome,
+    creatorId: row.creator_id,
+    tags: row.tags ?? [],
+  });
+
+  const readyRows = (readyData ?? []) as ResolutionMarketRow[];
+  const resolvedRows = (resolvedData ?? []) as ResolutionMarketRow[];
+
+  return {
+    readyToResolve: readyRows.map(mapRow),
+    resolvedMarkets: resolvedRows.map(mapRow),
     errorMessage: "",
   };
 }
@@ -184,7 +273,9 @@ export default async function AdminPage() {
   }
 
   const queue = await loadAdminQueueMarkets();
+  const resolution = await loadResolutionMarkets();
   const researchRuns = await loadResearchRuns();
+  const disputeWindowHours = getDisputeWindowHours();
 
   return (
     <main className="admin-page">
@@ -214,6 +305,27 @@ export default async function AdminPage() {
         ) : (
           <AdminReviewQueue reviewMarkets={queue.reviewMarkets} openMarkets={queue.openMarkets} />
         )}
+
+        <section className="admin-ai-runs" aria-label="Resolution pipeline">
+          <div className="admin-ai-runs-head">
+            <h2>Resolution & dispute pipeline</h2>
+            <p>
+              Dispute window: {disputeWindowHours}h • Resolve markets after close, then finalize after dispute window ends.
+            </p>
+          </div>
+
+          {resolution.errorMessage ? (
+            <p className="admin-copy">
+              Unable to load resolution queue: <code>{resolution.errorMessage}</code>
+            </p>
+          ) : (
+            <AdminResolutionQueue
+              readyToResolve={resolution.readyToResolve}
+              resolvedMarkets={resolution.resolvedMarkets}
+              disputeWindowHours={disputeWindowHours}
+            />
+          )}
+        </section>
 
         <section className="admin-ai-runs" aria-label="AI scout research runs">
           <div className="admin-ai-runs-head">
