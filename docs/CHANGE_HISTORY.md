@@ -131,3 +131,27 @@ Files/areas touched:
 
 User-visible change:
 - Authenticated users can now visit `/create` to save market drafts or submit markets into review status using validated tags and source definitions.
+
+## 2026-02-17 - Admin Review Queue (Step 8)
+Status: completed
+
+Short description:
+- Replaced the admin shell with a functional review queue surface for pending-review and open markets.
+- Added admin action APIs for `approve`, `reject`, and `halt` transitions with allowlist auth checks and status guardrails.
+- Added service-role-backed admin market action utility that writes immutable records to `admin_action_log`.
+
+Files/areas touched:
+- Admin page: `app/(app)/admin/page.tsx`
+- Admin queue UI: `components/admin/admin-review-queue.tsx`
+- Admin action APIs:
+  - `app/api/admin/markets/[marketId]/approve/route.ts`
+  - `app/api/admin/markets/[marketId]/reject/route.ts`
+  - `app/api/admin/markets/[marketId]/halt/route.ts`
+- Admin auth guard: `lib/auth/admin-guard.ts`
+- Admin action service: `lib/markets/admin-actions.ts`
+- Supabase service client: `lib/supabase/service.ts`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Allowlisted admins can now process review-queue markets and halt open markets from `/admin`, with each action captured in the admin audit log.
