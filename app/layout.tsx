@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./trade-interface.css";
 
 import { resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
 
