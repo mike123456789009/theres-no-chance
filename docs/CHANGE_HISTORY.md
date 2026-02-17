@@ -657,3 +657,19 @@ Files/areas touched:
 
 User-visible change:
 - Landing now renders only the canonical hero renderer output (no alternate fallback wordmark variant).
+
+## 2026-02-17 - Markets Header Rebalance (Search Width + Logo Height Match)
+Status: completed
+
+Short description:
+- Rebalanced the `/markets` top header grid so search no longer stretches across nearly the full row on desktop.
+- Added a shared markets control-height token and applied it to search input/button plus filter select/apply controls.
+- Matched TNC logo tile height to the shared search control height while preserving landing logo styles.
+- Reserved additional right-side space for account metrics/actions without adding new account content.
+
+Files/areas touched:
+- Markets header/layout styles: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Desktop `/markets` now has a narrower, capped search area, a logo block that matches search input height, and a roomier account strip on the right with aligned controls.
