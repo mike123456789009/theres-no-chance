@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { resolveAppBaseUrl } from "@/lib/app/base-url";
 import { createClient } from "@/lib/supabase/client";
 
 export function ResetForm() {
@@ -20,8 +21,9 @@ export function ResetForm() {
 
     try {
       const supabase = createClient();
+      const redirectBaseUrl = resolveAppBaseUrl();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset`,
+        redirectTo: `${redirectBaseUrl}/reset`,
       });
 
       if (error) {

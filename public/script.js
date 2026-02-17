@@ -76,6 +76,11 @@ function consumeForceLandingTopFlag() {
   return shouldForceTop;
 }
 
+function isBackForwardNavigation() {
+  const navEntry = performance.getEntriesByType("navigation")[0];
+  return Boolean(navEntry && navEntry.type === "back_forward");
+}
+
 let renderer = null;
 let scene = null;
 let camera = null;
@@ -699,7 +704,19 @@ function initSectionReveals() {
 
 async function main() {
   markLandingVisited();
-  if (consumeForceLandingTopFlag()) {
+  const forceTopFromAuth = consumeForceLandingTopFlag();
+  if (forceTopFromAuth && isBackForwardNavigation()) {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    window.location.reload();
+    return;
+  }
+
+  if (forceTopFromAuth) {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 

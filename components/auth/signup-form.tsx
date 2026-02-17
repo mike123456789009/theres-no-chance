@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { resolveAppBaseUrl } from "@/lib/app/base-url";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignupForm() {
@@ -19,11 +20,12 @@ export function SignupForm() {
 
     try {
       const supabase = createClient();
+      const redirectBaseUrl = resolveAppBaseUrl();
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${redirectBaseUrl}/login`,
         },
       });
 

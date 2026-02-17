@@ -208,3 +208,21 @@ Files/areas touched:
 User-visible change:
 - The production app now normalizes to `https://theres-no-chance.com`.
 - Using the browser back button from auth pages now returns users to the top of landing with hero/render state restored.
+
+## 2026-02-17 - Auth Back Navigation Hardening + Supabase Email Routing/Branding
+Status: completed
+
+Short description:
+- Hardened landing back-navigation handling to recover from browser back-forward cache rendering edge-cases by forcing a one-time reload on auth-return back events.
+- Standardized auth email redirect targets to a canonical app base URL helper so signup/reset links consistently target production routes.
+- Updated Supabase Auth project configuration (project `ynuyfchtajpmnbcpbagb`) to use production site URL and redirect allowlist, and customized confirmation/recovery email subject/body copy to clearly identify There&apos;s No Chance.
+
+Files/areas touched:
+- Landing runtime back-nav logic: `public/script.js`
+- Auth redirect URL helper: `lib/app/base-url.ts`
+- Auth forms: `components/auth/signup-form.tsx`, `components/auth/reset-form.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Browser back from `/login`, `/signup`, or `/reset` now reliably returns to a fully rendered landing page.
+- New signup and password reset emails now use There&apos;s No Chance branding and route users to `https://theres-no-chance.com` paths instead of localhost URLs.
