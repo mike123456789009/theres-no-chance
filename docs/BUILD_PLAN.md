@@ -13,6 +13,7 @@ Locked decisions:
 - Resolution authority in v1: **Platform Admin Final**.
 - Market creation flow in v1: **Approval Required** before open trading.
 - Private/institution gating in v1: **email-signup + verified institution domain rules** (e.g., `@college.edu`, `@students.college.edu`).
+- Discovery access model in v1: **guests can view public markets**, **institution/restricted markets require login**, and **all market actions require account authentication**.
 - Community/crowd resolution is explicitly postponed.
 
 ## Architecture & App Structure
@@ -177,6 +178,9 @@ Locked decisions:
 ## Market discovery
 - search + filters + sorting + watchlist.
 - market cards: probability, volume, time to close, access badge.
+- guest viewers can browse public markets without login.
+- institution/restricted market detail requires login before full render.
+- action modules (trade/withdraw/create market interactions) require authenticated accounts.
 
 ## Market detail page (from your sketch)
 - top layout:
@@ -237,8 +241,8 @@ Locked decisions:
 6. **Admin bootstrap + guardrails**: allowlist-based admin access control.
 7. **Market creation wizard v1**: draft/review flow with validation + tags + source rules.
 8. **Admin review queue**: approve/reject/halt actions and audit log.
-9. **Discovery page**: search, filters, sort, cards, watchlist.
-10. **Market detail (read-only shell)**: implement sketch layout with metadata/resolution panels.
+9. **Discovery page + guest/public guardrails**: search, filters, sort, cards, watchlist, with guest access to public markets and login-required institution visibility.
+10. **Market detail**: implement sketch layout with metadata/resolution panels.
 11. **AMM quote/execute engine**: pricing, slippage, fee calc, trade execution + ledger.
 12. **Position panel + portfolio**: holdings, P&L, history.
 13. **Stripe token store**: subscriptions + packs + webhook ledger credits.

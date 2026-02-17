@@ -1,7 +1,61 @@
 import { NextResponse } from "next/server";
 
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
+import {
+  getMarketViewerContext,
+  listDiscoveryMarketCards,
+  parseMarketDiscoveryQuery,
+} from "@/lib/markets/read-markets";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+
+export async function GET(request: Request) {
+  if (!isSupabaseServerEnvConfigured()) {
+    return NextResponse.json(
+      {
+        error: "Market discovery is unavailable: missing Supabase environment variables.",
+        missingEnv: getMissingSupabaseServerEnv(),
+      },
+      { status: 503 }
+    );
+  }
+
+  try {
+    const searchParams = new URL(request.url).searchParams;
+    const query = parseMarketDiscoveryQuery(searchParams);
+    const supabase = await createClient();
+    const viewer = await getMarketViewerContext(supabase);
+
+    const markets = await listDiscoveryMarketCards({
+      supabase,
+      viewer,
+      query,
+    });
+
+    if (markets.error) {
+      return NextResponse.json(
+        {
+          error: "Unable to load markets.",
+          detail: markets.error,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      markets: markets.markets,
+      query,
+      viewer,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Market discovery failed.",
+        detail: error instanceof Error ? error.message : "Unknown server error.",
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   if (!isSupabaseServerEnvConfigured()) {

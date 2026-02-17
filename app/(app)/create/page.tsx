@@ -47,6 +47,9 @@ export default async function CreateMarketPage() {
           Step 7 introduces creator submission flow with source validation, tags, and draft/review routing before any
           market opens for trading.
         </p>
+        <p className="create-copy">
+          Need market context first? Browse <Link href="/markets">public markets</Link>.
+        </p>
 
         <CreateMarketForm />
 

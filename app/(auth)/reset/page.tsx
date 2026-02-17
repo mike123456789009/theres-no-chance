@@ -10,7 +10,7 @@ export default function ResetPage() {
       subtitle="Request a reset link and set a new password from your secure email flow."
       footer={
         <p className="auth-meta-links">
-          Return to <Link href="/login">Log in</Link>
+          Return to <Link href="/login">Log in</Link> · <Link href="/markets">Browse public markets</Link>
         </p>
       }
     >

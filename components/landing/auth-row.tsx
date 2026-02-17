@@ -25,25 +25,32 @@ export function LandingAuthRow() {
   }
 
   return (
-    <div className="auth-row">
-      <Link className="auth-btn auth-btn-login" href="/login" onClick={onAuthLinkClick("/login")}>
-        LOGIN
-      </Link>
-      <Link className="auth-btn auth-btn-signup" href="/signup" onClick={onAuthLinkClick("/signup")}>
-        SIGN UP
-      </Link>
-      <label className="sr-only" htmlFor="email-input">
-        Enter email
-      </label>
-      <input
-        id="email-input"
-        className="auth-email"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        placeholder="Enter email"
-        ref={emailInputRef}
-      />
+    <div className="auth-row-shell">
+      <div className="auth-row">
+        <Link className="auth-btn auth-btn-login" href="/login" onClick={onAuthLinkClick("/login")}>
+          LOGIN
+        </Link>
+        <Link className="auth-btn auth-btn-signup" href="/signup" onClick={onAuthLinkClick("/signup")}>
+          SIGN UP
+        </Link>
+        <label className="sr-only" htmlFor="email-input">
+          Enter email
+        </label>
+        <input
+          id="email-input"
+          className="auth-email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="Enter email"
+          ref={emailInputRef}
+        />
+      </div>
+
+      <p className="auth-row-note">
+        Exploring first? <Link href="/markets">Browse public markets</Link>. Institution markets require login and
+        actions require an account.
+      </p>
     </div>
   );
 }

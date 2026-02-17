@@ -396,3 +396,26 @@ Files/areas touched:
 
 User-visible change:
 - `BET ON REALITY` is centered again and no longer shows the gray single-pixel seam during reveal.
+
+## 2026-02-17 - Market Discovery + Public/Institution Access Guardrails (Step 9)
+Status: completed
+
+Short description:
+- Added a connected market discovery flow at `/markets` with search, status/access filters, sorting, and market cards linked to detail pages.
+- Added market detail route `/markets/[marketId]` with read-only layout sections (stats strip, chart shell, action module, context, resolution rules, and sources).
+- Added server access enforcement so guest viewers can browse only public markets, while institution/restricted markets require login.
+- Added explicit action gating copy and CTAs so market actions require account authentication.
+- Added `GET /api/markets` and `GET /api/markets/:id` contracts to expose discovery and detail payloads with matching access controls.
+
+Files/areas touched:
+- Discovery/detail pages: `app/(app)/markets/page.tsx`, `app/(app)/markets/[marketId]/page.tsx`
+- Market APIs: `app/api/markets/route.ts`, `app/api/markets/[marketId]/route.ts`
+- Market read/access services: `lib/markets/read-markets.ts`, `lib/markets/view-access.ts`
+- Navigation wiring: `components/landing/auth-row.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/signup/page.tsx`, `app/(auth)/reset/page.tsx`, `app/(app)/create/page.tsx`
+- Styling: `app/globals.css`
+- Planning + deployment log: `docs/BUILD_PLAN.md`, `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Unauthenticated visitors can now browse public markets and open public market detail pages.
+- Institution/restricted markets now require login before detail access.
+- Action areas now clearly direct guests to create an account/login before taking market actions.

@@ -10,7 +10,7 @@ export default function SignupPage() {
       subtitle="Create your account to start trading prediction markets."
       footer={
         <p className="auth-meta-links">
-          Already have an account? <Link href="/login">Log in</Link>
+          Already have an account? <Link href="/login">Log in</Link> · <Link href="/markets">Browse public markets</Link>
         </p>
       }
     >
