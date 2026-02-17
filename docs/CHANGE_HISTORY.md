@@ -62,3 +62,20 @@ Files/areas touched:
 
 User-visible change:
 - Users can now access `/login`, `/signup`, and `/reset` and interact with core account auth forms.
+
+## 2026-02-17 - Onboarding Flow (Step 4)
+Status: completed
+
+Short description:
+- Added an onboarding page to collect city/region, user interests, and optional institution email.
+- Implemented institution-domain eligibility checks for education domains (including subdomains ending in `.edu`).
+- Stored onboarding payload in Supabase user metadata through auth update calls.
+
+Files/areas touched:
+- Route: `app/(app)/onboarding/page.tsx`
+- UI component: `components/onboarding/onboarding-form.tsx`
+- Styling: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Users can complete initial onboarding at `/onboarding` with local context and institution verification inputs.

@@ -711,6 +711,167 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   color: #286942;
 }
 
+.onboarding-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem) var(--stage-pad);
+  display: grid;
+  align-items: center;
+}
+
+.onboarding-card {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  border: 6px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+  background: var(--bg);
+  padding: clamp(1rem, 3vw, 1.8rem);
+}
+
+.onboarding-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.7rem, 0.9vw, 0.82rem);
+  letter-spacing: 0.09em;
+  color: #4d4d4d;
+}
+
+.onboarding-title {
+  margin: 0.55rem 0 0;
+  text-transform: uppercase;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.onboarding-subtitle {
+  margin: 0.7rem 0 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.8rem, 1.04vw, 0.92rem);
+  line-height: 1.45;
+}
+
+.onboarding-stack {
+  margin-top: clamp(1rem, 2.5vw, 1.35rem);
+  display: grid;
+  gap: 0.9rem;
+}
+
+.onboarding-field {
+  display: grid;
+  gap: 0.35rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.onboarding-field input {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: #f2f2f2;
+  color: #111;
+  padding: 0.62rem 0.72rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.8rem, 1vw, 0.92rem);
+}
+
+.onboarding-interests {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.onboarding-interests legend {
+  margin-bottom: 0.45rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.onboarding-interest-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.interest-chip {
+  border: 2px solid var(--ink);
+  background: #e0e0e0;
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 0.4rem 0.58rem;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.68rem, 0.8vw, 0.78rem);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.interest-chip.is-active {
+  background: var(--gold-face);
+}
+
+.onboarding-hint {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  line-height: 1.4;
+}
+
+.onboarding-hint-ok {
+  color: #2a6d45;
+}
+
+.onboarding-hint-warn {
+  color: #8f2f2f;
+}
+
+.onboarding-submit {
+  justify-self: start;
+  border: 4px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  background: var(--red-face);
+  color: #fff;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.8rem, 1vw, 0.92rem);
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.64rem 0.9rem;
+}
+
+.onboarding-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.onboarding-status {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.74rem, 0.92vw, 0.84rem);
+  line-height: 1.45;
+}
+
+.onboarding-error {
+  color: #8f2f2f;
+}
+
+.onboarding-success {
+  color: #286942;
+}
+
+.onboarding-meta-links {
+  margin: 1rem 0 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.76rem, 0.95vw, 0.84rem);
+  line-height: 1.45;
+}
+
+.onboarding-meta-links a {
+  color: var(--red-face);
+}
+
 @keyframes scroll-cue-blink {
   0%,
   40% {
@@ -811,6 +972,25 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   .auth-field input {
     border-width: 2px;
     box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .onboarding-card {
+    border-width: 4px;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+
+  .onboarding-field input {
+    border-width: 2px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .interest-chip {
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .onboarding-submit {
+    border-width: 3px;
+    box-shadow: 4px 4px 0 var(--ink);
   }
 }
 
