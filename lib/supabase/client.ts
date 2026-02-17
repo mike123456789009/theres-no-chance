@@ -1,10 +1,34 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-import { requiredEnv } from "@/lib/env";
+type BrowserPublicConfig = {
+  supabaseUrl?: string;
+  supabasePublishableKey?: string;
+};
+
+declare global {
+  interface Window {
+    __TNC_PUBLIC_CONFIG__?: BrowserPublicConfig;
+  }
+}
+
+function resolveBrowserSupabaseConfig() {
+  const fromEnvUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const fromEnvKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  const fromWindow = typeof window !== "undefined" ? window.__TNC_PUBLIC_CONFIG__ : undefined;
+  const url = (fromEnvUrl || fromWindow?.supabaseUrl || "").trim();
+  const publishableKey = (fromEnvKey || fromWindow?.supabasePublishableKey || "").trim();
+
+  if (!url || !publishableKey) {
+    throw new Error(
+      "Missing Supabase public configuration. Configure NEXT_PUBLIC_SUPABASE_* on Vercel or SUPABASE_* fallback vars."
+    );
+  }
+
+  return { url, publishableKey };
+}
 
 export function createClient() {
-  return createBrowserClient(
-    requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requiredEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
-  );
+  const config = resolveBrowserSupabaseConfig();
+  return createBrowserClient(config.url, config.publishableKey);
 }

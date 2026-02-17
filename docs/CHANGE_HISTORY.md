@@ -170,3 +170,22 @@ Files/areas touched:
 
 User-visible change:
 - `LOGIN` and `SIGN UP` controls on `/` now correctly navigate to `/login` and `/signup`.
+
+## 2026-02-17 - Auth Env Fallback Hardening
+Status: completed
+
+Short description:
+- Added shared Supabase public config resolution that supports both `NEXT_PUBLIC_SUPABASE_*` and legacy `SUPABASE_*` naming.
+- Injected safe runtime public config into the HTML shell so client auth forms can initialize even when build-time public env injection is unavailable.
+- Updated client, server, and service Supabase helpers to use unified config resolution and clearer missing-config errors.
+
+Files/areas touched:
+- Config utility: `lib/supabase/config.ts`
+- Client helper: `lib/supabase/client.ts`
+- Server helper: `lib/supabase/server.ts`
+- Service helper: `lib/supabase/service.ts`
+- App shell injection: `app/layout.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Signup/login/reset no longer fail with `Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL` when legacy `SUPABASE_*` env names exist.

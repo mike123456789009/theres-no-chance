@@ -1,12 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import { requiredEnv } from "@/lib/env";
-
-const REQUIRED_SUPABASE_SERVER_ENV = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"] as const;
+import { getMissingSupabasePublicEnvNames, resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
 
 export function getMissingSupabaseServerEnv(): string[] {
-  return REQUIRED_SUPABASE_SERVER_ENV.filter((name) => !process.env[name]);
+  return getMissingSupabasePublicEnvNames();
 }
 
 export function isSupabaseServerEnvConfigured(): boolean {
@@ -15,10 +13,16 @@ export function isSupabaseServerEnvConfigured(): boolean {
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const config = resolveSupabasePublicConfigFromEnv();
+
+  if (!config) {
+    const missing = getMissingSupabaseServerEnv().join(", ");
+    throw new Error(`Missing required Supabase public env configuration: ${missing}`);
+  }
 
   return createServerClient(
-    requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requiredEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
+    config.url,
+    config.publishableKey,
     {
       cookies: {
         getAll() {
