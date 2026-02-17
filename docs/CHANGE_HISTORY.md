@@ -673,3 +673,20 @@ Files/areas touched:
 
 User-visible change:
 - Desktop `/markets` now has a narrower, capped search area, a logo block that matches search input height, and a roomier account strip on the right with aligned controls.
+
+## 2026-02-17 - Market Detail Layout Completion (Step 10)
+Status: completed
+
+Short description:
+- Completed Step 10 by upgrading `/markets/[marketId]` from a placeholder shell into the full sketch-aligned market detail layout.
+- Added a structured top layout with a left market strip, center probability timeline chart, and right rail containing buy/sell module scaffolding plus a personal position panel.
+- Extended market detail data contracts to provide chart timeline points and authenticated viewer position summary values.
+
+Files/areas touched:
+- Market detail route: `app/(app)/markets/[marketId]/page.tsx`
+- Market detail data/service contract: `lib/markets/read-markets.ts`
+- Market detail styling + responsive layout: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets/[marketId]` now presents the intended product detail experience: stats strip, chart with timeline axis, action module shell, context/resolution sections, source list, and a right-rail personal position panel (stacked below on mobile).

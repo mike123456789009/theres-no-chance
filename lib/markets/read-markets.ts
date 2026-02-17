@@ -49,6 +49,21 @@ export type MarketSourceDTO = {
   type: string;
 };
 
+export type MarketDetailChartPointDTO = {
+  timestamp: string;
+  priceYes: number;
+};
+
+export type MarketViewerPositionDTO = {
+  yesShares: number;
+  noShares: number;
+  totalShares: number;
+  averageEntryPriceYes: number | null;
+  averageEntryPriceNo: number | null;
+  realizedPnl: number;
+  markValue: number;
+};
+
 export type MarketDetailDTO = {
   id: string;
   question: string;
@@ -71,7 +86,10 @@ export type MarketDetailDTO = {
   priceNo: number;
   yesShares: number;
   noShares: number;
+  poolShares: number;
   liquidityParameter: number;
+  chartPoints: MarketDetailChartPointDTO[];
+  viewerPosition: MarketViewerPositionDTO | null;
   sources: MarketSourceDTO[];
   cardShadowTone: MarketCardShadowTone;
   actionRequired: "create_account" | "account_ready";
@@ -133,9 +151,18 @@ type MarketDetailRow = {
   market_sources: MarketSourceRow[] | null;
 };
 
+type PositionRow = {
+  yes_shares: number | string | null;
+  no_shares: number | string | null;
+  average_entry_price_yes: number | string | null;
+  average_entry_price_no: number | string | null;
+  realized_pnl: number | string | null;
+};
+
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const MARKET_DISCOVERY_LIMIT = 120;
+const MARKET_DETAIL_CHART_POINTS = 9;
 
 function isSchemaMissingError(message: string): boolean {
   const normalized = message.toLowerCase();
@@ -167,6 +194,50 @@ function toNumber(value: number | string | null | undefined, fallback: number): 
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function toOptionalNumber(value: number | string | null | undefined): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function parseDateMs(value: string | null | undefined, fallbackMs: number): number {
+  if (!value) return fallbackMs;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : fallbackMs;
+}
+
+function buildMarketDetailChartPoints(options: {
+  createdAt: string;
+  closeTime: string;
+  expectedResolutionTime: string | null;
+  priceYes: number;
+}): MarketDetailChartPointDTO[] {
+  const nowMs = Date.now();
+  const createdMs = parseDateMs(options.createdAt, nowMs - 1000 * 60 * 60 * 24 * 7);
+  const closeMs = parseDateMs(options.closeTime, nowMs + 1000 * 60 * 60 * 24 * 7);
+  const resolutionMs = parseDateMs(options.expectedResolutionTime, closeMs);
+  const endMs = Math.max(closeMs, resolutionMs, createdMs + 1000 * 60 * 60);
+  const spanMs = Math.max(1, endMs - createdMs);
+
+  return Array.from({ length: MARKET_DETAIL_CHART_POINTS }, (_, index) => {
+    const ratio = index / (MARKET_DETAIL_CHART_POINTS - 1);
+    const pointMs = createdMs + Math.round(spanMs * ratio);
+    return {
+      timestamp: new Date(pointMs).toISOString(),
+      priceYes: options.priceYes,
+    };
+  });
 }
 
 function normalizeAmmState(raw: MarketAmmStateRow | MarketAmmStateRow[] | null): MarketAmmStateRow | null {
@@ -497,8 +568,47 @@ export async function getMarketDetail(options: {
   const priceNo = clamp(explicitPriceNo || 1 - priceYes, 0, 1);
   const yesShares = Math.max(0, toNumber(ammState?.yes_shares, 0));
   const noShares = Math.max(0, toNumber(ammState?.no_shares, 0));
+  const poolShares = yesShares + noShares;
 
   const sourceRows = Array.isArray(row.market_sources) ? row.market_sources : [];
+  const chartPoints = buildMarketDetailChartPoints({
+    createdAt: row.created_at,
+    closeTime: row.close_time,
+    expectedResolutionTime: row.expected_resolution_time,
+    priceYes,
+  });
+
+  let viewerPosition: MarketViewerPositionDTO | null = null;
+
+  if (viewer.isAuthenticated && viewer.userId) {
+    try {
+      const { data: positionData, error: positionError } = await supabase
+        .from("positions")
+        .select("yes_shares, no_shares, average_entry_price_yes, average_entry_price_no, realized_pnl")
+        .eq("market_id", marketId)
+        .eq("user_id", viewer.userId)
+        .maybeSingle();
+
+      if (!positionError && positionData) {
+        const position = positionData as PositionRow;
+        const positionYesShares = Math.max(0, toNumber(position.yes_shares, 0));
+        const positionNoShares = Math.max(0, toNumber(position.no_shares, 0));
+        const positionTotalShares = positionYesShares + positionNoShares;
+
+        viewerPosition = {
+          yesShares: positionYesShares,
+          noShares: positionNoShares,
+          totalShares: positionTotalShares,
+          averageEntryPriceYes: toOptionalNumber(position.average_entry_price_yes),
+          averageEntryPriceNo: toOptionalNumber(position.average_entry_price_no),
+          realizedPnl: toNumber(position.realized_pnl, 0),
+          markValue: positionYesShares * priceYes + positionNoShares * priceNo,
+        };
+      }
+    } catch {
+      viewerPosition = null;
+    }
+  }
 
   return {
     kind: "ok",
@@ -524,7 +634,10 @@ export async function getMarketDetail(options: {
       priceNo,
       yesShares,
       noShares,
+      poolShares,
       liquidityParameter: Math.max(0, toNumber(ammState?.liquidity_parameter, 0)),
+      chartPoints,
+      viewerPosition,
       sources: sourceRows.map((source) => ({
         label: source.source_label,
         url: source.source_url,
