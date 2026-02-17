@@ -1,0 +1,131 @@
+import { NextResponse } from "next/server";
+
+import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
+import { quoteMarketTrade, validateTradeQuotePayload } from "@/lib/markets/trade-engine";
+import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+
+export async function POST(request: Request, context: { params: Promise<{ marketId: string }> }) {
+  if (!isSupabaseServerEnvConfigured()) {
+    return NextResponse.json(
+      {
+        error: "Trade quote is unavailable: missing Supabase environment variables.",
+        missingEnv: getMissingSupabaseServerEnv(),
+      },
+      { status: 503 }
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  }
+
+  const validation = validateTradeQuotePayload(payload);
+  if (!validation.ok) {
+    return NextResponse.json(
+      {
+        error: "Validation failed.",
+        details: validation.errors,
+      },
+      { status: 400 }
+    );
+  }
+
+  const { marketId } = await context.params;
+
+  try {
+    const supabase = await createClient();
+    const viewer = await getMarketViewerContext(supabase);
+
+    if (!viewer.isAuthenticated || !viewer.userId) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const detail = await getMarketDetail({
+      supabase,
+      viewer,
+      marketId,
+    });
+
+    if (detail.kind === "login_required") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (detail.kind === "not_found") {
+      return NextResponse.json({ error: "Market not found." }, { status: 404 });
+    }
+
+    if (detail.kind === "schema_missing") {
+      return NextResponse.json(
+        {
+          error: "Market tables are not provisioned in this environment yet.",
+          detail: detail.message,
+        },
+        { status: 503 }
+      );
+    }
+
+    if (detail.kind === "error") {
+      return NextResponse.json(
+        {
+          error: "Unable to load market for trade quote.",
+          detail: detail.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (detail.market.status !== "open") {
+      return NextResponse.json(
+        {
+          error: "Trade quote unavailable.",
+          detail: "Market must be open for trading.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const quote = await quoteMarketTrade({
+      marketId,
+      side: validation.data.side,
+      action: validation.data.action,
+      shares: validation.data.shares,
+      maxSlippageBps: validation.data.maxSlippageBps,
+    });
+
+    if (!quote.ok) {
+      return NextResponse.json(
+        {
+          error: quote.error,
+          detail: quote.detail,
+          missingEnv: quote.missingEnv,
+        },
+        { status: quote.status }
+      );
+    }
+
+    return NextResponse.json({
+      quote: quote.data,
+      market: {
+        id: detail.market.id,
+        status: detail.market.status,
+        feeBps: detail.market.feeBps,
+        priceYes: detail.market.priceYes,
+        priceNo: detail.market.priceNo,
+      },
+      viewer: {
+        userId: viewer.userId,
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Trade quote failed.",
+        detail: error instanceof Error ? error.message : "Unknown server error.",
+      },
+      { status: 500 }
+    );
+  }
+}

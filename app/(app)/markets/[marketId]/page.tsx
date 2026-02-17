@@ -299,8 +299,8 @@ export default async function MarketDetailPage({
               <span>{chartEndLabel}</span>
             </div>
             <p className="market-detail-chart-note">
-              Trade-by-trade historical candles are enabled with Step 11 execution. This panel currently tracks the latest
-              AMM probability across market time bounds.
+              Trade execution APIs are now live. This panel currently tracks the latest AMM probability across market time
+              bounds until full historical candle rendering is wired in.
             </p>
           </article>
 
@@ -337,7 +337,7 @@ export default async function MarketDetailPage({
                 </p>
                 <p>
                   <span>Slippage + fees</span>
-                  <strong>Preview in Step 11</strong>
+                  <strong>Live via quote API</strong>
                 </p>
               </div>
 
@@ -351,9 +351,9 @@ export default async function MarketDetailPage({
                 </>
               ) : (
                 <>
-                  <p>Your account is market-ready. Live quote + execute endpoints arrive in Step 11.</p>
+                  <p>Your account is market-ready. Quote and execute APIs are now active for live trading calls.</p>
                   <button className="market-detail-action-button" type="button" disabled>
-                    Execution unlocks in Step 11
+                    UI order entry rolls out next
                   </button>
                 </>
               )}
