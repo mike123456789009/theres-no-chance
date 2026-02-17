@@ -30,3 +30,18 @@ Files/areas touched:
 
 User-visible change:
 - Resolves production `404 NOT_FOUND` on `https://theres-no-chance.com` caused by framework misconfiguration.
+
+## 2026-02-17 - Landing FAQ Expansion (Step 2)
+Status: completed
+
+Short description:
+- Added a collapsed FAQ expansion directly below the email signup row on the landing page.
+- Implemented the requested trigger style with a gold `+` and red `FAQ` text.
+
+Files/areas touched:
+- Landing markup: `app/(marketing)/page.tsx`
+- Landing styles: `app/globals.css`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Visitors can expand/collapse a starter FAQ block covering market resolution, disputes, fees, withdrawals, and private/institution markets.

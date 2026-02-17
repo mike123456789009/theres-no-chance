@@ -149,6 +149,60 @@ export default function MarketingPage() {
                 />
               </div>
             </section>
+
+            <section className="faq-wrap reveal-item" data-reveal-delay="4" aria-label="Frequently asked questions">
+              <details className="faq-expander">
+                <summary className="faq-trigger" aria-controls="faq-content">
+                  <span className="faq-plus" aria-hidden="true">
+                    +
+                  </span>
+                  <span className="faq-label">FAQ</span>
+                </summary>
+
+                <div id="faq-content" className="faq-content">
+                  <article className="faq-item">
+                    <h3>How do markets resolve?</h3>
+                    <p>
+                      Every market includes explicit yes/no resolution criteria, an expected resolution window, and
+                      official source guidance. In v1, platform admins apply the final ruling based on those posted
+                      criteria.
+                    </p>
+                  </article>
+
+                  <article className="faq-item">
+                    <h3>What is the dispute process and timing?</h3>
+                    <p>
+                      After resolution, disputes can be filed during a configurable review window (default 48 hours).
+                      Admin actions and evidence are logged before a market is finalized.
+                    </p>
+                  </article>
+
+                  <article className="faq-item">
+                    <h3>How are fees handled?</h3>
+                    <p>
+                      Trading and payout fees are shown in quote/checkout flows before execution. Fee policy is set per
+                      market or platform rules and is recorded in the ledger.
+                    </p>
+                  </article>
+
+                  <article className="faq-item">
+                    <h3>How do withdrawals work?</h3>
+                    <p>
+                      Withdrawals require eligibility checks including KYC status, risk controls, and minimum
+                      thresholds. Requests move through pending, completed, or failed states with reason tracking.
+                    </p>
+                  </article>
+
+                  <article className="faq-item">
+                    <h3>Can I run private or institution-only markets?</h3>
+                    <p>
+                      Yes. v1 supports gated access using approved organization and domain rules so only verified
+                      members can discover or trade selected markets.
+                    </p>
+                  </article>
+                </div>
+              </details>
+            </section>
           </div>
         </section>
       </main>
