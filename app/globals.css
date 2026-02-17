@@ -2183,6 +2183,89 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   cursor: not-allowed;
 }
 
+.admin-ai-runs {
+  margin-top: 1rem;
+  border: 4px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  background: #f4f3ef;
+  padding: clamp(0.8rem, 2.2vw, 1rem);
+}
+
+.admin-ai-runs-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.admin-ai-runs-head h2 {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: clamp(0.88rem, 1.5vw, 1.18rem);
+}
+
+.admin-ai-runs-head p {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.72rem, 0.9vw, 0.84rem);
+}
+
+.admin-ai-run-list {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.admin-ai-run-card {
+  border: 3px solid rgba(16, 16, 16, 0.75);
+  background: #f9f7f2;
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.admin-ai-run-card p {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  line-height: 1.45;
+}
+
+.admin-ai-run-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #3d3d3d;
+}
+
+.admin-ai-run-metrics {
+  margin-top: 0.25rem;
+  border-left: 3px solid rgba(16, 16, 16, 0.45);
+  padding-left: 0.72rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.admin-ai-run-proposals {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.26rem;
+}
+
+.admin-ai-run-proposals li {
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.7rem, 0.88vw, 0.8rem);
+  line-height: 1.4;
+}
+
+.admin-ai-run-proposals span {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #3e3e3e;
+}
+
 @keyframes scroll-cue-blink {
   0%,
   40% {
@@ -2523,13 +2606,28 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
     box-shadow: 4px 4px 0 var(--ink);
   }
 
+  .admin-ai-runs {
+    border-width: 3px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
   .admin-queue-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.4rem;
   }
 
+  .admin-ai-runs-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
   .admin-queue-card {
+    border-width: 2px;
+  }
+
+  .admin-ai-run-card {
     border-width: 2px;
   }
 

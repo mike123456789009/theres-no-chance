@@ -674,6 +674,39 @@ Files/areas touched:
 User-visible change:
 - Desktop `/markets` now has a narrower, capped search area, a logo block that matches search input height, and a roomier account strip on the right with aligned controls.
 
+## 2026-02-17 - AI Market Scout Automation (Public + Institution)
+Status: completed
+
+Short description:
+- Added shared market taxonomy constants used by both `/markets` UI navigation and AI market scouting so category definitions cannot drift.
+- Added new Supabase persistence for AI research runs/proposals with dedupe and run-lock guardrails.
+- Added automation-safe proposal submission service that reuses market creation validation, forces review-mode submission, stamps AI metadata in `access_rules`, and writes admin audit logs.
+- Added OpenAI Responses-based public and institution research engines with retries, timeout guardrails, confidence/source/time-window quality gates, and per-scope proposal caps.
+- Added CLI automation runner + npm scripts for recurring codex automation execution and markdown run summaries.
+- Added admin observability section for latest AI runs and proposal submission outcomes.
+
+Files/areas touched:
+- Shared taxonomy: `lib/markets/taxonomy.ts`, `app/(app)/markets/page.tsx`
+- Schema migration: `supabase/migrations/202602170002_step_ai_market_scout.sql`
+- Automation market submit service: `lib/markets/submit-automation-proposal.ts`
+- AI scan engines + runner:
+  - `lib/automation/market-research/types.ts`
+  - `lib/automation/market-research/constants.ts`
+  - `lib/automation/market-research/utils.ts`
+  - `lib/automation/market-research/openai-research.ts`
+  - `lib/automation/market-research/quality-gates.ts`
+  - `lib/automation/market-research/process-candidates.ts`
+  - `lib/automation/market-research/public-scan.ts`
+  - `lib/automation/market-research/institution-scan.ts`
+  - `lib/automation/market-research/runner.ts`
+- CLI + scripts: `scripts/market-research-runner.ts`, `package.json`
+- Admin observability: `app/(app)/admin/page.tsx`, `app/globals.css`
+- Planning docs: `docs/BUILD_PLAN.md`, `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Platform admins can now inspect AI research run history and proposal outcomes in `/admin`.
+- Backend now supports recurring AI-generated market proposals that flow into existing review queue guardrails instead of opening directly for trading.
+
 ## 2026-02-17 - Market Detail Layout Completion (Step 10)
 Status: completed
 

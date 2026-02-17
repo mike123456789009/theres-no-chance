@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminReviewQueue } from "@/components/admin/admin-review-queue";
+import { listRecentResearchRunsForAdmin } from "@/lib/automation/market-research/db";
 import { getAdminAllowlistEmails, isEmailAllowlisted } from "@/lib/auth/admin";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
@@ -26,6 +28,8 @@ type MarketRow = {
   creator_id: string;
   tags: string[] | null;
 };
+
+type AdminResearchRunCard = Awaited<ReturnType<typeof listRecentResearchRunsForAdmin>>[number];
 
 async function loadAdminQueueMarkets() {
   const service = createServiceClient();
@@ -61,6 +65,42 @@ async function loadAdminQueueMarkets() {
     openMarkets: mappedMarkets.filter((market) => market.status === "open"),
     errorMessage: "",
   };
+}
+
+async function loadResearchRuns() {
+  try {
+    const runs = await listRecentResearchRunsForAdmin(20);
+    return {
+      runs,
+      errorMessage: "",
+    };
+  } catch (error) {
+    return {
+      runs: [] as AdminResearchRunCard[],
+      errorMessage: error instanceof Error ? error.message : "Unable to load research runs.",
+    };
+  }
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatDuration(durationMs: number | null): string {
+  if (!durationMs || durationMs <= 0) return "N/A";
+  const seconds = Math.round(durationMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  if (minutes > 0) {
+    return `${minutes}m ${remainingSeconds}s`;
+  }
+  return `${remainingSeconds}s`;
 }
 
 export default async function AdminPage() {
@@ -144,6 +184,7 @@ export default async function AdminPage() {
   }
 
   const queue = await loadAdminQueueMarkets();
+  const researchRuns = await loadResearchRuns();
 
   return (
     <main className="admin-page">
@@ -173,6 +214,76 @@ export default async function AdminPage() {
         ) : (
           <AdminReviewQueue reviewMarkets={queue.reviewMarkets} openMarkets={queue.openMarkets} />
         )}
+
+        <section className="admin-ai-runs" aria-label="AI scout research runs">
+          <div className="admin-ai-runs-head">
+            <h2>AI scout runs (latest 20)</h2>
+            <p>Research + proposal submission observability</p>
+          </div>
+
+          {researchRuns.errorMessage ? (
+            <p className="admin-copy">
+              Unable to load AI run history: <code>{researchRuns.errorMessage}</code>
+            </p>
+          ) : researchRuns.runs.length === 0 ? (
+            <p className="admin-copy">No AI research runs recorded yet.</p>
+          ) : (
+            <div className="admin-ai-run-list">
+              {researchRuns.runs.map((run) => (
+                <article key={run.id} className="admin-ai-run-card">
+                  <p className="admin-ai-run-kicker">
+                    {run.scope} • {run.status}
+                  </p>
+                  <p>
+                    Run id: <code>{run.id}</code>
+                  </p>
+                  <p>
+                    Model: <code>{run.modelName}</code>
+                  </p>
+                  <p>Started: {formatDate(run.startedAt)}</p>
+                  <p>Completed: {formatDate(run.completedAt)}</p>
+                  <p>Duration: {formatDuration(run.durationMs)}</p>
+                  {run.organizationId ? (
+                    <p>
+                      Organization: {run.organizationName ?? "Unknown"} (<code>{run.organizationId}</code>)
+                    </p>
+                  ) : null}
+                  {run.errorMessage ? (
+                    <p>
+                      Error: <code>{run.errorMessage}</code>
+                    </p>
+                  ) : null}
+
+                  <div className="admin-ai-run-metrics" role="list" aria-label="AI run metrics">
+                    <p role="listitem">submitted: {run.proposalCounts.submitted_review}</p>
+                    <p role="listitem">duplicates: {run.proposalCounts.skipped_duplicate}</p>
+                    <p role="listitem">quality skips: {run.proposalCounts.skipped_quality}</p>
+                    <p role="listitem">invalid skips: {run.proposalCounts.skipped_invalid}</p>
+                    <p role="listitem">submit failed: {run.proposalCounts.submit_failed}</p>
+                  </div>
+
+                  {run.proposals.length > 0 ? (
+                    <ul className="admin-ai-run-proposals">
+                      {run.proposals.map((proposal) => (
+                        <li key={proposal.id}>
+                          <span>{proposal.submissionStatus}</span> {proposal.question}
+                          {proposal.submittedMarketId ? (
+                            <>
+                              {" "}
+                              (<Link href={`/markets/${proposal.submittedMarketId}`}>open market</Link>)
+                            </>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No proposal records for this run.</p>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </section>
     </main>
   );

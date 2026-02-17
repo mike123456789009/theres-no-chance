@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { requiredEnv } from "@/lib/env";
-import { getMissingSupabasePublicEnvNames, resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
+import { getMissingSupabaseUrlEnvNames, resolveSupabaseUrlFromEnv } from "@/lib/supabase/config";
 
 export function getMissingSupabaseServiceEnv(): string[] {
-  const missing = getMissingSupabasePublicEnvNames();
+  const missing = getMissingSupabaseUrlEnvNames();
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     missing.push("SUPABASE_SERVICE_ROLE_KEY");
   }
@@ -16,13 +16,13 @@ export function isSupabaseServiceEnvConfigured(): boolean {
 }
 
 export function createServiceClient() {
-  const config = resolveSupabasePublicConfigFromEnv();
-  if (!config) {
-    const missing = getMissingSupabasePublicEnvNames().join(", ");
-    throw new Error(`Missing required Supabase public env configuration: ${missing}`);
+  const supabaseUrl = resolveSupabaseUrlFromEnv();
+  if (!supabaseUrl) {
+    const missing = getMissingSupabaseUrlEnvNames().join(", ");
+    throw new Error(`Missing required Supabase URL env configuration: ${missing}`);
   }
 
-  return createClient(config.url, requiredEnv("SUPABASE_SERVICE_ROLE_KEY"), {
+  return createClient(supabaseUrl, requiredEnv("SUPABASE_SERVICE_ROLE_KEY"), {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

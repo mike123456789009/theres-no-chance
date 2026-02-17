@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit --max=8",
+    "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit --max=3",
+    "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run --max=8",
+    "market:scan:institution:dry": "tsx scripts/market-research-runner.ts --scope=institution --dry-run --max=3"
   },
   "repository": {
     "type": "git",
@@ -31,6 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
 }

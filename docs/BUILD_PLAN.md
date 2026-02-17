@@ -230,6 +230,12 @@ Locked decisions:
 - `COINBASE_COMMERCE_WEBHOOK_SECRET`
 - `ADMIN_ALLOWLIST_EMAILS`
 - `APP_BASE_URL`
+- `OPENAI_API_KEY`
+- `MARKET_RESEARCH_BOT_USER_ID`
+- `MARKET_RESEARCH_ENABLED`
+- `MARKET_RESEARCH_MODEL` (optional override, default `gpt-5`)
+- `MARKET_RESEARCH_PUBLIC_MAX` (optional)
+- `MARKET_RESEARCH_INSTITUTION_MAX_PER_ORG` (optional)
 
 ## Deployment Plan (isolated, one-feature-per-deploy)
 
@@ -251,6 +257,7 @@ Locked decisions:
 16. **Resolution/dispute pipeline**: pending/resolved/finalized with dispute window.
 17. **Private/institution markets**: group/domain-gated visibility and membership checks.
 18. **Notifications v1**: close soon, resolve, payout, dispute, billing events.
+19. **AI Market Scout Automation**: recurring public + institution research scans that generate full proposals, dedupe via fingerprint, and auto-submit valid markets into review status with admin observability.
 
 Each step is one commit + one deploy + deployment note in commit message, matching your AGENTS rules.
 
@@ -293,5 +300,6 @@ Each step is one commit + one deploy + deployment note in commit message, matchi
 - Stripe handles non-crypto payments and KYC provider integration (Stripe Identity).
 - Market review is mandatory before open trading.
 - Resolution authority is platform admin final in v1.
+- AI market proposals are generated and submitted by a single dedicated bot user.
 - Community/crowd resolution is intentionally out of scope for this cycle.
 - Admin accounts are bootstrapped through allowlisted emails from environment configuration.

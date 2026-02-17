@@ -14,7 +14,7 @@ function clean(value: string | undefined): string {
 }
 
 export function resolveSupabasePublicConfigFromEnv(env: NodeJS.ProcessEnv = process.env): SupabasePublicConfig | null {
-  const url = clean(env.NEXT_PUBLIC_SUPABASE_URL) || clean(env.SUPABASE_URL);
+  const url = resolveSupabaseUrlFromEnv(env);
   const publishableKey =
     clean(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || clean(env.SUPABASE_PUBLISHABLE_KEY);
 
@@ -26,6 +26,17 @@ export function resolveSupabasePublicConfigFromEnv(env: NodeJS.ProcessEnv = proc
     url,
     publishableKey,
   };
+}
+
+export function resolveSupabaseUrlFromEnv(env: NodeJS.ProcessEnv = process.env): string {
+  return clean(env.NEXT_PUBLIC_SUPABASE_URL) || clean(env.SUPABASE_URL);
+}
+
+export function getMissingSupabaseUrlEnvNames(env: NodeJS.ProcessEnv = process.env): string[] {
+  if (!resolveSupabaseUrlFromEnv(env)) {
+    return ["NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL"];
+  }
+  return [];
 }
 
 export function getMissingSupabasePublicEnvNames(env: NodeJS.ProcessEnv = process.env): string[] {

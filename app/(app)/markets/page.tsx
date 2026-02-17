@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
+import { MARKET_PRIMARY_NAV_ITEMS } from "@/lib/markets/taxonomy";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
 import {
   MarketCardDTO,
@@ -39,21 +40,6 @@ const SORT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "newest", label: "Newest" },
   { value: "probability_high", label: "Highest yes" },
   { value: "probability_low", label: "Lowest yes" },
-];
-
-const PRIMARY_NAV_ITEMS: Array<{ label: string; query?: string }> = [
-  { label: "Trending" },
-  { label: "New", query: "new" },
-  { label: "Politics", query: "politics" },
-  { label: "Sports", query: "sports" },
-  { label: "Crypto", query: "bitcoin" },
-  { label: "Finance", query: "finance" },
-  { label: "Geopolitics", query: "geopolitics" },
-  { label: "Tech", query: "tech" },
-  { label: "Culture", query: "culture" },
-  { label: "World", query: "world" },
-  { label: "Economy", query: "economy" },
-  { label: "Climate & Science", query: "climate" },
 ];
 
 type WalletAccountSummaryRow = {
@@ -282,7 +268,7 @@ export default async function MarketsPage({
           </div>
 
           <nav className="markets-primary-nav" aria-label="Market categories">
-            {PRIMARY_NAV_ITEMS.map((item) => (
+            {MARKET_PRIMARY_NAV_ITEMS.map((item) => (
               <Link
                 key={item.label}
                 href={buildQuickFilterHref(search, item.query)}
