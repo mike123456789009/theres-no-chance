@@ -170,17 +170,24 @@ export default async function MarketsPage({
           </button>
         </form>
 
-        {result.error ? (
+        {result.schemaMissing ? (
+          <p className="markets-empty">
+            Market tables are not provisioned in this environment yet. Public discovery shell is live, and cards will
+            appear once database migrations are applied.
+          </p>
+        ) : null}
+
+        {!result.schemaMissing && result.error ? (
           <p className="markets-error">
             Unable to load markets: <code>{result.error}</code>
           </p>
         ) : null}
 
-        {!result.error && result.markets.length === 0 ? (
+        {!result.schemaMissing && !result.error && result.markets.length === 0 ? (
           <p className="markets-empty">No markets matched this filter set. Try broadening status or access filters.</p>
         ) : null}
 
-        {!result.error && result.markets.length > 0 ? (
+        {!result.schemaMissing && !result.error && result.markets.length > 0 ? (
           <div className="markets-grid" role="list" aria-label="Market results">
             {result.markets.map((market) => (
               <article key={market.id} className="market-card" role="listitem">

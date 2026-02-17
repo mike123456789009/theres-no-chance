@@ -63,6 +63,26 @@ export default async function MarketDetailPage({
     notFound();
   }
 
+  if (detail.kind === "schema_missing") {
+    return (
+      <main className="market-detail-page">
+        <section className="market-detail-shell market-detail-shell-warning" aria-label="Market schema unavailable">
+          <p className="market-detail-kicker">Market</p>
+          <h1 className="market-detail-title">Market data provisioning required</h1>
+          <p className="market-detail-copy">
+            This environment does not have the market tables provisioned yet.
+          </p>
+          <p className="market-detail-copy">
+            Detail: <code>{detail.message}</code>
+          </p>
+          <p className="market-detail-copy">
+            Return to <Link href="/markets">market discovery</Link>
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   if (detail.kind === "error") {
     return (
       <main className="market-detail-page">

@@ -31,6 +31,15 @@ export async function GET(request: Request) {
       query,
     });
 
+    if (markets.schemaMissing) {
+      return NextResponse.json({
+        markets: [],
+        query,
+        viewer,
+        warning: "Market tables are not provisioned in this environment yet.",
+      });
+    }
+
     if (markets.error) {
       return NextResponse.json(
         {

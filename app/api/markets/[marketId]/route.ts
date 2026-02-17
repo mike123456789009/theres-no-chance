@@ -45,6 +45,16 @@ export async function GET(_request: Request, context: { params: Promise<{ market
       );
     }
 
+    if (detail.kind === "schema_missing") {
+      return NextResponse.json(
+        {
+          error: "Market tables are not provisioned in this environment yet.",
+          detail: detail.message,
+        },
+        { status: 503 }
+      );
+    }
+
     if (detail.kind === "error") {
       return NextResponse.json(
         {

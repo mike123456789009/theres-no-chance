@@ -78,6 +78,7 @@ export type MarketDetailFetchResult =
   | { kind: "ok"; market: MarketDetailDTO }
   | { kind: "login_required" }
   | { kind: "not_found" }
+  | { kind: "schema_missing"; message: string }
   | { kind: "error"; message: string };
 
 type MarketAmmStateRow = {
@@ -132,6 +133,15 @@ type MarketDetailRow = {
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const MARKET_DISCOVERY_LIMIT = 120;
+
+function isSchemaMissingError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("could not find the table 'public.markets'") ||
+    normalized.includes("relation \"markets\" does not exist") ||
+    normalized.includes("schema cache")
+  );
+}
 
 function cleanText(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
@@ -247,7 +257,7 @@ export async function listDiscoveryMarketCards(options: {
   supabase: SupabaseServerClient;
   viewer: MarketViewerContext;
   query: MarketDiscoveryQuery;
-}): Promise<{ markets: MarketCardDTO[]; error: string | null }> {
+}): Promise<{ markets: MarketCardDTO[]; error: string | null; schemaMissing: boolean }> {
   const { supabase, viewer, query } = options;
 
   let request = supabase
@@ -278,6 +288,7 @@ export async function listDiscoveryMarketCards(options: {
     return {
       markets: [],
       error: error.message,
+      schemaMissing: isSchemaMissingError(error.message),
     };
   }
 
@@ -349,6 +360,7 @@ export async function listDiscoveryMarketCards(options: {
   return {
     markets,
     error: null,
+    schemaMissing: false,
   };
 }
 
@@ -370,6 +382,13 @@ export async function getMarketDetail(options: {
   if (error) {
     if (error.code === "PGRST116") {
       return { kind: "not_found" };
+    }
+
+    if (isSchemaMissingError(error.message)) {
+      return {
+        kind: "schema_missing",
+        message: error.message,
+      };
     }
 
     return {

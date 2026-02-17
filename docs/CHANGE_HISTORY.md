@@ -419,3 +419,20 @@ User-visible change:
 - Unauthenticated visitors can now browse public markets and open public market detail pages.
 - Institution/restricted markets now require login before detail access.
 - Action areas now clearly direct guests to create an account/login before taking market actions.
+
+## 2026-02-17 - Market Schema-Missing Graceful Degradation Hotfix
+Status: completed
+
+Short description:
+- Added schema-aware handling for environments where `public.markets` is not provisioned yet.
+- Updated discovery and detail read services to detect schema-cache missing-table errors and return controlled responses.
+- Updated market APIs and pages to avoid raw 500 failures and show clear provisioning guidance instead.
+
+Files/areas touched:
+- Market read service: `lib/markets/read-markets.ts`
+- Market APIs: `app/api/markets/route.ts`, `app/api/markets/[marketId]/route.ts`
+- Market pages: `app/(app)/markets/page.tsx`, `app/(app)/markets/[marketId]/page.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets` and market detail flows now render guidance instead of crashing when the Supabase market schema has not been applied in an environment.
