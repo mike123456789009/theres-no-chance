@@ -271,10 +271,16 @@ export function toUrlSearchParams(
 export async function getMarketViewerContext(
   supabase: SupabaseServerClient
 ): Promise<MarketViewerContext> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  let user: { id: string } | null = null;
+  let error: unknown = null;
+
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+    error = result.error;
+  } catch (caught) {
+    error = caught;
+  }
 
   if (error || !user) {
     return {

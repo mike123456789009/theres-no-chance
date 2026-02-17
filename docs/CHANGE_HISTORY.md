@@ -485,3 +485,18 @@ Files/areas touched:
 
 User-visible change:
 - `/markets` now fails gracefully with a retryable error panel if a transient server error occurs, instead of showing the raw application error digest screen.
+
+## 2026-02-17 - Markets Auth-Cookie Crash Root-Cause Fix
+Status: completed
+
+Short description:
+- Fixed Supabase server-client cookie refresh writes in Server Component contexts by safely ignoring unsupported cookie-set operations during render.
+- Added defensive catch handling around viewer auth lookup (`supabase.auth.getUser`) to prevent session-related exceptions from crashing market discovery rendering.
+
+Files/areas touched:
+- Supabase server client cookie handling: `lib/supabase/server.ts`
+- Markets auth viewer lookup hardening: `lib/markets/read-markets.ts`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- `/markets` no longer crashes for sessions with stale/refreshing auth cookies and should render normally instead of dropping into the temporary-unavailable error panel.
