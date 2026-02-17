@@ -291,3 +291,17 @@ Files/areas touched:
 
 User-visible change:
 - Users can now click `SHOW`/`HIDE` next to password fields on `/login`, `/signup`, and `/reset`.
+
+## 2026-02-17 - Auth Back-To-Landing Full Reload Hotfix
+Status: completed
+
+Short description:
+- Replaced the auth layout's client-side `Link` with a native anchor for the `Back to landing` control.
+- Forced full-document navigation when returning from `/login`, `/signup`, or `/reset` to `/` so the landing renderer always initializes from a clean page load.
+
+Files/areas touched:
+- Auth layout navigation: `app/(auth)/layout.tsx`
+- Deployment log: `docs/CHANGE_HISTORY.md`
+
+User-visible change:
+- Clicking `← Back to landing` from auth pages now returns to a fully rendered landing page instead of a blank screen.
