@@ -123,14 +123,15 @@ export async function createCoinbaseCharge(input: {
   item: CoinbaseCatalogItem;
   userId: string;
   request: Request;
+  fundingIntentId: string;
 }): Promise<CoinbaseChargeResult> {
   const apiKey = requiredEnv("COINBASE_COMMERCE_API_KEY");
   const endpoint = getCoinbaseChargeCreateEndpoint();
   const baseUrl = getCoinbaseChargeBaseUrl(input.request);
-  const successUrl = `${baseUrl}/portfolio?checkout=success&provider=coinbase&intent=${encodeURIComponent(
+  const successUrl = `${baseUrl}/wallet?checkout=success&provider=coinbase&intent=${encodeURIComponent(
     input.intent
-  )}&key=${encodeURIComponent(input.item.key)}`;
-  const cancelUrl = `${baseUrl}/portfolio?checkout=cancel&provider=coinbase`;
+  )}&key=${encodeURIComponent(input.item.key)}&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
+  const cancelUrl = `${baseUrl}/wallet?checkout=cancel&provider=coinbase&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -156,6 +157,7 @@ export async function createCoinbaseCharge(input: {
         tokens_granted: String(input.item.tokensGranted),
         local_amount_usd: input.item.amountUsd.toFixed(2),
         network: "base",
+        funding_intent_id: input.fundingIntentId,
       },
     }),
   });
