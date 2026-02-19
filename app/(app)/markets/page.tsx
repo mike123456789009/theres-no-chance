@@ -255,14 +255,14 @@ export default async function MarketsPage({
                     : formatCurrency(walletSummary.cashUsd)}
                 </strong>
               </p>
-              <Link className="markets-deposit-button" href={viewer.isAuthenticated ? "/wallet" : "/signup"}>
+              <Link className="markets-deposit-button" href={viewer.isAuthenticated ? "/account/wallet" : "/signup"}>
                 Deposit
               </Link>
-              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/portfolio" : "/login"}>
-                {viewer.isAuthenticated ? "Portfolio" : "Log in"}
+              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/account/portfolio" : "/login"}>
+                {viewer.isAuthenticated ? "Account" : "Log in"}
               </Link>
-              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/wallet" : "/signup"}>
-                {viewer.isAuthenticated ? "Wallet" : "Sign up"}
+              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/account/settings" : "/signup"}>
+                {viewer.isAuthenticated ? "Settings" : "Sign up"}
               </Link>
             </div>
           </div>

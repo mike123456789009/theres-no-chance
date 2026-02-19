@@ -128,10 +128,10 @@ export async function createCoinbaseCharge(input: {
   const apiKey = requiredEnv("COINBASE_COMMERCE_API_KEY");
   const endpoint = getCoinbaseChargeCreateEndpoint();
   const baseUrl = getCoinbaseChargeBaseUrl(input.request);
-  const successUrl = `${baseUrl}/wallet?checkout=success&provider=coinbase&intent=${encodeURIComponent(
+  const successUrl = `${baseUrl}/account/wallet?checkout=success&provider=coinbase&intent=${encodeURIComponent(
     input.intent
   )}&key=${encodeURIComponent(input.item.key)}&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
-  const cancelUrl = `${baseUrl}/wallet?checkout=cancel&provider=coinbase&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
+  const cancelUrl = `${baseUrl}/account/wallet?checkout=cancel&provider=coinbase&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
 
   const response = await fetch(endpoint, {
     method: "POST",

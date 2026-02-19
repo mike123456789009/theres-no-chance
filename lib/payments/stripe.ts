@@ -104,12 +104,12 @@ export async function createStripeCheckoutSession(input: {
 }): Promise<StripeCheckoutSessionResult> {
   const secretKey = requiredEnv("STRIPE_SECRET_KEY");
   const baseUrl = getStripeCheckoutBaseUrl(input.request);
-  const successUrl = `${baseUrl}/wallet?checkout=success&provider=stripe&intent=${encodeURIComponent(
+  const successUrl = `${baseUrl}/account/wallet?checkout=success&provider=stripe&intent=${encodeURIComponent(
     input.intent
   )}&key=${encodeURIComponent(input.item.key)}&funding_intent_id=${encodeURIComponent(
     input.fundingIntentId
   )}&session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = `${baseUrl}/wallet?checkout=cancel&provider=stripe&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
+  const cancelUrl = `${baseUrl}/account/wallet?checkout=cancel&provider=stripe&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
 
   const params = new URLSearchParams();
   params.set("mode", input.intent === "subscription" ? "subscription" : "payment");
