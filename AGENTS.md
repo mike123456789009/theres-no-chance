@@ -12,6 +12,10 @@
 - Pushes to the `main` branch must be treated as production deployment triggers.
 - Feature branches should be merged only when the deployment note is ready.
 
+### 1.2) Main-Only Deploy Preference
+- Always deploy by pushing changes directly to `main` unless the user explicitly asks for a non-`main` branch workflow.
+- Do not default to feature-branch-first deployment for this project.
+
 ### 2) Small, Isolated Feature Releases
 - Ship features one at a time.
 - Do not batch many unrelated changes into a single deployment.
