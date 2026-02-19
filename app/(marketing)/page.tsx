@@ -1,4 +1,5 @@
 import { LandingAuthRow } from "@/components/landing/auth-row";
+import { TncLogo } from "@/components/branding/tnc-logo";
 
 export default function MarketingPage() {
   return (
@@ -7,11 +8,7 @@ export default function MarketingPage() {
         Skip to content
       </a>
 
-      <div className="tnc-logo" aria-hidden="true">
-        <span className="logo-letter red">T</span>
-        <span className="logo-letter gold">N</span>
-        <span className="logo-letter red">C</span>
-      </div>
+      <TncLogo className="tnc-logo" decorative />
 
       <div className="scroll-cue" aria-hidden="true">
         <span className="scroll-cue-text">SCROLL</span>

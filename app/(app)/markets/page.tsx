@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { TncLogo } from "@/components/branding/tnc-logo";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_PRIMARY_NAV_ITEMS } from "@/lib/markets/taxonomy";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
@@ -216,9 +217,7 @@ export default async function MarketsPage({
         <div className="markets-header-inner">
           <div className="markets-brand-row">
             <a className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
-              <span className="logo-letter red">T</span>
-              <span className="logo-letter gold">N</span>
-              <span className="logo-letter red">C</span>
+              <TncLogo size="compact" decorative />
             </a>
 
             <form className="markets-search-row" action="/markets" method="get">

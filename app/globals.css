@@ -163,13 +163,41 @@ body[data-render-mode="svg"] .svg-render-host {
   line-height: 1;
 }
 
+.tnc-unified-logo {
+  --tnc-logo-gap: 0.18rem;
+  --tnc-logo-font-size: clamp(1.25rem, 2.9vw, 2.1rem);
+  --tnc-logo-pad-y: 0.18em;
+  --tnc-logo-pad-x: 0.24em;
+  --tnc-logo-border: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tnc-logo-gap);
+}
+
+.tnc-unified-logo--compact {
+  --tnc-logo-gap: 0.14rem;
+  --tnc-logo-font-size: clamp(0.9rem, 0.85vw, 1rem);
+  --tnc-logo-pad-y: 0;
+  --tnc-logo-pad-x: 0.24rem;
+  --tnc-logo-border: 3px;
+}
+
+.tnc-unified-logo--compact .logo-letter {
+  height: var(--markets-control-h, 2.2rem);
+  min-width: calc(var(--markets-control-h, 2.2rem) - 0.3rem);
+}
+
 .logo-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   font-family: "Bungee", "Arial Black", sans-serif;
   font-weight: 400;
-  font-size: clamp(1.25rem, 2.9vw, 2.1rem);
+  font-size: var(--tnc-logo-font-size, clamp(1.25rem, 2.9vw, 2.1rem));
   line-height: 1;
-  padding: 0.18em 0.24em;
-  border: 5px solid var(--ink);
+  padding: var(--tnc-logo-pad-y, 0.18em) var(--tnc-logo-pad-x, 0.24em);
+  border: var(--tnc-logo-border, 5px) solid var(--ink);
   background: var(--bg);
 }
 
@@ -1383,23 +1411,9 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .markets-brand-logo {
   display: inline-flex;
-  gap: 0.14rem;
   align-items: center;
   text-decoration: none;
   height: var(--markets-control-h);
-}
-
-.markets-brand-logo .logo-letter {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  height: var(--markets-control-h);
-  min-width: calc(var(--markets-control-h) - 0.3rem);
-  font-size: clamp(0.9rem, 0.85vw, 1rem);
-  line-height: 1;
-  padding: 0 0.24rem;
-  border-width: 3px;
 }
 
 .markets-brand-logo:focus-visible {
@@ -2777,10 +2791,13 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
     gap: 0.48rem;
   }
 
-  .markets-brand-logo .logo-letter {
-    border-width: 2px;
+  .markets-brand-logo .tnc-unified-logo--compact {
+    --tnc-logo-border: 2px;
+    --tnc-logo-pad-x: 0.2rem;
+  }
+
+  .markets-brand-logo .tnc-unified-logo--compact .logo-letter {
     min-width: calc(var(--markets-control-h) - 0.22rem);
-    padding: 0 0.2rem;
   }
 
   .markets-search-row {

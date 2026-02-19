@@ -1,15 +1,14 @@
 import Link from "next/link";
 
 import { AccountNav } from "@/components/account/account-nav";
+import { TncLogo } from "@/components/branding/tnc-logo";
 
 export default function AccountLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="account-shell">
       <aside className="account-pane" aria-label="Account navigation">
-        <Link className="account-logo" href="/">
-          <span className="logo-letter red">T</span>
-          <span className="logo-letter gold">N</span>
-          <span className="logo-letter red">C</span>
+        <Link className="account-logo" href="/" aria-label="There&apos;s No Chance landing">
+          <TncLogo decorative />
         </Link>
 
         <div className="account-pane-copy">
