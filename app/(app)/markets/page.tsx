@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { TncLogo } from "@/components/branding/tnc-logo";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_PRIMARY_NAV_ITEMS } from "@/lib/markets/taxonomy";
@@ -47,6 +48,20 @@ type WalletAccountSummaryRow = {
   available_balance: number | string | null;
   reserved_balance: number | string | null;
 } | null;
+
+type ProfileSummaryRow = {
+  display_name: string | null;
+  avatar_url: string | null;
+} | null;
+
+type ViewerAccountSummary = {
+  portfolioUsd: number | null;
+  cashUsd: number | null;
+  avatarUrl: string;
+  displayName: string;
+};
+
+const DEFAULT_AVATAR_URL = PIXEL_AVATAR_OPTIONS[0]?.url ?? "/assets/avatars/pixel-scout.svg";
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -115,45 +130,62 @@ function parseNumberish(value: number | string | null | undefined, fallback = 0)
   return fallback;
 }
 
-async function getViewerWalletSummary(options: {
+function clean(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function getViewerAccountSummary(options: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   viewer: MarketViewerContext;
-}): Promise<{ portfolioUsd: number | null; cashUsd: number | null }> {
+}): Promise<ViewerAccountSummary> {
   const { supabase, viewer } = options;
 
   if (!viewer.isAuthenticated || !viewer.userId) {
     return {
       portfolioUsd: null,
       cashUsd: null,
+      avatarUrl: DEFAULT_AVATAR_URL,
+      displayName: "Guest",
     };
   }
 
   try {
-    const { data, error } = await supabase
-      .from("wallet_accounts")
-      .select("available_balance, reserved_balance")
-      .eq("user_id", viewer.userId)
-      .maybeSingle();
+    const [walletResult, profileResult] = await Promise.all([
+      supabase.from("wallet_accounts").select("available_balance, reserved_balance").eq("user_id", viewer.userId).maybeSingle(),
+      supabase.from("profiles").select("display_name, avatar_url").eq("id", viewer.userId).maybeSingle(),
+    ]);
 
-    if (error) {
-      return {
-        portfolioUsd: null,
-        cashUsd: null,
-      };
+    let portfolioUsd: number | null = null;
+    let cashUsd: number | null = null;
+    let avatarUrl = DEFAULT_AVATAR_URL;
+    let displayName = "Account";
+
+    if (!walletResult.error) {
+      const wallet = walletResult.data as WalletAccountSummaryRow;
+      cashUsd = Math.max(0, parseNumberish(wallet?.available_balance, 0));
+      const reservedUsd = Math.max(0, parseNumberish(wallet?.reserved_balance, 0));
+      portfolioUsd = cashUsd + reservedUsd;
     }
 
-    const wallet = data as WalletAccountSummaryRow;
-    const cashUsd = Math.max(0, parseNumberish(wallet?.available_balance, 0));
-    const reservedUsd = Math.max(0, parseNumberish(wallet?.reserved_balance, 0));
+    if (!profileResult.error) {
+      const profile = profileResult.data as ProfileSummaryRow;
+      const avatarCandidate = clean(profile?.avatar_url);
+      avatarUrl = isPixelAvatarUrl(avatarCandidate) ? avatarCandidate : DEFAULT_AVATAR_URL;
+      displayName = clean(profile?.display_name) || "Account";
+    }
 
     return {
-      portfolioUsd: cashUsd + reservedUsd,
+      portfolioUsd,
       cashUsd,
+      avatarUrl,
+      displayName,
     };
   } catch {
     return {
       portfolioUsd: null,
       cashUsd: null,
+      avatarUrl: DEFAULT_AVATAR_URL,
+      displayName: "Account",
     };
   }
 }
@@ -193,15 +225,17 @@ export default async function MarketsPage({
     error: null,
     schemaMissing: false,
   };
-  let walletSummary: { portfolioUsd: number | null; cashUsd: number | null } = {
+  let accountSummary: ViewerAccountSummary = {
     portfolioUsd: null,
     cashUsd: null,
+    avatarUrl: DEFAULT_AVATAR_URL,
+    displayName: "Guest",
   };
   let loadError: string | null = null;
 
   try {
     viewer = await getMarketViewerContext(supabase);
-    walletSummary = await getViewerWalletSummary({ supabase, viewer });
+    accountSummary = await getViewerAccountSummary({ supabase, viewer });
     result = await listDiscoveryMarketCards({
       supabase,
       viewer,
@@ -237,32 +271,49 @@ export default async function MarketsPage({
               <p className="markets-account-metric">
                 <span>Portfolio</span>
                 <strong>
-                  {walletSummary.portfolioUsd === null
+                  {accountSummary.portfolioUsd === null
                     ? viewer.isAuthenticated
                       ? "$0.00"
                       : "Guest"
-                    : formatCurrency(walletSummary.portfolioUsd)}
+                    : formatCurrency(accountSummary.portfolioUsd)}
                 </strong>
               </p>
               <p className="markets-account-metric">
                 <span>Cash</span>
                 <strong>
-                  {walletSummary.cashUsd === null
+                  {accountSummary.cashUsd === null
                     ? viewer.isAuthenticated
                       ? "$0.00"
                       : "--"
-                    : formatCurrency(walletSummary.cashUsd)}
+                    : formatCurrency(accountSummary.cashUsd)}
                 </strong>
               </p>
               <Link className="markets-deposit-button" href={viewer.isAuthenticated ? "/account/wallet" : "/signup"}>
                 Deposit
               </Link>
-              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/account/portfolio" : "/login"}>
-                {viewer.isAuthenticated ? "Account" : "Log in"}
-              </Link>
-              <Link className="markets-account-link" href={viewer.isAuthenticated ? "/account/settings" : "/signup"}>
-                {viewer.isAuthenticated ? "Settings" : "Sign up"}
-              </Link>
+              {viewer.isAuthenticated ? (
+                <details className="markets-account-avatar-menu">
+                  <summary className="markets-account-avatar-trigger" aria-label="Open account menu">
+                    <img src={accountSummary.avatarUrl} alt={`${accountSummary.displayName} profile avatar`} width={34} height={34} />
+                  </summary>
+                  <div className="markets-account-dropdown">
+                    <Link href="/account/overview">Overview</Link>
+                    <Link href="/account/portfolio">Portfolio</Link>
+                    <Link href="/account/wallet">Wallet</Link>
+                    <Link href="/account/settings">Settings</Link>
+                    <Link href="/account/activity">Activity</Link>
+                  </div>
+                </details>
+              ) : (
+                <>
+                  <Link className="markets-account-link" href="/login">
+                    Log in
+                  </Link>
+                  <Link className="markets-account-link" href="/signup">
+                    Sign up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 

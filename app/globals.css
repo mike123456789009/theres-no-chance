@@ -1531,6 +1531,71 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   border-bottom-color: var(--ink);
 }
 
+.markets-account-avatar-menu {
+  position: relative;
+}
+
+.markets-account-avatar-trigger {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: #fff;
+  list-style: none;
+  width: var(--markets-control-h);
+  height: var(--markets-control-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 110ms ease-out, box-shadow 110ms ease-out;
+}
+
+.markets-account-avatar-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.markets-account-avatar-trigger img {
+  width: calc(var(--markets-control-h) - 0.56rem);
+  height: calc(var(--markets-control-h) - 0.56rem);
+  border: 1px solid rgba(16, 16, 16, 0.75);
+  image-rendering: pixelated;
+  background: #fff;
+}
+
+.markets-account-avatar-menu[open] .markets-account-avatar-trigger {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.markets-account-dropdown {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  border: 3px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  background: #f8f6f0;
+  min-width: 11.6rem;
+  padding: 0.34rem;
+  display: grid;
+  gap: 0.24rem;
+  z-index: 40;
+}
+
+.markets-account-dropdown a {
+  color: #222;
+  text-decoration: none;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 2px solid transparent;
+  padding: 0.34rem 0.42rem;
+  background: #fff;
+}
+
+.markets-account-dropdown a:hover {
+  border-color: var(--ink);
+}
+
 .markets-primary-nav {
   display: flex;
   flex-wrap: wrap;
@@ -2565,6 +2630,11 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
     flex-wrap: wrap;
   }
 
+  .markets-account-dropdown {
+    right: auto;
+    left: 0;
+  }
+
   .markets-toolbar-row {
     flex-direction: column;
     align-items: stretch;
@@ -2810,6 +2880,17 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
   .markets-account-metric {
     text-align: left;
+  }
+
+  .markets-account-avatar-trigger {
+    border-width: 2px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .markets-account-dropdown {
+    border-width: 2px;
+    box-shadow: 4px 4px 0 var(--ink);
+    min-width: 10.8rem;
   }
 
   .markets-primary-nav {
