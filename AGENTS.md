@@ -16,6 +16,40 @@
 - Always deploy by pushing changes directly to `main` unless the user explicitly asks for a non-`main` branch workflow.
 - Do not default to feature-branch-first deployment for this project.
 
+### 1.3) Confirmed Platform Access (Do Not Forget)
+- Assume full operational access to project tooling in this workspace (Supabase, Vercel, GitHub) unless a command explicitly fails.
+- Never claim missing access without first running verification commands.
+- Verification commands:
+  - `supabase projects list`
+  - `vercel ls`
+  - `git remote -v`
+  - `gh auth status` (when GitHub CLI actions are needed)
+
+### 1.4) Supabase Access + Edit Workflow
+- Supabase project ref for this app: `ynuyfchtajpmnbcpbagb` (`theres-no-chance`).
+- Link workspace to project: `supabase link --project-ref ynuyfchtajpmnbcpbagb`.
+- Check local vs remote migration state: `supabase migration list`.
+- Apply schema changes to remote: `supabase db push --linked --yes`.
+- If migration history drifts, repair explicitly:
+  - `supabase migration repair --linked --status reverted <version> --yes`
+  - `supabase migration repair --linked --status applied <version> --yes`
+- If Supabase CLI fails parsing `.env` (for example due to multiline key material), temporarily move `.env`, run CLI commands, then restore `.env` immediately.
+
+### 1.5) Vercel Access + Deploy Workflow
+- Main branch pushes are production deploy triggers; treat every `git push origin main` as a live deploy.
+- Check deployment queue/state: `vercel ls`.
+- Inspect a deployment: `vercel inspect <deployment-url>`.
+- Confirm production reaches `Ready` after each push.
+
+### 1.6) GitHub Access + Change Workflow
+- Default delivery path is direct push to `main` for this project unless user explicitly requests otherwise.
+- Push command: `git push origin main`.
+- Use GitHub CLI (`gh`) for PR/issues/review tasks when requested.
+
+### 1.7) Security Handling for Tooling
+- Never print or expose secrets (tokens, API keys, private keys) in logs or summaries.
+- Use existing local auth/session state and environment variables without echoing sensitive values.
+
 ### 2) Small, Isolated Feature Releases
 - Ship features one at a time.
 - Do not batch many unrelated changes into a single deployment.
