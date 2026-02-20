@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { MarketsFilterEnhancer } from "@/components/markets/markets-filter-enhancer";
 import { StyleToggle } from "@/components/theme/style-toggle";
 import { checkUserAdminAccess } from "@/lib/auth/admin";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
@@ -352,6 +353,7 @@ export default async function MarketsPage({
           </nav>
 
           <div className="markets-toolbar-row">
+            <MarketsFilterEnhancer />
             <form className="markets-toolbar" action="/markets" method="get">
               <input type="hidden" name="q" value={query.search} />
 
