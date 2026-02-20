@@ -82,7 +82,6 @@ export function MarketsCategoryNav({ items }: MarketsCategoryNavProps) {
         <Link
           key={item.category}
           href={buildCategoryHref(searchParams, item.category)}
-          prefetch={false}
           onClick={() => setPendingCategory(item.category)}
           className={activeCategory === item.category ? "markets-primary-link is-active" : "markets-primary-link"}
         >

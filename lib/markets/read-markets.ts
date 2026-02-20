@@ -330,6 +330,25 @@ function parseCategory(value: string): MarketDiscoveryCategoryFilter {
   return "trending";
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsCategoryTerm(text: string, term: string): boolean {
+  if (!text || !term) return false;
+
+  if (term.includes(" ") || term.includes("-")) {
+    return text.includes(term);
+  }
+
+  if (term.length <= 3) {
+    const matcher = new RegExp(`\\b${escapeRegex(term)}\\b`, "i");
+    return matcher.test(text);
+  }
+
+  return text.includes(term);
+}
+
 function inferLegacyCategoryFromSearch(search: string): MarketDiscoveryCategoryFilter | null {
   if (!search) return null;
 
@@ -368,8 +387,8 @@ function shouldIncludeForCategory(options: {
   const question = market.question.toLowerCase();
 
   return matchTerms.some((term) => {
-    if (question.includes(term)) return true;
-    return tags.some((tag) => tag === term || tag.includes(term) || term.includes(tag));
+    if (containsCategoryTerm(question, term)) return true;
+    return tags.some((tag) => containsCategoryTerm(tag, term));
   });
 }
 
