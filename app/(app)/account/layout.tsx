@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AccountNav } from "@/components/account/account-nav";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { StyleToggle } from "@/components/theme/style-toggle";
 import { checkUserAdminAccess } from "@/lib/auth/admin";
 import { createClient, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
@@ -54,7 +55,12 @@ export default async function AccountLayout({ children }: Readonly<{ children: R
         </div>
       </aside>
 
-      <section className="account-content">{children}</section>
+      <section className="account-content">
+        <div className="account-content-toolbar">
+          <StyleToggle className="account-style-toggle" />
+        </div>
+        {children}
+      </section>
     </div>
   );
 }

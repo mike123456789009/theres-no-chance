@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
+import { useUiStyle } from "@/components/theme/ui-style-sync";
 
 type ProfileEditorProps = {
   initialDisplayName: string;
@@ -17,6 +18,7 @@ function normalizeName(value: string): string {
 }
 
 export function ProfileEditor({ initialDisplayName, initialAvatarUrl }: ProfileEditorProps) {
+  const { uiStyle } = useUiStyle();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,6 +71,7 @@ export function ProfileEditor({ initialDisplayName, initialAvatarUrl }: ProfileE
           id: user.id,
           display_name: name,
           avatar_url: avatarUrl,
+          ui_style: uiStyle,
         },
         {
           onConflict: "id",
@@ -84,6 +87,7 @@ export function ProfileEditor({ initialDisplayName, initialAvatarUrl }: ProfileE
         data: {
           display_name: name,
           avatar_url: avatarUrl,
+          ui_style: uiStyle,
         },
       });
 

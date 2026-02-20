@@ -422,13 +422,13 @@ function handleHeroPointerLeave() {
   queueRender();
 }
 
-function layout(font) {
+function layout(font, force = false) {
   syncThemeColors();
 
   const rect = wrap.getBoundingClientRect();
   const W = Math.max(1, Math.floor(rect.width));
   const H = Math.max(1, Math.floor(rect.height));
-  if (W === lastW && H === lastH) return;
+  if (!force && W === lastW && H === lastH) return;
   lastW = W;
   lastH = H;
 
@@ -825,6 +825,11 @@ async function main() {
       if (action === "reload" || action === "handled") {
         return;
       }
+      syncSceneToScrollPosition();
+    });
+
+    window.addEventListener("tnc:ui-style-changed", () => {
+      layout(font, true);
       syncSceneToScrollPosition();
     });
   } catch (error) {

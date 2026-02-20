@@ -1,0 +1,173 @@
+.markets-style-toggle {
+  flex-shrink: 0;
+}
+
+html[data-ui-style="modern"] .markets-product-page {
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .markets-product-header {
+  background: rgba(249, 251, 255, 0.9);
+  border-bottom: 1px solid var(--border-soft);
+  backdrop-filter: blur(14px);
+}
+
+html[data-ui-style="modern"] .markets-brand-logo .logo-letter {
+  border-width: 2px;
+  border-radius: 8px;
+}
+
+html[data-ui-style="modern"] .markets-search-field input,
+html[data-ui-style="modern"] .markets-search-submit,
+html[data-ui-style="modern"] .markets-deposit-button,
+html[data-ui-style="modern"] .markets-select-field select,
+html[data-ui-style="modern"] .markets-toolbar-apply,
+html[data-ui-style="modern"] .markets-account-avatar-trigger,
+html[data-ui-style="modern"] .market-tile-open {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .markets-search-submit,
+html[data-ui-style="modern"] .markets-toolbar-apply,
+html[data-ui-style="modern"] .markets-deposit-button {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .markets-search-submit,
+html[data-ui-style="modern"] .market-tile-open {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .markets-toolbar-apply,
+html[data-ui-style="modern"] .markets-deposit-button {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="modern"] .markets-account-metric span,
+html[data-ui-style="modern"] .markets-select-field span,
+html[data-ui-style="modern"] .markets-inline-links,
+html[data-ui-style="modern"] .markets-primary-nav,
+html[data-ui-style="modern"] .market-tile-access,
+html[data-ui-style="modern"] .market-tile-status,
+html[data-ui-style="modern"] .market-tile-meta p,
+html[data-ui-style="modern"] .market-tile-tags,
+html[data-ui-style="modern"] .market-tile-foot p {
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .markets-account-metric strong {
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .markets-primary-nav {
+  border-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .markets-primary-link {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+html[data-ui-style="modern"] .markets-primary-link.is-active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+html[data-ui-style="modern"] .markets-card-grid {
+  gap: 0.9rem;
+}
+
+html[data-ui-style="modern"] .market-tile {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  background: var(--surface-elevated);
+  padding: 0.72rem;
+}
+
+html[data-ui-style="modern"] .market-tile-restricted {
+  border-color: color-mix(in srgb, var(--negative) 56%, white);
+}
+
+html[data-ui-style="modern"] .market-tile-access {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 0.16rem 0.44rem;
+  font-weight: 600;
+}
+
+html[data-ui-style="modern"] .market-tile-question {
+  text-transform: none;
+  font-family: var(--font-modern-display);
+  letter-spacing: -0.01em;
+  line-height: 1.32;
+}
+
+html[data-ui-style="modern"] .market-tile-probability p {
+  border-width: 1px;
+  border-radius: 10px;
+  font-family: var(--font-modern-mono);
+}
+
+html[data-ui-style="modern"] .market-tile-prob-yes {
+  background: color-mix(in srgb, var(--positive) 16%, white);
+}
+
+html[data-ui-style="modern"] .market-tile-prob-no {
+  background: color-mix(in srgb, var(--negative) 10%, white);
+}
+
+html[data-ui-style="modern"] .markets-account-dropdown {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  background: var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .markets-account-dropdown a {
+  background: transparent;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .markets-account-dropdown a:hover {
+  border-color: var(--border-soft);
+  background: var(--surface-muted);
+}
+
+html[data-ui-style="modern"] .markets-empty-state,
+html[data-ui-style="modern"] .markets-access-note,
+html[data-ui-style="modern"] .markets-error-state {
+  border-left-width: 2px;
+  border-left-color: var(--border-strong);
+  color: var(--text-muted);
+}
+
+html[data-ui-style="modern"] .markets-error-state {
+  border-left-color: var(--negative);
+  color: var(--negative);
+}
+
+@media (max-width: 1120px) {
+  .markets-style-toggle {
+    margin-right: 0.12rem;
+  }
+}

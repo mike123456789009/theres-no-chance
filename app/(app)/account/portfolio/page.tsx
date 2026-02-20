@@ -67,7 +67,7 @@ export default async function PortfolioPage() {
         <p className="create-kicker">Portfolio</p>
         <h1 className="create-title">Log in to view portfolio</h1>
         <p className="create-copy">Portfolio holdings, P&amp;L, and trade history require an authenticated account.</p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/login">
             Log in
           </Link>
@@ -102,7 +102,7 @@ export default async function PortfolioPage() {
         <p className="create-copy">
           Error detail: <code>{loadError ?? "Unknown error."}</code>
         </p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/account/portfolio">
             Retry
           </Link>
@@ -123,7 +123,7 @@ export default async function PortfolioPage() {
         endpoint.
       </p>
 
-      <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+      <div className="create-actions account-actions-top">
         <a className="create-submit create-submit-muted" href="/api/portfolio?format=csv">
           Export CSV
         </a>
@@ -135,11 +135,7 @@ export default async function PortfolioPage() {
         </Link>
       </div>
 
-      <section
-        className="create-section"
-        aria-label="Portfolio summary"
-        style={{ marginTop: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", display: "grid" }}
-      >
+      <section className="create-section account-summary-grid" aria-label="Portfolio summary">
         <div>
           <p className="create-note">Wallet cash</p>
           <h2>{formatCurrency(snapshot.wallet.cashUsd)}</h2>
@@ -179,57 +175,39 @@ export default async function PortfolioPage() {
         {snapshot.positions.length === 0 ? (
           <p className="create-note">No positions yet. Execute your first trade from a market detail page.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "760px",
-                fontFamily: "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                fontSize: "0.78rem",
-              }}
-            >
+          <div className="tnc-table-wrap">
+            <table className="tnc-data-table tnc-data-table--narrow">
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Market</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Status</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>YES</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>NO</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Mark Value</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Unrealized</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Realized</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Closes</th>
+                  <th>Market</th>
+                  <th>Status</th>
+                  <th className="is-right">YES</th>
+                  <th className="is-right">NO</th>
+                  <th className="is-right">Mark Value</th>
+                  <th className="is-right">Unrealized</th>
+                  <th className="is-right">Realized</th>
+                  <th>Closes</th>
                 </tr>
               </thead>
               <tbody>
                 {snapshot.positions.map((position) => (
                   <tr key={position.marketId}>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
+                    <td>
                       <Link href={`/markets/${position.marketId}`}>{position.question}</Link>
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
-                      {formatStatus(position.status)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
+                    <td>{formatStatus(position.status)}</td>
+                    <td className="is-right">
                       {position.yesShares.toLocaleString("en-US", { maximumFractionDigits: 2 })} @{" "}
                       {position.averageEntryPriceYes === null ? "N/A" : formatPercent(position.averageEntryPriceYes)}
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
+                    <td className="is-right">
                       {position.noShares.toLocaleString("en-US", { maximumFractionDigits: 2 })} @{" "}
                       {position.averageEntryPriceNo === null ? "N/A" : formatPercent(position.averageEntryPriceNo)}
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatCurrency(position.markValue)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatSignedCurrency(position.unrealizedPnl)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatSignedCurrency(position.realizedPnl)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
-                      {position.closeTime ? formatDate(position.closeTime) : "Unknown"}
-                    </td>
+                    <td className="is-right">{formatCurrency(position.markValue)}</td>
+                    <td className="is-right">{formatSignedCurrency(position.unrealizedPnl)}</td>
+                    <td className="is-right">{formatSignedCurrency(position.realizedPnl)}</td>
+                    <td>{position.closeTime ? formatDate(position.closeTime) : "Unknown"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -243,53 +221,35 @@ export default async function PortfolioPage() {
         {snapshot.fills.length === 0 ? (
           <p className="create-note">No trade fills yet.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "820px",
-                fontFamily: "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                fontSize: "0.76rem",
-              }}
-            >
+          <div className="tnc-table-wrap">
+            <table className="tnc-data-table tnc-data-table--wide">
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Executed</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Market</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Leg</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Shares</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Avg Price</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Notional</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Fee</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Cash Delta</th>
+                  <th>Executed</th>
+                  <th>Market</th>
+                  <th>Leg</th>
+                  <th className="is-right">Shares</th>
+                  <th className="is-right">Avg Price</th>
+                  <th className="is-right">Notional</th>
+                  <th className="is-right">Fee</th>
+                  <th className="is-right">Cash Delta</th>
                 </tr>
               </thead>
               <tbody>
                 {snapshot.fills.map((fill) => (
                   <tr key={fill.id}>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{formatDate(fill.executedAt)}</td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
+                    <td>{formatDate(fill.executedAt)}</td>
+                    <td>
                       <Link href={`/markets/${fill.marketId}`}>{fill.question}</Link>
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
+                    <td>
                       {fill.action.toUpperCase()} {fill.side.toUpperCase()}
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {fill.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatPercent(fill.averagePrice)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatCurrency(fill.notional)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatCurrency(fill.feeAmount)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatSignedCurrency(fill.cashDelta)}
-                    </td>
+                    <td className="is-right">{fill.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })}</td>
+                    <td className="is-right">{formatPercent(fill.averagePrice)}</td>
+                    <td className="is-right">{formatCurrency(fill.notional)}</td>
+                    <td className="is-right">{formatCurrency(fill.feeAmount)}</td>
+                    <td className="is-right">{formatSignedCurrency(fill.cashDelta)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 type ProfileRow = {
   display_name: string | null;
   avatar_url: string | null;
+  ui_style: string | null;
 } | null;
 
 function clean(value: unknown): string {
@@ -50,7 +51,7 @@ export default async function AccountSettingsPage() {
         <p className="create-kicker">Settings</p>
         <h1 className="create-title">Log in to edit settings</h1>
         <p className="create-copy">Profile edits are saved to your authenticated account.</p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/login">
             Log in
           </Link>
@@ -64,7 +65,7 @@ export default async function AccountSettingsPage() {
 
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url")
+    .select("display_name, avatar_url, ui_style")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -85,7 +86,7 @@ export default async function AccountSettingsPage() {
       <p className="create-copy">Update your public display name and choose a square pixel avatar from the default set.</p>
 
       {profileError ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           Existing profile row could not be loaded: <code>{profileError.message}</code>
         </p>
       ) : null}

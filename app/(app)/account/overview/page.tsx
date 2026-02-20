@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 type ProfileRow = {
   display_name: string | null;
   avatar_url: string | null;
+  ui_style: string | null;
 } | null;
 
 type WalletRow = {
@@ -71,7 +72,7 @@ export default async function AccountOverviewPage() {
         <p className="create-kicker">Account</p>
         <h1 className="create-title">Log in to open account center</h1>
         <p className="create-copy">Manage wallet, holdings, and profile settings from a single view after authentication.</p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/login">
             Log in
           </Link>
@@ -88,7 +89,7 @@ export default async function AccountOverviewPage() {
 
   const [walletResult, profileResult] = await Promise.all([
     supabase.from("wallet_accounts").select("available_balance, reserved_balance").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("display_name, avatar_url, ui_style").eq("id", user.id).maybeSingle(),
   ]);
 
   const wallet = (walletResult.data ?? null) as WalletRow;

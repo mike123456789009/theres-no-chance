@@ -1,0 +1,104 @@
+:root {
+  --font-retro-display: "Bungee", "Arial Black", sans-serif;
+  --font-retro-ui: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --font-modern-display: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  --font-modern-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --font-modern-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --surface-page: #ececec;
+  --surface-elevated: #f8f6f0;
+  --surface-muted: #f4f3ef;
+  --surface-inverse: #111;
+
+  --border-strong: #101010;
+  --border-soft: #b0b0b0;
+
+  --text-primary: #101010;
+  --text-muted: #4d4d4d;
+  --text-soft: #6a6a6a;
+  --text-inverse: #fff;
+
+  --accent-primary: #bc595e;
+  --accent-secondary: #c6a727;
+  --accent-tertiary: #8db8e8;
+
+  --positive: #2f6f48;
+  --negative: #8f2f2f;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-soft: 0 10px 30px -20px rgba(16, 16, 16, 0.45);
+  --shadow-card: 0 18px 36px -26px rgba(16, 16, 16, 0.44);
+
+  --focus-ring: 0 0 0 3px rgba(37, 89, 214, 0.26);
+
+  --toggle-bg: #fff;
+  --toggle-border: #101010;
+  --toggle-text: #101010;
+  --toggle-active-bg: #101010;
+  --toggle-active-text: #fff;
+  --toggle-shadow: 3px 3px 0 #101010;
+  --toggle-radius: 999px;
+}
+
+.style-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.26rem;
+  border: 1px solid var(--toggle-border);
+  border-radius: var(--toggle-radius);
+  background: var(--toggle-bg);
+  color: var(--toggle-text);
+  padding: 0.2rem;
+  box-shadow: var(--toggle-shadow);
+}
+
+.style-toggle-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: calc(var(--toggle-radius) - 2px);
+  padding: 0.38rem 0.72rem;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.style-toggle-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.style-toggle-button.is-active {
+  background: var(--toggle-active-bg);
+  color: var(--toggle-active-text);
+}
+
+.tnc-error-text {
+  color: var(--negative);
+}
+
+.tnc-surface-card {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-elevated);
+}
+
+.tnc-inline-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tnc-flex-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: center;
+}

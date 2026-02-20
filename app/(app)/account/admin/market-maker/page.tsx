@@ -78,7 +78,7 @@ export default async function AdminMarketMakerPage() {
       <section className="create-section" aria-label="Proposal run status">
         <h2>Proposal run status</h2>
         {runs.errorMessage ? (
-          <p className="create-note" style={{ color: "#b00020" }}>
+          <p className="create-note tnc-error-text">
             Unable to load run history: <code>{runs.errorMessage}</code>
           </p>
         ) : runs.runs.length === 0 ? (
@@ -106,7 +106,7 @@ export default async function AdminMarketMakerPage() {
       </section>
 
       {queue.errorMessage ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           Unable to load review queue: <code>{queue.errorMessage}</code>
         </p>
       ) : (
@@ -120,7 +120,7 @@ export default async function AdminMarketMakerPage() {
         </p>
 
         {previews.errorMessage ? (
-          <p className="create-note" style={{ color: "#b00020" }}>
+          <p className="create-note tnc-error-text">
             Unable to load proposal previews: <code>{previews.errorMessage}</code>
           </p>
         ) : previews.proposals.length === 0 ? (

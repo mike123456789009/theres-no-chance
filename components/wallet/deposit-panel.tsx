@@ -136,27 +136,27 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
       </p>
 
       {errorMessage ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           {errorMessage}
         </p>
       ) : null}
 
-      <div style={{ display: "grid", gap: "1rem" }}>
-        <article style={{ border: "1px solid #101010", padding: "0.85rem", background: "#fafafa" }}>
-          <h3 style={{ marginTop: 0 }}>Card (Stripe)</h3>
+      <div className="deposit-panel-grid">
+        <article className="deposit-provider-card">
+          <h3>Card (Stripe)</h3>
           {!hasStripe ? <p className="create-note">No Stripe products configured in environment variables.</p> : null}
 
           {stripeTokenPacks.length > 0 ? (
             <>
-              <p className="create-note" style={{ marginTop: "0.6rem" }}>
+              <p className="create-note">
                 Token packs
               </p>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
+              <div className="deposit-provider-stack">
                 {stripeTokenPacks.map((item) => {
                   const actionKey = `stripe:token_pack:${item.key}`;
                   const isPending = pendingKey === actionKey;
                   return (
-                    <div key={item.key} style={{ display: "flex", justifyContent: "space-between", gap: "0.7rem", alignItems: "center" }}>
+                    <div key={item.key} className="deposit-provider-row">
                       <div>
                         <strong>{formatKeyLabel(item.key)}</strong>
                         <div className="create-note">{item.tokensGranted} tokens</div>
@@ -178,15 +178,15 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
 
           {stripeSubscriptions.length > 0 ? (
             <>
-              <p className="create-note" style={{ marginTop: "0.8rem" }}>
+              <p className="create-note">
                 Subscriptions
               </p>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
+              <div className="deposit-provider-stack">
                 {stripeSubscriptions.map((item) => {
                   const actionKey = `stripe:subscription:${item.key}`;
                   const isPending = pendingKey === actionKey;
                   return (
-                    <div key={item.key} style={{ display: "flex", justifyContent: "space-between", gap: "0.7rem", alignItems: "center" }}>
+                    <div key={item.key} className="deposit-provider-row">
                       <div>
                         <strong>{formatKeyLabel(item.key)}</strong>
                         <div className="create-note">{item.tokensGranted} tokens / month (configured)</div>
@@ -207,17 +207,17 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
           ) : null}
         </article>
 
-        <article style={{ border: "1px solid #101010", padding: "0.85rem", background: "#fafafa" }}>
-          <h3 style={{ marginTop: 0 }}>USDC (Coinbase Commerce)</h3>
+        <article className="deposit-provider-card">
+          <h3>USDC (Coinbase Commerce)</h3>
           {!hasCoinbase ? <p className="create-note">No Coinbase token packs configured in environment variables.</p> : null}
 
           {coinbaseTokenPacks.length > 0 ? (
-            <div style={{ display: "grid", gap: "0.55rem" }}>
+            <div className="deposit-provider-stack">
               {coinbaseTokenPacks.map((item) => {
                 const actionKey = `coinbase:token_pack:${item.key}`;
                 const isPending = pendingKey === actionKey;
                 return (
-                  <div key={item.key} style={{ display: "flex", justifyContent: "space-between", gap: "0.7rem", alignItems: "center" }}>
+                  <div key={item.key} className="deposit-provider-row">
                     <div>
                       <strong>{formatKeyLabel(item.key)}</strong>
                       <div className="create-note">
@@ -237,4 +237,3 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
     </section>
   );
 }
-

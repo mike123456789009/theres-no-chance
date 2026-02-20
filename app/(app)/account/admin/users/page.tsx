@@ -334,7 +334,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
       </p>
 
       {usersError ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           Unable to load users: <code>{usersError.message}</code>
         </p>
       ) : null}
@@ -426,7 +426,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {tokenPurchases.length === 0 ? (
                   <p className="create-note">No token purchases recorded.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>
@@ -456,7 +456,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {ledgerEntries.length === 0 ? (
                   <p className="create-note">No ledger entries found.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>
@@ -486,7 +486,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {createdMarkets.length === 0 ? (
                   <p className="create-note">No created markets found.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>
@@ -516,7 +516,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {tradeFills.length === 0 ? (
                   <p className="create-note">No trade fills found.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>
@@ -554,7 +554,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {withdrawals.length === 0 ? (
                   <p className="create-note">No withdrawal requests found.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>
@@ -587,7 +587,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 {disputes.length === 0 ? (
                   <p className="create-note">No dispute or vote-like records found.</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
+                  <div className="tnc-table-wrap">
                     <table className="admin-history-table">
                       <thead>
                         <tr>

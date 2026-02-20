@@ -123,7 +123,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
         <p className="create-kicker">Wallet</p>
         <h1 className="create-title">Log in to view wallet</h1>
         <p className="create-copy">Wallet balances, deposits, and ledger history require an authenticated account.</p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/login">
             Log in
           </Link>
@@ -253,7 +253,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       <h1 className="create-title">Balances + deposits</h1>
       <p className="create-copy">View wallet balances, deposit methods, and your most recent ledger entries.</p>
 
-      <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+      <div className="create-actions account-actions-top">
         <Link className="create-submit create-submit-muted" href="/markets">
           Back to markets
         </Link>
@@ -267,11 +267,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
 
       {banner ? <DepositStatusBanner {...banner} /> : null}
 
-      <section
-        className="create-section"
-        aria-label="Wallet balances"
-        style={{ marginTop: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", display: "grid" }}
-      >
+      <section className="create-section account-summary-grid" aria-label="Wallet balances">
         <div>
           <p className="create-note">Available</p>
           <h2>{formatCurrency(wallet.cashUsd)}</h2>
@@ -287,7 +283,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       </section>
 
       {walletError ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           Unable to load wallet balances: <code>{walletError.message}</code>
         </p>
       ) : null}
@@ -297,7 +293,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       <section className="create-section" aria-label="Recent ledger entries">
         <h2>Recent ledger entries</h2>
         {ledgerError ? (
-          <p className="create-note" style={{ color: "#b00020" }}>
+          <p className="create-note tnc-error-text">
             Unable to load ledger entries: <code>{ledgerError.message}</code>
           </p>
         ) : (
@@ -306,7 +302,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       </section>
 
       {sessionId ? (
-        <p className="create-note" style={{ marginTop: "0.9rem" }}>
+        <p className="create-note account-note-top">
           Stripe session: <code>{sessionId}</code>
         </p>
       ) : null}

@@ -91,7 +91,7 @@ export default async function AccountActivityPage() {
         <p className="create-kicker">Activity</p>
         <h1 className="create-title">Log in to view activity</h1>
         <p className="create-copy">Recent wallet ledger and trade fills are available after authentication.</p>
-        <div className="create-actions" style={{ marginTop: "0.8rem" }}>
+        <div className="create-actions account-actions-top">
           <Link className="create-submit create-submit-muted" href="/login">
             Log in
           </Link>
@@ -149,51 +149,37 @@ export default async function AccountActivityPage() {
       <section className="create-section" aria-label="Recent trade fills">
         <h2>Recent trade fills</h2>
         {fillsResult.error ? (
-          <p className="create-note" style={{ color: "#b00020" }}>
+          <p className="create-note tnc-error-text">
             Unable to load trade fills: <code>{fillsResult.error.message}</code>
           </p>
         ) : tradeFills.length === 0 ? (
           <p className="create-note">No trade fills yet.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "820px",
-                fontFamily: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-                fontSize: "0.76rem",
-              }}
-            >
+          <div className="tnc-table-wrap">
+            <table className="tnc-data-table tnc-data-table--wide">
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Executed</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Market</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Leg</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Shares</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Avg Price</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Notional</th>
+                  <th>Executed</th>
+                  <th>Market</th>
+                  <th>Leg</th>
+                  <th className="is-right">Shares</th>
+                  <th className="is-right">Avg Price</th>
+                  <th className="is-right">Notional</th>
                 </tr>
               </thead>
               <tbody>
                 {tradeFills.map((fill) => (
                   <tr key={fill.id}>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{formatDate(fill.createdAt)}</td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
+                    <td>{formatDate(fill.createdAt)}</td>
+                    <td>
                       <Link href={`/markets/${fill.marketId}`}>{fill.marketId.slice(0, 8)}...</Link>
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
+                    <td>
                       {fill.action.toUpperCase()} {fill.side.toUpperCase()}
                     </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {fill.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatPercent(fill.price)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatCurrency(fill.notional)}
-                    </td>
+                    <td className="is-right">{fill.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })}</td>
+                    <td className="is-right">{formatPercent(fill.price)}</td>
+                    <td className="is-right">{formatCurrency(fill.notional)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -205,39 +191,29 @@ export default async function AccountActivityPage() {
       <section className="create-section" aria-label="Recent ledger entries">
         <h2>Recent ledger entries</h2>
         {ledgerResult.error ? (
-          <p className="create-note" style={{ color: "#b00020" }}>
+          <p className="create-note tnc-error-text">
             Unable to load ledger entries: <code>{ledgerResult.error.message}</code>
           </p>
         ) : ledgerEntries.length === 0 ? (
           <p className="create-note">No ledger entries yet.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "760px",
-                fontFamily: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-                fontSize: "0.78rem",
-              }}
-            >
+          <div className="tnc-table-wrap">
+            <table className="tnc-data-table tnc-data-table--narrow">
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Time</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Type</th>
-                  <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Amount</th>
-                  <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Currency</th>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th className="is-right">Amount</th>
+                  <th>Currency</th>
                 </tr>
               </thead>
               <tbody>
                 {ledgerEntries.map((entry) => (
                   <tr key={entry.id}>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{formatDate(entry.createdAt)}</td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{formatLabel(entry.entryType)}</td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                      {formatSignedCurrency(entry.amount)}
-                    </td>
-                    <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{entry.currency}</td>
+                    <td>{formatDate(entry.createdAt)}</td>
+                    <td>{formatLabel(entry.entryType)}</td>
+                    <td className="is-right">{formatSignedCurrency(entry.amount)}</td>
+                    <td>{entry.currency}</td>
                   </tr>
                 ))}
               </tbody>

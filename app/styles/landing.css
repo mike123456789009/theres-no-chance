@@ -1,0 +1,134 @@
+.style-toggle-floating {
+  position: fixed;
+  top: clamp(0.75rem, 2vw, 1.5rem);
+  right: clamp(0.75rem, 2vw, 1.5rem);
+  z-index: 1002;
+}
+
+html[data-ui-style="retro"] .style-toggle-floating {
+  top: clamp(0.8rem, 2vw, 1.4rem);
+}
+
+html[data-ui-style="modern"] .landing-page {
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .tnc-logo {
+  opacity: 0.94;
+}
+
+html[data-ui-style="modern"] .tnc-unified-logo {
+  --tnc-logo-gap: 0.28rem;
+}
+
+html[data-ui-style="modern"] .logo-letter {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--border-strong) 72%, white);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .scroll-cue {
+  color: var(--text-muted);
+  opacity: 0.78;
+}
+
+html[data-ui-style="modern"] .after-box,
+html[data-ui-style="modern"] .token-title,
+html[data-ui-style="modern"] .payment-card,
+html[data-ui-style="modern"] .redeem-note,
+html[data-ui-style="modern"] .auth-btn,
+html[data-ui-style="modern"] .auth-email {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .after-box-primary {
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-family: var(--font-modern-display);
+  font-weight: 700;
+}
+
+html[data-ui-style="modern"] .after-box-secondary {
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .feature-list,
+html[data-ui-style="modern"] .token-copy,
+html[data-ui-style="modern"] .payment-note,
+html[data-ui-style="modern"] .plan-list li,
+html[data-ui-style="modern"] .redeem-note,
+html[data-ui-style="modern"] .auth-row-note,
+html[data-ui-style="modern"] .faq-item h3,
+html[data-ui-style="modern"] .faq-item p {
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .token-title,
+html[data-ui-style="modern"] .payment-title,
+html[data-ui-style="modern"] .faq-label,
+html[data-ui-style="modern"] .plan-name {
+  font-family: var(--font-modern-display);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .after-box-primary,
+html[data-ui-style="modern"] .token-title,
+html[data-ui-style="modern"] .payment-title,
+html[data-ui-style="modern"] .faq-label {
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .payment-grid .payment-card:first-child,
+html[data-ui-style="modern"] .payment-grid .payment-card:last-child {
+  box-shadow: var(--shadow-card);
+}
+
+html[data-ui-style="modern"] .auth-btn {
+  text-transform: none;
+  font-family: var(--font-modern-ui);
+  font-weight: 600;
+}
+
+html[data-ui-style="modern"] .auth-btn-login {
+  background: var(--surface-elevated);
+  color: var(--accent-primary);
+}
+
+html[data-ui-style="modern"] .auth-btn-signup {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="modern"] .auth-email {
+  background: #f8fbff;
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .auth-row-note a,
+html[data-ui-style="modern"] .faq-plus {
+  color: var(--accent-primary);
+}
+
+html[data-ui-style="modern"] .faq-content {
+  border-left-width: 1px;
+  border-left-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .faq-trigger {
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  html[data-ui-style="modern"] .style-toggle-floating {
+    top: 0.56rem;
+    right: 0.56rem;
+  }
+}

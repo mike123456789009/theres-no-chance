@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { StyleToggle } from "@/components/theme/style-toggle";
 import { checkUserAdminAccess } from "@/lib/auth/admin";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_PRIMARY_NAV_ITEMS } from "@/lib/markets/taxonomy";
@@ -53,6 +54,7 @@ type WalletAccountSummaryRow = {
 type ProfileSummaryRow = {
   display_name: string | null;
   avatar_url: string | null;
+  ui_style: string | null;
 } | null;
 
 type ViewerAccountSummary = {
@@ -155,7 +157,7 @@ async function getViewerAccountSummary(options: {
   try {
     const [walletResult, profileResult] = await Promise.all([
       supabase.from("wallet_accounts").select("available_balance, reserved_balance").eq("user_id", viewer.userId).maybeSingle(),
-      supabase.from("profiles").select("display_name, avatar_url").eq("id", viewer.userId).maybeSingle(),
+      supabase.from("profiles").select("display_name, avatar_url, ui_style").eq("id", viewer.userId).maybeSingle(),
     ]);
 
     let portfolioUsd: number | null = null;
@@ -286,6 +288,7 @@ export default async function MarketsPage({
             </form>
 
             <div className="markets-account-strip">
+              <StyleToggle className="markets-style-toggle" />
               <p className="markets-account-metric">
                 <span>Portfolio</span>
                 <strong>

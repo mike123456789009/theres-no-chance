@@ -1,5 +1,6 @@
 import { LandingAuthRow } from "@/components/landing/auth-row";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { StyleToggle } from "@/components/theme/style-toggle";
 
 export default function MarketingPage() {
   return (
@@ -10,12 +11,16 @@ export default function MarketingPage() {
 
       <TncLogo className="tnc-logo" decorative />
 
+      <div className="style-toggle-floating style-toggle-floating-marketing">
+        <StyleToggle />
+      </div>
+
       <div className="scroll-cue" aria-hidden="true">
         <span className="scroll-cue-text">SCROLL</span>
         <span className="scroll-cue-arrow">↓</span>
       </div>
 
-      <main id="main">
+      <main id="main" className="landing-page">
         <section className="scroll-stage" data-stage>
           <div className="stage-pin">
             <h1 className="sr-only">There&apos;s No Chance</h1>

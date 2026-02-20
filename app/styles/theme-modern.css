@@ -1,0 +1,61 @@
+html[data-ui-style="modern"] {
+  --bg: #f2f5f9;
+  --ink: #132030;
+
+  --red-face: #2559d6;
+  --red-side: #1f49ae;
+  --gold-face: #0f9d83;
+  --gold-side: #0b7a66;
+  --slash-face: #d9e3f2;
+  --slash-side: #becde1;
+  --neutral-face: #cad7e9;
+  --neutral-side: #aebfd6;
+
+  --surface-page: #f2f5f9;
+  --surface-elevated: #ffffff;
+  --surface-muted: #eef2f7;
+  --surface-inverse: #0d1827;
+
+  --border-strong: #c5cfdd;
+  --border-soft: #d8dfeb;
+
+  --text-primary: #132030;
+  --text-muted: #5b697c;
+  --text-soft: #7a8799;
+  --text-inverse: #f8fbff;
+
+  --accent-primary: #2559d6;
+  --accent-secondary: #0f9d83;
+  --accent-tertiary: #e9f0ff;
+
+  --positive: #147a4f;
+  --negative: #b42318;
+
+  --shadow-soft: 0 10px 28px -18px rgba(15, 23, 42, 0.22);
+  --shadow-card: 0 18px 32px -24px rgba(15, 23, 42, 0.26);
+  --focus-ring: 0 0 0 3px rgba(37, 89, 214, 0.28);
+
+  --toggle-bg: #f8fbff;
+  --toggle-border: #c5cfdd;
+  --toggle-text: #304156;
+  --toggle-active-bg: #2559d6;
+  --toggle-active-text: #fff;
+  --toggle-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.45);
+  --toggle-radius: 999px;
+}
+
+html[data-ui-style="modern"] body {
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .style-toggle,
+html[data-ui-style="modern"] .style-toggle-button {
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .style-toggle-button {
+  text-transform: none;
+  letter-spacing: 0;
+}

@@ -59,7 +59,7 @@ function renderMeta(metadata: Record<string, unknown>): React.ReactNode {
     return (
       <span>
         market{" "}
-        <Link href={`/markets/${marketId}`} style={{ textDecoration: "underline" }}>
+        <Link href={`/markets/${marketId}`} className="ledger-market-link">
           {marketId.slice(0, 8)}…
         </Link>
       </span>
@@ -92,35 +92,23 @@ export function LedgerTable({ entries }: LedgerTableProps) {
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          minWidth: "860px",
-          fontFamily: "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-          fontSize: "0.78rem",
-        }}
-      >
+    <div className="tnc-table-wrap">
+      <table className="tnc-data-table tnc-data-table--ledger">
         <thead>
           <tr>
-            <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Time</th>
-            <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Type</th>
-            <th style={{ textAlign: "right", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Amount</th>
-            <th style={{ textAlign: "left", borderBottom: "2px solid #101010", padding: "0.4rem" }}>Details</th>
+            <th>Time</th>
+            <th>Type</th>
+            <th className="is-right">Amount</th>
+            <th>Details</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((entry) => (
             <tr key={entry.id}>
-              <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{formatDate(entry.createdAt)}</td>
-              <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>{entry.entryType}</td>
-              <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem", textAlign: "right" }}>
-                {formatSignedCurrency(entry.amount)}
-              </td>
-              <td style={{ borderBottom: "1px solid #cccccc", padding: "0.45rem 0.4rem" }}>
-                {isRecord(entry.metadata) ? renderMeta(entry.metadata) : "—"}
-              </td>
+              <td>{formatDate(entry.createdAt)}</td>
+              <td>{entry.entryType}</td>
+              <td className="is-right">{formatSignedCurrency(entry.amount)}</td>
+              <td>{isRecord(entry.metadata) ? renderMeta(entry.metadata) : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -128,4 +116,3 @@ export function LedgerTable({ entries }: LedgerTableProps) {
     </div>
   );
 }
-

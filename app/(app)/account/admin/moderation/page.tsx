@@ -29,7 +29,7 @@ export default async function AdminModerationPage() {
       </p>
 
       {resolution.errorMessage ? (
-        <p className="create-note" style={{ color: "#b00020" }}>
+        <p className="create-note tnc-error-text">
           Unable to load moderation queues: <code>{resolution.errorMessage}</code>
         </p>
       ) : (

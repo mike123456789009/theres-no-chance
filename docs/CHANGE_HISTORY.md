@@ -1,5 +1,56 @@
 # Change History
 
+## 2026-02-20 - Pre-Refactor Baseline Guardrail
+Status: noted
+
+Known baseline failures before the UI style-system refactor:
+- `npm run typecheck` currently fails in existing trade route test typing due `MarketDetailDTO` fixture drift.
+- `npm test` currently has one existing failing assertion in `lib/markets/trade-engine.test.ts`.
+
+Note:
+- These failures predate the style-toggle/theme work and should not be treated as regressions from this deployment scope.
+
+## 2026-02-20 - Dual Style System + Toggle (Landing, Markets, Account)
+Status: in progress
+
+Short description:
+- Added a two-style UI system (`retro` and `modern`) with SSR + client synchronization.
+- Added account-synced style persistence via `profiles.ui_style` with cookie/local guest fallback.
+- Added reusable style toggle controls to landing (top-right), market discovery header, and account layout.
+- Split global styling into layered files and added Mercury-leaning modern overrides for landing, markets, and account surfaces.
+- Refactored style-heavy account/wallet/admin tables/panels from inline styles to semantic CSS classes.
+
+Files/areas touched:
+- Theme runtime and model: `app/layout.tsx`, `lib/theme/*`, `components/theme/*`
+- DB migration: `supabase/migrations/202602200001_step18_ui_style_preference.sql`
+- Routes with new toggle placement:
+  - `app/(marketing)/page.tsx`
+  - `app/(app)/markets/page.tsx`
+  - `app/(app)/account/layout.tsx`
+- Styling split:
+  - `app/globals.css`
+  - `app/styles/base.css`
+  - `app/styles/tokens.css`
+  - `app/styles/theme-retro.css`
+  - `app/styles/theme-modern.css`
+  - `app/styles/landing.css`
+  - `app/styles/markets.css`
+  - `app/styles/account.css`
+- Account/wallet/admin styling cleanup:
+  - `app/(app)/account/portfolio/page.tsx`
+  - `app/(app)/account/activity/page.tsx`
+  - `app/(app)/account/wallet/page.tsx`
+  - `app/(app)/account/settings/page.tsx`
+  - `app/(app)/account/admin/moderation/page.tsx`
+  - `app/(app)/account/admin/market-maker/page.tsx`
+  - `app/(app)/account/admin/users/page.tsx`
+  - `components/wallet/deposit-panel.tsx`
+  - `components/wallet/deposit-status-banner.tsx`
+  - `components/wallet/ledger-table.tsx`
+
+User-visible change:
+- Users can now toggle between retro and modern UI styles on landing, market discovery, and account pages, with preference persistence across sessions.
+
 ## 2026-02-17 - Foundation Migration (Step 1)
 Status: completed
 
