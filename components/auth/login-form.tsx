@@ -36,8 +36,8 @@ export function LoginForm() {
         return;
       }
 
-      setSuccessMessage("Logged in. Redirecting...");
-      window.location.assign("/");
+      setSuccessMessage("Logged in. Redirecting to markets...");
+      window.location.assign("/markets");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to log in right now.");
     } finally {

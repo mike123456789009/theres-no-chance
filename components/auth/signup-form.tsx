@@ -32,7 +32,7 @@ export function SignupForm() {
         email,
         password,
         options: {
-          emailRedirectTo: `${redirectBaseUrl}/login`,
+          emailRedirectTo: `${redirectBaseUrl}/markets`,
         },
       });
 
@@ -41,9 +41,10 @@ export function SignupForm() {
         return;
       }
 
-      setSuccessMessage("Account created. Check your email to confirm your account.");
+      setSuccessMessage("Account created. Redirecting to markets...");
       setEmail("");
       setPassword("");
+      window.location.assign("/markets");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create account right now.");
     } finally {
