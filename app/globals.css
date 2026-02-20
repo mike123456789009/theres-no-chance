@@ -5,3 +5,6 @@
 @import "./styles/landing.css";
 @import "./styles/markets.css";
 @import "./styles/account.css";
+@import "./styles/auth.css";
+@import "./styles/create.css";
+@import "./styles/market-detail.css";

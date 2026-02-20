@@ -1,0 +1,213 @@
+html[data-ui-style="modern"] .create-page,
+html[data-ui-style="modern"] .admin-page {
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(37, 89, 214, 0.08), transparent 52%),
+    var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .create-card,
+html[data-ui-style="modern"] .admin-card {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%),
+    var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .create-card-warning,
+html[data-ui-style="modern"] .admin-card-warning {
+  border-color: color-mix(in srgb, var(--negative) 46%, white);
+  box-shadow: 0 18px 28px -22px rgba(180, 35, 24, 0.45);
+}
+
+html[data-ui-style="modern"] .create-kicker,
+html[data-ui-style="modern"] .admin-kicker {
+  color: var(--text-soft);
+  font-family: var(--font-modern-mono);
+}
+
+html[data-ui-style="modern"] .create-title,
+html[data-ui-style="modern"] .admin-title,
+html[data-ui-style="modern"] .create-section h2,
+html[data-ui-style="modern"] .admin-queue-header h2,
+html[data-ui-style="modern"] .admin-ai-runs-head h2,
+html[data-ui-style="modern"] .admin-queue-card h3 {
+  font-family: var(--font-modern-display);
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+html[data-ui-style="modern"] .create-copy,
+html[data-ui-style="modern"] .admin-copy,
+html[data-ui-style="modern"] .create-note,
+html[data-ui-style="modern"] .create-status,
+html[data-ui-style="modern"] .admin-queue-empty,
+html[data-ui-style="modern"] .admin-queue-status,
+html[data-ui-style="modern"] .admin-queue-header p,
+html[data-ui-style="modern"] .admin-ai-runs-head p,
+html[data-ui-style="modern"] .admin-panel-list {
+  color: var(--text-muted);
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .admin-queue-status {
+  border-left-width: 1px;
+  border-left-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .create-section,
+html[data-ui-style="modern"] .create-source-item,
+html[data-ui-style="modern"] .admin-queue-section,
+html[data-ui-style="modern"] .admin-queue-card,
+html[data-ui-style="modern"] .admin-ai-runs,
+html[data-ui-style="modern"] .admin-ai-run-card,
+html[data-ui-style="modern"] .admin-run-badge,
+html[data-ui-style="modern"] .admin-run-summary-grid p {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .create-field,
+html[data-ui-style="modern"] .create-field span,
+html[data-ui-style="modern"] .admin-queue-note {
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+html[data-ui-style="modern"] .create-field input,
+html[data-ui-style="modern"] .create-field textarea,
+html[data-ui-style="modern"] .create-field select,
+html[data-ui-style="modern"] .admin-queue-note textarea {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 10px;
+  box-shadow: none;
+  background: #f8fbff;
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .create-field input:focus-visible,
+html[data-ui-style="modern"] .create-field textarea:focus-visible,
+html[data-ui-style="modern"] .create-field select:focus-visible,
+html[data-ui-style="modern"] .admin-queue-note textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+html[data-ui-style="modern"] .create-source-index,
+html[data-ui-style="modern"] .admin-ai-run-kicker,
+html[data-ui-style="modern"] .admin-ai-run-proposals span {
+  color: var(--text-soft);
+  font-family: var(--font-modern-mono);
+}
+
+html[data-ui-style="modern"] .create-submit,
+html[data-ui-style="modern"] .create-source-add,
+html[data-ui-style="modern"] .create-source-remove,
+html[data-ui-style="modern"] .admin-queue-actions button {
+  border-width: 1px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .create-submit,
+html[data-ui-style="modern"] .create-source-add,
+html[data-ui-style="modern"] .admin-queue-actions button {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="modern"] .create-submit.create-submit-muted,
+html[data-ui-style="modern"] .create-source-remove,
+html[data-ui-style="modern"] .admin-queue-actions button.is-muted {
+  background: var(--surface-elevated);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .create-source-add:hover:not(:disabled),
+html[data-ui-style="modern"] .create-submit:hover:not(:disabled),
+html[data-ui-style="modern"] .admin-queue-actions button:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+html[data-ui-style="modern"] .create-submit:disabled,
+html[data-ui-style="modern"] .create-source-add:disabled,
+html[data-ui-style="modern"] .create-source-remove:disabled,
+html[data-ui-style="modern"] .admin-queue-actions button:disabled {
+  border-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .create-status-error,
+html[data-ui-style="modern"] .admin-queue-error {
+  color: var(--negative);
+}
+
+html[data-ui-style="modern"] .create-status-success,
+html[data-ui-style="modern"] .admin-queue-success {
+  color: var(--positive);
+}
+
+html[data-ui-style="modern"] .admin-queue-badge {
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--accent-primary) 58%, white);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-primary) 12%, white);
+  color: var(--accent-primary);
+  font-family: var(--font-modern-ui);
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .admin-queue-badge-open {
+  background: color-mix(in srgb, var(--negative) 12%, white);
+  border-color: color-mix(in srgb, var(--negative) 55%, white);
+  color: var(--negative);
+}
+
+html[data-ui-style="modern"] .admin-panel-list {
+  border-left-width: 1px;
+  border-left-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .admin-ai-run-metrics {
+  border-left-width: 1px;
+  border-left-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .admin-ai-run-proposals li,
+html[data-ui-style="modern"] .admin-run-badge p,
+html[data-ui-style="modern"] .admin-run-summary-grid p,
+html[data-ui-style="modern"] .admin-ai-run-card p,
+html[data-ui-style="modern"] .admin-queue-card p {
+  font-family: var(--font-modern-ui);
+}
+
+@media (max-width: 640px) {
+  html[data-ui-style="modern"] .create-card,
+  html[data-ui-style="modern"] .admin-card,
+  html[data-ui-style="modern"] .create-section,
+  html[data-ui-style="modern"] .create-source-item,
+  html[data-ui-style="modern"] .admin-queue-section,
+  html[data-ui-style="modern"] .admin-queue-card,
+  html[data-ui-style="modern"] .admin-ai-runs,
+  html[data-ui-style="modern"] .admin-ai-run-card,
+  html[data-ui-style="modern"] .admin-run-badge {
+    border-radius: 12px;
+  }
+}

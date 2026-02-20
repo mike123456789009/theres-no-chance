@@ -1,0 +1,182 @@
+html[data-ui-style="modern"] .auth-page,
+html[data-ui-style="modern"] .onboarding-page {
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(37, 89, 214, 0.08), transparent 55%),
+    radial-gradient(120% 120% at 100% 0%, rgba(15, 157, 131, 0.08), transparent 52%),
+    var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .auth-page-inner,
+html[data-ui-style="modern"] .onboarding-card {
+  position: relative;
+}
+
+html[data-ui-style="modern"] .auth-home-link {
+  color: var(--text-muted);
+  font-family: var(--font-modern-ui);
+  border-bottom-width: 1px;
+}
+
+html[data-ui-style="modern"] .auth-home-link:hover {
+  color: var(--accent-primary);
+  border-bottom-color: color-mix(in srgb, var(--accent-primary) 58%, white);
+}
+
+html[data-ui-style="modern"] .auth-card,
+html[data-ui-style="modern"] .onboarding-card {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%),
+    var(--surface-elevated);
+}
+
+html[data-ui-style="modern"] .auth-title,
+html[data-ui-style="modern"] .onboarding-title,
+html[data-ui-style="modern"] .auth-section-title {
+  font-family: var(--font-modern-display);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  line-height: 1.08;
+}
+
+html[data-ui-style="modern"] .auth-subtitle,
+html[data-ui-style="modern"] .onboarding-subtitle,
+html[data-ui-style="modern"] .onboarding-meta-links,
+html[data-ui-style="modern"] .auth-meta-links,
+html[data-ui-style="modern"] .auth-status,
+html[data-ui-style="modern"] .onboarding-status,
+html[data-ui-style="modern"] .onboarding-hint {
+  color: var(--text-muted);
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .auth-meta-links a,
+html[data-ui-style="modern"] .onboarding-meta-links a {
+  color: var(--accent-primary);
+}
+
+html[data-ui-style="modern"] .auth-field,
+html[data-ui-style="modern"] .onboarding-field,
+html[data-ui-style="modern"] .onboarding-interests legend {
+  font-family: var(--font-modern-ui);
+  font-size: 0.78rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+html[data-ui-style="modern"] .auth-field input,
+html[data-ui-style="modern"] .onboarding-field input,
+html[data-ui-style="modern"] .auth-password-toggle {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 10px;
+  box-shadow: none;
+  background: #f8fbff;
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .auth-field input:focus-visible,
+html[data-ui-style="modern"] .onboarding-field input:focus-visible,
+html[data-ui-style="modern"] .auth-password-toggle:focus-visible,
+html[data-ui-style="modern"] .interest-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+html[data-ui-style="modern"] .auth-password-toggle {
+  background: var(--surface-muted);
+  text-transform: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .auth-password-toggle:hover {
+  background: color-mix(in srgb, var(--surface-muted) 78%, white);
+}
+
+html[data-ui-style="modern"] .auth-submit,
+html[data-ui-style="modern"] .onboarding-submit {
+  border-width: 1px;
+  border-color: var(--accent-primary);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"] .auth-submit:hover:not(:disabled),
+html[data-ui-style="modern"] .onboarding-submit:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+html[data-ui-style="modern"] .auth-submit:disabled,
+html[data-ui-style="modern"] .onboarding-submit:disabled {
+  border-color: var(--border-soft);
+}
+
+html[data-ui-style="modern"] .onboarding-kicker {
+  color: var(--text-soft);
+  text-transform: uppercase;
+  font-family: var(--font-modern-mono);
+  letter-spacing: 0.08em;
+}
+
+html[data-ui-style="modern"] .onboarding-interests {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.72rem;
+}
+
+html[data-ui-style="modern"] .interest-chip {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 999px;
+  box-shadow: none;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+html[data-ui-style="modern"] .interest-chip:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 42%, white);
+  background: color-mix(in srgb, var(--accent-primary) 10%, white);
+}
+
+html[data-ui-style="modern"] .interest-chip.is-active {
+  background: color-mix(in srgb, var(--accent-primary) 14%, white);
+  border-color: color-mix(in srgb, var(--accent-primary) 50%, white);
+  color: color-mix(in srgb, var(--accent-primary) 92%, black);
+}
+
+html[data-ui-style="modern"] .onboarding-hint-ok,
+html[data-ui-style="modern"] .auth-success {
+  color: var(--positive);
+}
+
+html[data-ui-style="modern"] .onboarding-hint-warn,
+html[data-ui-style="modern"] .auth-error {
+  color: var(--negative);
+}
+
+@media (max-width: 640px) {
+  html[data-ui-style="modern"] .auth-card,
+  html[data-ui-style="modern"] .onboarding-card {
+    border-radius: 14px;
+  }
+}
