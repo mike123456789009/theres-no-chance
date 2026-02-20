@@ -6,6 +6,7 @@ import {
   listDiscoveryMarketCards,
   parseMarketDiscoveryQuery,
 } from "@/lib/markets/read-markets";
+import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -122,6 +123,7 @@ export async function POST(request: Request) {
         fee_bps: validation.data.feeBps,
         status: marketStatus,
         visibility: validation.data.visibility,
+        resolution_mode: validation.data.resolutionMode,
         access_rules: validation.data.accessRules,
         tags: validation.data.tags,
         risk_flags: validation.data.riskFlags,
@@ -160,11 +162,56 @@ export async function POST(request: Request) {
       );
     }
 
+    if (validation.data.submissionMode === "review") {
+      if (!isSupabaseServiceEnvConfigured()) {
+        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
+        return NextResponse.json(
+          {
+            error: "Market submission is unavailable: missing service role configuration for listing fees.",
+            missingEnv: getMissingSupabaseServiceEnv(),
+          },
+          { status: 503 }
+        );
+      }
+
+      const service = createServiceClient();
+      const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {
+        p_market_id: market.id,
+        p_user_id: user.id,
+        p_amount: 0.5,
+      });
+
+      if (listingFeeError) {
+        await supabase.from("market_sources").delete().eq("market_id", market.id);
+        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
+
+        const normalizedMessage = listingFeeError.message.toLowerCase();
+        if (normalizedMessage.includes("[listing_funds]")) {
+          return NextResponse.json(
+            {
+              error: "Insufficient wallet balance for listing fee.",
+              detail: listingFeeError.message,
+            },
+            { status: 409 }
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error: "Unable to charge market listing fee.",
+            detail: listingFeeError.message,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     return NextResponse.json(
       {
         marketId: market.id,
         status: market.status,
         submissionMode: validation.data.submissionMode,
+        resolutionMode: validation.data.resolutionMode,
         message:
           validation.data.submissionMode === "review"
             ? "Market submitted for review."

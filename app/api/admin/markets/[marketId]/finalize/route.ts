@@ -10,6 +10,25 @@ function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
   return raw as Record<string, unknown>;
 }
 
+function mapFinalizeRpcError(message: string): { status: number; error: string; detail: string } {
+  const trimmed = message.trim();
+  const match = trimmed.match(/^\[(FINALIZE_[A-Z_]+)\]\s*(.*)$/);
+  const detail = match?.[2] || trimmed;
+
+  switch (match?.[1]) {
+    case "FINALIZE_VALIDATION":
+      return { status: 400, error: "Market finalization validation failed.", detail };
+    case "FINALIZE_FORBIDDEN":
+      return { status: 403, error: "Market finalization forbidden.", detail };
+    case "FINALIZE_NOT_FOUND":
+      return { status: 404, error: "Market not found.", detail };
+    case "FINALIZE_CONFLICT":
+      return { status: 409, error: "Market finalization unavailable.", detail };
+    default:
+      return { status: 500, error: "Market finalization failed.", detail: trimmed };
+  }
+}
+
 function getDisputeWindowHours(): number {
   const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
   if (Number.isFinite(parsed) && parsed > 0) {
@@ -45,12 +64,13 @@ export async function POST(_request: Request, context: { params: Promise<{ marke
     });
 
     if (error) {
+      const mapped = mapFinalizeRpcError(error.message);
       return NextResponse.json(
         {
-          error: "Market finalization failed.",
-          detail: error.message,
+          error: mapped.error,
+          detail: mapped.detail,
         },
-        { status: 500 }
+        { status: mapped.status }
       );
     }
 
@@ -79,4 +99,3 @@ export async function POST(_request: Request, context: { params: Promise<{ marke
     );
   }
 }
-

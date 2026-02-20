@@ -162,6 +162,7 @@ export async function submitAutomationMarketProposal(
       fee_bps: validation.data.feeBps,
       status: "review",
       visibility: validation.data.visibility,
+      resolution_mode: validation.data.resolutionMode,
       access_rules: validation.data.accessRules,
       tags: validation.data.tags,
       risk_flags: validation.data.riskFlags,
@@ -194,6 +195,23 @@ export async function submitAutomationMarketProposal(
       status: 500,
       error: "Unable to insert automation market sources.",
       detail: sourceInsertError.message,
+    };
+  }
+
+  const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {
+    p_market_id: market.id,
+    p_user_id: botUserId,
+    p_amount: 0.5,
+  });
+
+  if (listingFeeError) {
+    await service.from("market_sources").delete().eq("market_id", market.id);
+    await service.from("markets").delete().eq("id", market.id).eq("creator_id", botUserId);
+    return {
+      ok: false,
+      status: listingFeeError.message.toLowerCase().includes("[listing_funds]") ? 409 : 500,
+      error: "Unable to apply listing fee for automation market proposal.",
+      detail: listingFeeError.message,
     };
   }
 

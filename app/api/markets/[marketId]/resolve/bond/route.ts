@@ -3,31 +3,37 @@ import { NextResponse } from "next/server";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
-type DisputeBody = {
-  reason?: string;
-  proposedOutcome?: unknown;
+type ResolverBondBody = {
+  outcome?: unknown;
+  bondAmount?: unknown;
 };
 
-const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
+type ResolverOutcome = "yes" | "no";
 
-type ChallengeOutcome = "yes" | "no" | "void";
+const DEFAULT_RESOLUTION_WINDOW_HOURS = 24;
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function parseOutcome(value: unknown): ChallengeOutcome | null {
+function parseOutcome(value: unknown): ResolverOutcome | null {
   const normalized = clean(value).toLowerCase();
-  if (normalized === "yes" || normalized === "no" || normalized === "void") return normalized;
+  if (normalized === "yes" || normalized === "no") return normalized;
   return null;
 }
 
-function getDisputeWindowHours(): number {
-  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
+function parseBondAmount(value: unknown): number {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.round(parsed * 1_000_000) / 1_000_000;
+}
+
+function getResolutionWindowHours(): number {
+  const parsed = Number(process.env.MARKET_RESOLUTION_WINDOW_HOURS);
   if (Number.isFinite(parsed) && parsed > 0) {
     return Math.max(1, Math.floor(parsed));
   }
-  return DEFAULT_DISPUTE_WINDOW_HOURS;
+  return DEFAULT_RESOLUTION_WINDOW_HOURS;
 }
 
 function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
@@ -35,23 +41,23 @@ function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
   return raw as Record<string, unknown>;
 }
 
-function mapChallengeRpcError(message: string): { status: number; error: string; detail: string } {
+function mapResolverBondRpcError(message: string): { status: number; error: string; detail: string } {
   const trimmed = message.trim();
-  const match = trimmed.match(/^\[(CHALLENGE_[A-Z_]+)\]\s*(.*)$/);
+  const match = trimmed.match(/^\[(RESOLVE_[A-Z_]+)\]\s*(.*)$/);
   const detail = match?.[2] || trimmed;
 
   switch (match?.[1]) {
-    case "CHALLENGE_VALIDATION":
-      return { status: 400, error: "Challenge validation failed.", detail };
-    case "CHALLENGE_FORBIDDEN":
-      return { status: 403, error: "Challenge submission forbidden.", detail };
-    case "CHALLENGE_NOT_FOUND":
-      return { status: 404, error: "Market challenge target not found.", detail };
-    case "CHALLENGE_CONFLICT":
-    case "CHALLENGE_FUNDS":
-      return { status: 409, error: "Challenge submission unavailable.", detail };
+    case "RESOLVE_VALIDATION":
+      return { status: 400, error: "Resolver bond validation failed.", detail };
+    case "RESOLVE_FORBIDDEN":
+      return { status: 403, error: "Resolver bond submission forbidden.", detail };
+    case "RESOLVE_NOT_FOUND":
+      return { status: 404, error: "Market not found.", detail };
+    case "RESOLVE_CONFLICT":
+    case "RESOLVE_FUNDS":
+      return { status: 409, error: "Resolver bond submission unavailable.", detail };
     default:
-      return { status: 500, error: "Unable to submit challenge.", detail: trimmed };
+      return { status: 500, error: "Resolver bond submission failed.", detail: trimmed };
   }
 }
 
@@ -59,7 +65,7 @@ export async function POST(request: Request, context: { params: Promise<{ market
   if (!isSupabaseServerEnvConfigured()) {
     return NextResponse.json(
       {
-        error: "Market dispute is unavailable: missing Supabase environment variables.",
+        error: "Resolver bond submission is unavailable: missing Supabase environment variables.",
         missingEnv: getMissingSupabaseServerEnv(),
       },
       { status: 503 }
@@ -69,7 +75,7 @@ export async function POST(request: Request, context: { params: Promise<{ market
   if (!isSupabaseServiceEnvConfigured()) {
     return NextResponse.json(
       {
-        error: "Market dispute is unavailable: missing service role configuration.",
+        error: "Resolver bond submission is unavailable: missing service role configuration.",
         missingEnv: getMissingSupabaseServiceEnv(),
       },
       { status: 503 }
@@ -78,35 +84,34 @@ export async function POST(request: Request, context: { params: Promise<{ market
 
   const { marketId } = await context.params;
 
-  let body: DisputeBody;
+  let body: ResolverBondBody;
   try {
-    body = (await request.json()) as DisputeBody;
+    body = (await request.json()) as ResolverBondBody;
   } catch {
     return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
   }
 
-  const reason = clean(body.reason);
-  if (!reason || reason.length < 10) {
+  const outcome = parseOutcome(body.outcome);
+  if (!outcome) {
     return NextResponse.json(
       {
         error: "Validation failed.",
-        details: ["reason must be at least 10 characters."],
+        details: ["outcome must be one of: yes, no."],
       },
       { status: 400 }
     );
   }
 
-  if (reason.length > 1000) {
+  const bondAmount = parseBondAmount(body.bondAmount);
+  if (!Number.isFinite(bondAmount) || bondAmount <= 0) {
     return NextResponse.json(
       {
         error: "Validation failed.",
-        details: ["reason must be 1000 characters or less."],
+        details: ["bondAmount must be greater than zero."],
       },
       { status: 400 }
     );
   }
-
-  const proposedOutcome = parseOutcome(body.proposedOutcome);
 
   try {
     const supabase = await createClient();
@@ -120,16 +125,16 @@ export async function POST(request: Request, context: { params: Promise<{ market
     }
 
     const service = createServiceClient();
-    const { data, error } = await service.rpc("submit_market_dispute_challenge", {
+    const { data, error } = await service.rpc("submit_market_resolver_bond", {
       p_market_id: marketId,
       p_user_id: user.id,
-      p_reason: reason,
-      p_proposed_outcome: proposedOutcome,
-      p_dispute_window_hours: getDisputeWindowHours(),
+      p_outcome: outcome,
+      p_bond_amount: bondAmount,
+      p_resolution_window_hours: getResolutionWindowHours(),
     });
 
     if (error) {
-      const mapped = mapChallengeRpcError(error.message);
+      const mapped = mapResolverBondRpcError(error.message);
       return NextResponse.json(
         {
           error: mapped.error,
@@ -143,8 +148,8 @@ export async function POST(request: Request, context: { params: Promise<{ market
     if (!result) {
       return NextResponse.json(
         {
-          error: "Unable to submit challenge.",
-          detail: "Malformed submit_market_dispute_challenge RPC response.",
+          error: "Resolver bond submission failed.",
+          detail: "Malformed submit_market_resolver_bond RPC response.",
         },
         { status: 500 }
       );
@@ -152,14 +157,14 @@ export async function POST(request: Request, context: { params: Promise<{ market
 
     return NextResponse.json(
       {
-        dispute: result,
+        resolverBond: result,
       },
       { status: result.reused === true ? 200 : 201 }
     );
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Market dispute failed.",
+        error: "Resolver bond submission failed.",
         detail: error instanceof Error ? error.message : "Unknown server error.",
       },
       { status: 500 }

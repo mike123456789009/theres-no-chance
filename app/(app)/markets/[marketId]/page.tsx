@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
+import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 import { MarketLiveOverview } from "@/components/markets/market-live-overview";
 import { TradeInterface } from "@/components/markets/trade-interface";
@@ -72,6 +73,15 @@ export default async function MarketDetailPage({
   }
 
   const { marketId } = await params;
+
+  if (isSupabaseServiceEnvConfigured()) {
+    const service = createServiceClient();
+    await service.rpc("sync_market_close_state", { p_market_id: marketId });
+    await service.rpc("refresh_community_market_resolution_state", {
+      p_market_id: marketId,
+      p_resolution_window_hours: 24,
+    });
+  }
 
   const supabase = await createClient();
   const viewer = await getMarketViewerContext(supabase);
@@ -159,7 +169,8 @@ export default async function MarketDetailPage({
             Status: <strong>{formatStatus(market.status)}</strong>
           </p>
           <p className="market-detail-copy market-detail-copy-muted">
-            Closes {formatDate(market.closeTime)} • Fee {(market.feeBps / 100).toFixed(2)}%
+            Closes {formatDate(market.closeTime)} • Fee {(market.feeBps / 100).toFixed(2)}% • Resolution{" "}
+            {formatStatus(market.resolutionMode)}
           </p>
         </div>
 
@@ -284,8 +295,17 @@ export default async function MarketDetailPage({
               <strong>Resolves NO if:</strong> {market.resolvesNoIf}
             </p>
             <p>
-              <strong>Resolver authority:</strong> Platform admin final (v1)
+              <strong>Resolver authority:</strong>{" "}
+              {market.resolutionMode === "community"
+                ? "Community provisional outcome + platform admin challenge adjudication"
+                : "Platform admin final (v1)"}
             </p>
+            {market.resolutionMode === "community" ? (
+              <p>
+                <strong>Successful challenge bonus:</strong> {(market.challengeBonusRate * 100).toFixed(1)}% of the
+                resolver reward pool is paid to successful challengers.
+              </p>
+            ) : null}
             {market.evidenceRules ? (
               <p>
                 <strong>Evidence rules:</strong> {market.evidenceRules}

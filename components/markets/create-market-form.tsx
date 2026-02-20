@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-import type { MarketSourceType } from "@/lib/markets/create-market";
+import type { MarketResolutionMode, MarketSourceType } from "@/lib/markets/create-market";
 import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 
 type SourceDraft = {
@@ -63,6 +63,7 @@ export function CreateMarketForm() {
   const [evidenceRules, setEvidenceRules] = useState("");
   const [disputeRules, setDisputeRules] = useState("Disputes must be filed within 48 hours of resolution.");
   const [visibility, setVisibility] = useState("public");
+  const [resolutionMode, setResolutionMode] = useState<MarketResolutionMode | "">("");
   const [feeBps, setFeeBps] = useState("200");
   const [tagsInput, setTagsInput] = useState("");
   const [riskFlagsInput, setRiskFlagsInput] = useState("");
@@ -81,6 +82,7 @@ export function CreateMarketForm() {
     () => sources.filter((source) => source.type === "official").length,
     [sources]
   );
+  const defaultResolutionMode = visibility === "private" ? "community" : "admin";
 
   function updateSource(id: string, key: keyof SourceDraft, value: string) {
     setSources((current) =>
@@ -157,6 +159,7 @@ export function CreateMarketForm() {
           evidenceRules,
           disputeRules,
           visibility,
+          resolutionMode: resolutionMode || undefined,
           feeBps: Number(feeBps),
           tags: splitListInput(tagsInput),
           riskFlags: splitListInput(riskFlagsInput),
@@ -242,6 +245,21 @@ export function CreateMarketForm() {
             />
           </label>
         </div>
+
+        <label className="create-field">
+          <span>Resolution mode</span>
+          <select
+            value={resolutionMode}
+            onChange={(event) => setResolutionMode(event.target.value as MarketResolutionMode | "")}
+          >
+            <option value="">Auto by access tier (default: {defaultResolutionMode})</option>
+            <option value="admin">Admin resolution</option>
+            <option value="community">Community resolution</option>
+          </select>
+        </label>
+        <p className="create-note">
+          Submitting to review charges a <strong>$0.50 listing fee</strong> from your wallet balance.
+        </p>
       </section>
 
       <section className="create-section" aria-label="Resolution rules">

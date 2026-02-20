@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
+import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export async function GET(_request: Request, context: { params: Promise<{ marketId: string }> }) {
@@ -17,6 +18,15 @@ export async function GET(_request: Request, context: { params: Promise<{ market
   const { marketId } = await context.params;
 
   try {
+    if (isSupabaseServiceEnvConfigured()) {
+      const service = createServiceClient();
+      await service.rpc("sync_market_close_state", { p_market_id: marketId });
+      await service.rpc("refresh_community_market_resolution_state", {
+        p_market_id: marketId,
+        p_resolution_window_hours: 24,
+      });
+    }
+
     const supabase = await createClient();
     const viewer = await getMarketViewerContext(supabase);
 

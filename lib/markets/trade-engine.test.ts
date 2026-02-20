@@ -645,7 +645,7 @@ describe("validateTradeExecutePayload", () => {
       }
     });
 
-    it("should accumulate both quote and execute errors", () => {
+    it("should return quote validation errors before execute validation", () => {
       const result = validateTradeExecutePayload({
         side: "invalid",
         action: "buy",
@@ -656,7 +656,7 @@ describe("validateTradeExecutePayload", () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.errors).toContain("side must be one of: yes, no.");
-        expect(result.errors.some((e) => e.includes("8-120 characters"))).toBe(true);
+        expect(result.errors.some((e) => e.includes("8-120 characters"))).toBe(false);
       }
     });
   });

@@ -30,7 +30,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function hasInstitutionAccessRule(accessRules: Record<string, unknown> | null): boolean {
+export function hasInstitutionAccessRule(accessRules: Record<string, unknown> | null): boolean {
   if (!accessRules) return false;
 
   const valueByKey = [

@@ -25,6 +25,57 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
   const mockContext = {
     params: Promise.resolve({ marketId: "test-market-123" }),
   };
+  const baseMarketDetail = {
+    id: "test-market-123",
+    question: "Will this market resolve by the target date?",
+    description: "This is a test market description used for route tests.",
+    resolvesYesIf: "An eligible source confirms the condition happened.",
+    resolvesNoIf: "An eligible source confirms the condition did not happen.",
+    status: "open",
+    resolutionMode: "admin",
+    visibility: "public",
+    accessBadge: "Public",
+    accessRequiresLogin: false,
+    closeTime: "2026-12-31T00:00:00.000Z",
+    expectedResolutionTime: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    feeBps: 200,
+    tags: [],
+    riskFlags: [],
+    evidenceRules: null,
+    disputeRules: null,
+    resolutionOutcome: null,
+    provisionalOutcome: null,
+    resolvedAt: null,
+    provisionalResolvedAt: null,
+    finalizedAt: null,
+    resolutionWindowEndsAt: null,
+    challengeBonusRate: 0.1,
+    challengeBondAmount: 1,
+    listingFeeAmount: 0.5,
+    finalOutcomeChangedByChallenge: false,
+    priceYes: 0.55,
+    priceNo: 0.45,
+    yesShares: 0,
+    noShares: 0,
+    poolShares: 0,
+    liquidityParameter: 100,
+    chartPoints: [{ timestamp: "2026-01-01T00:00:00.000Z", priceYes: 0.55 }],
+    viewerPosition: null,
+    sources: [],
+    cardShadowTone: "mint" as const,
+    actionRequired: "account_ready" as const,
+  };
+
+  function okMarketDetail(overrides: Partial<typeof baseMarketDetail> = {}) {
+    return {
+      kind: "ok" as const,
+      market: {
+        ...baseMarketDetail,
+        ...overrides,
+      },
+    };
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,14 +111,7 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
         userId: "user-123",
       });
 
-      vi.mocked(getMarketDetail).mockResolvedValue({
-        kind: "ok",
-        market: {
-          id: "test-market-123",
-          status: "open",
-          feeBps: 200,
-        },
-      });
+      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
 
       vi.mocked(executeMarketTrade).mockResolvedValue({
         ok: true,
@@ -135,14 +179,7 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
         userId: "user-123",
       });
 
-      vi.mocked(getMarketDetail).mockResolvedValue({
-        kind: "ok",
-        market: {
-          id: "test-market-123",
-          status: "open",
-          feeBps: 200,
-        },
-      });
+      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
 
       vi.mocked(executeMarketTrade).mockResolvedValue({
         ok: true,
@@ -213,14 +250,7 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
         userId: "user-123",
       });
 
-      vi.mocked(getMarketDetail).mockResolvedValue({
-        kind: "ok",
-        market: {
-          id: "test-market-123",
-          status: "open",
-          feeBps: 200,
-        },
-      });
+      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
 
       vi.mocked(executeMarketTrade).mockResolvedValue({
         ok: true,
@@ -286,14 +316,7 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
         userId: "user-123",
       });
 
-      vi.mocked(getMarketDetail).mockResolvedValue({
-        kind: "ok",
-        market: {
-          id: "test-market-123",
-          status: "open",
-          feeBps: 200,
-        },
-      });
+      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
 
       vi.mocked(executeMarketTrade).mockResolvedValue({
         ok: true,
@@ -429,14 +452,7 @@ describe("POST /api/markets/[marketId]/trade/execute", () => {
         userId: "user-123",
       });
 
-      vi.mocked(getMarketDetail).mockResolvedValue({
-        kind: "ok",
-        market: {
-          id: "test-market-123",
-          status: "open",
-          feeBps: 200,
-        },
-      });
+      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
 
       vi.mocked(executeMarketTrade).mockResolvedValue({
         ok: false,

@@ -1,10 +1,14 @@
+import { hasInstitutionAccessRule } from "@/lib/markets/view-access";
+
 export const MARKET_VISIBILITIES = ["public", "unlisted", "private"] as const;
 export const MARKET_SUBMISSION_MODES = ["draft", "review"] as const;
 export const MARKET_SOURCE_TYPES = ["official", "supporting", "rules"] as const;
+export const MARKET_RESOLUTION_MODES = ["admin", "community"] as const;
 
 export type MarketVisibility = (typeof MARKET_VISIBILITIES)[number];
 export type MarketSubmissionMode = (typeof MARKET_SUBMISSION_MODES)[number];
 export type MarketSourceType = (typeof MARKET_SOURCE_TYPES)[number];
+export type MarketResolutionMode = (typeof MARKET_RESOLUTION_MODES)[number];
 
 export type CreateMarketValidationResult =
   | { ok: true; data: ValidatedCreateMarketPayload }
@@ -28,10 +32,20 @@ export interface ValidatedCreateMarketPayload {
   disputeRules: string | null;
   feeBps: number;
   visibility: MarketVisibility;
+  resolutionMode: MarketResolutionMode;
   accessRules: Record<string, unknown>;
   tags: string[];
   riskFlags: string[];
   sources: ValidatedMarketSource[];
+}
+
+function defaultResolutionMode(options: {
+  visibility: MarketVisibility;
+  accessRules: Record<string, unknown>;
+}): MarketResolutionMode {
+  if (options.visibility === "private") return "community";
+  if (hasInstitutionAccessRule(options.accessRules)) return "community";
+  return "admin";
 }
 
 function cleanText(value: unknown, maxLength: number): string {
@@ -114,6 +128,10 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
   const feeBps = Number.isFinite(feeBpsRaw) ? Math.floor(feeBpsRaw) : 200;
 
   const accessRules = isRecord(raw.accessRules) ? raw.accessRules : {};
+  const resolutionModeRaw = cleanText(raw.resolutionMode, 16).toLowerCase();
+  const resolutionMode = isOneOf(resolutionModeRaw, MARKET_RESOLUTION_MODES)
+    ? resolutionModeRaw
+    : defaultResolutionMode({ visibility, accessRules });
   const tags = normalizeList(raw.tags, 12);
   const riskFlags = normalizeList(raw.riskFlags, 10);
 
@@ -214,6 +232,7 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
       disputeRules: disputeRules || null,
       feeBps,
       visibility,
+      resolutionMode,
       accessRules,
       tags,
       riskFlags,

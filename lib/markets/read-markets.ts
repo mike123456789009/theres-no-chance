@@ -34,6 +34,7 @@ export type MarketCardDTO = {
   id: string;
   question: string;
   status: string;
+  resolutionMode: string;
   closeTime: string;
   createdAt: string;
   tags: string[];
@@ -74,6 +75,7 @@ export type MarketDetailDTO = {
   resolvesYesIf: string;
   resolvesNoIf: string;
   status: string;
+  resolutionMode: string;
   visibility: string;
   accessBadge: string;
   accessRequiresLogin: boolean;
@@ -85,6 +87,16 @@ export type MarketDetailDTO = {
   riskFlags: string[];
   evidenceRules: string | null;
   disputeRules: string | null;
+  resolutionOutcome: string | null;
+  provisionalOutcome: string | null;
+  resolvedAt: string | null;
+  provisionalResolvedAt: string | null;
+  finalizedAt: string | null;
+  resolutionWindowEndsAt: string | null;
+  challengeBonusRate: number;
+  challengeBondAmount: number;
+  listingFeeAmount: number;
+  finalOutcomeChangedByChallenge: boolean;
   priceYes: number;
   priceNo: number;
   yesShares: number;
@@ -123,6 +135,7 @@ type MarketDiscoveryRow = {
   id: string;
   question: string;
   status: string;
+  resolution_mode: string;
   visibility: string;
   access_rules: Record<string, unknown> | null;
   creator_id: string;
@@ -139,6 +152,7 @@ type MarketDetailRow = {
   resolves_yes_if: string;
   resolves_no_if: string;
   status: string;
+  resolution_mode: string;
   visibility: string;
   access_rules: Record<string, unknown> | null;
   creator_id: string;
@@ -150,6 +164,16 @@ type MarketDetailRow = {
   risk_flags: string[] | null;
   evidence_rules: string | null;
   dispute_rules: string | null;
+  resolution_outcome: string | null;
+  provisional_outcome: string | null;
+  resolved_at: string | null;
+  provisional_resolved_at: string | null;
+  finalized_at: string | null;
+  resolution_window_ends_at: string | null;
+  challenge_bonus_rate: number | string | null;
+  challenge_bond_amount: number | string | null;
+  listing_fee_amount: number | string | null;
+  final_outcome_changed_by_challenge: boolean | null;
   market_amm_state: MarketAmmStateRow | MarketAmmStateRow[] | null;
   market_sources: MarketSourceRow[] | null;
 };
@@ -479,7 +503,7 @@ export async function listDiscoveryMarketCards(options: {
   let request = supabase
     .from("markets")
     .select(
-      "id, question, status, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
+      "id, question, status, resolution_mode, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
     )
     .in("status", [...DISCOVERABLE_MARKET_STATUSES])
     .limit(MARKET_DISCOVERY_LIMIT);
@@ -563,6 +587,7 @@ export async function listDiscoveryMarketCards(options: {
         id: row.id,
         question: row.question,
         status: row.status,
+        resolutionMode: row.resolution_mode,
         closeTime: row.close_time,
         createdAt: row.created_at,
         tags: normalizeTags(row.tags),
@@ -608,7 +633,7 @@ export async function getMarketDetail(options: {
     const result = await supabase
       .from("markets")
       .select(
-        "id, question, description, resolves_yes_if, resolves_no_if, status, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
+        "id, question, description, resolves_yes_if, resolves_no_if, status, resolution_mode, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, resolution_outcome, provisional_outcome, resolved_at, provisional_resolved_at, finalized_at, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
       )
       .eq("id", marketId)
       .maybeSingle();
@@ -722,6 +747,7 @@ export async function getMarketDetail(options: {
       resolvesYesIf: row.resolves_yes_if,
       resolvesNoIf: row.resolves_no_if,
       status: row.status,
+      resolutionMode: row.resolution_mode,
       visibility: row.visibility,
       accessBadge: marketAccessBadge(row.visibility, accessRules),
       accessRequiresLogin: requiresAuthenticatedViewer({ visibility: row.visibility, accessRules }),
@@ -733,6 +759,16 @@ export async function getMarketDetail(options: {
       riskFlags: normalizeTags(row.risk_flags),
       evidenceRules: row.evidence_rules,
       disputeRules: row.dispute_rules,
+      resolutionOutcome: row.resolution_outcome,
+      provisionalOutcome: row.provisional_outcome,
+      resolvedAt: row.resolved_at,
+      provisionalResolvedAt: row.provisional_resolved_at,
+      finalizedAt: row.finalized_at,
+      resolutionWindowEndsAt: row.resolution_window_ends_at,
+      challengeBonusRate: Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1))),
+      challengeBondAmount: Math.max(0, toNumber(row.challenge_bond_amount, 1)),
+      listingFeeAmount: Math.max(0, toNumber(row.listing_fee_amount, 0.5)),
+      finalOutcomeChangedByChallenge: row.final_outcome_changed_by_challenge === true,
       priceYes,
       priceNo,
       yesShares,

@@ -26,6 +26,25 @@ function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
   return raw as Record<string, unknown>;
 }
 
+function mapResolveRpcError(message: string): { status: number; error: string; detail: string } {
+  const trimmed = message.trim();
+  const match = trimmed.match(/^\[(RESOLVE_[A-Z_]+)\]\s*(.*)$/);
+  const detail = match?.[2] || trimmed;
+
+  switch (match?.[1]) {
+    case "RESOLVE_VALIDATION":
+      return { status: 400, error: "Market resolution validation failed.", detail };
+    case "RESOLVE_FORBIDDEN":
+      return { status: 403, error: "Market resolution forbidden.", detail };
+    case "RESOLVE_NOT_FOUND":
+      return { status: 404, error: "Market not found.", detail };
+    case "RESOLVE_CONFLICT":
+      return { status: 409, error: "Market resolution unavailable.", detail };
+    default:
+      return { status: 500, error: "Market resolution failed.", detail: trimmed };
+  }
+}
+
 export async function POST(request: Request, context: { params: Promise<{ marketId: string }> }) {
   const auth = await requireAllowlistedAdmin();
   if (!auth.ok) {
@@ -74,12 +93,13 @@ export async function POST(request: Request, context: { params: Promise<{ market
     });
 
     if (error) {
+      const mapped = mapResolveRpcError(error.message);
       return NextResponse.json(
         {
-          error: "Market resolution failed.",
-          detail: error.message,
+          error: mapped.error,
+          detail: mapped.detail,
         },
-        { status: 500 }
+        { status: mapped.status }
       );
     }
 
@@ -108,4 +128,3 @@ export async function POST(request: Request, context: { params: Promise<{ market
     );
   }
 }
-
