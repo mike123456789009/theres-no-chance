@@ -70,7 +70,12 @@ const OUTPUT_SCHEMA: Record<string, unknown> = {
           disputeRules: { type: ["string", "null"] },
           feeBps: { type: "number" },
           visibility: { type: "string", enum: ["public", "unlisted", "private"] },
-          accessRules: { type: "object", additionalProperties: true },
+          accessRules: {
+            type: "object",
+            additionalProperties: false,
+            properties: {},
+            required: [],
+          },
           tags: { type: "array", items: { type: "string" }, maxItems: 12 },
           riskFlags: { type: "array", items: { type: "string" }, maxItems: 10 },
           sources: {
@@ -104,6 +109,12 @@ function jsonString(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+function cleanBoolean(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
 function getResponseText(response: OpenAiResponse): string {
   if (typeof response.output_text === "string" && response.output_text.trim().length > 0) {
     return response.output_text.trim();
@@ -121,9 +132,13 @@ function getResponseText(response: OpenAiResponse): string {
   return chunks.join("\n").trim();
 }
 
-async function createResponseWithRetry(payload: Record<string, unknown>, timeoutMs: number): Promise<OpenAiResponse> {
+async function createResponseWithRetry(
+  payload: Record<string, unknown>,
+  timeoutMs: number,
+  maxAttempts = 2
+): Promise<OpenAiResponse> {
   const key = requiredEnv("OPENAI_API_KEY");
-  const attempts = 3;
+  const attempts = Math.max(1, Math.min(4, Math.floor(maxAttempts)));
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -160,6 +175,34 @@ async function createResponseWithRetry(payload: Record<string, unknown>, timeout
   }
 
   throw lastError ?? new Error("OpenAI call failed with no error details.");
+}
+
+function isTimeoutLikeError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const normalized = error.message.toLowerCase();
+  return (
+    normalized.includes("aborted") ||
+    normalized.includes("timeout") ||
+    normalized.includes("timed out") ||
+    normalized.includes("aborterror")
+  );
+}
+
+function buildTools(scope: ResearchRunScope): Array<Record<string, unknown>> {
+  if (scope === "public") {
+    return [
+      {
+        type: "web_search_preview",
+        user_location: {
+          type: "approximate",
+          country: "US",
+        },
+        search_context_size: "medium",
+      },
+    ];
+  }
+
+  return [{ type: "web_search_preview", search_context_size: "medium" }];
 }
 
 function buildSystemPrompt(scope: ResearchRunScope): string {
@@ -233,24 +276,10 @@ function toGeneratedProposals(raw: unknown): GeneratedMarketProposal[] {
 }
 
 export async function generateProposalBatch(input: GenerateProposalBatchInput): Promise<GeneratedMarketProposal[]> {
-  const tools =
-    input.scope === "public"
-      ? [
-          {
-            type: "web_search_preview",
-            user_location: {
-              type: "approximate",
-              country: "US",
-            },
-            search_context_size: "medium",
-          },
-        ]
-      : [{ type: "web_search_preview", search_context_size: "medium" }];
-
-  const payload = {
+  const useWebSearch = cleanBoolean(process.env.MARKET_RESEARCH_USE_WEB_SEARCH);
+  const basePayload = {
     model: input.modelName,
-    tools,
-    reasoning: { effort: "medium" },
+    reasoning: { effort: "low" },
     text: {
       format: {
         type: "json_schema",
@@ -269,9 +298,65 @@ export async function generateProposalBatch(input: GenerateProposalBatchInput): 
         content: [{ type: "input_text", text: buildUserPrompt(input) }],
       },
     ],
-  } as const;
+  } as const satisfies Record<string, unknown>;
 
-  const response = await createResponseWithRetry(payload as unknown as Record<string, unknown>, OPENAI_CALL_TIMEOUT_MS);
+  if (!useWebSearch) {
+    const directResponse = await createResponseWithRetry(
+      {
+        ...basePayload,
+      },
+      OPENAI_CALL_TIMEOUT_MS,
+      1
+    );
+
+    const directText = getResponseText(directResponse);
+    if (!directText) {
+      throw new Error(`OpenAI returned empty content for response ${directResponse.id}.`);
+    }
+
+    let directParsed: unknown;
+    try {
+      directParsed = JSON.parse(directText);
+    } catch (error) {
+      throw new Error(
+        `Unable to parse OpenAI structured output as JSON: ${
+          error instanceof Error ? error.message : "unknown parse error"
+        }. Raw: ${directText.slice(0, 240)}.`
+      );
+    }
+
+    const directProposals = toGeneratedProposals(directParsed).slice(0, input.maxCandidates);
+    if (directProposals.length === 0) {
+      throw new Error(`OpenAI returned zero proposals. Parsed payload: ${jsonString(directParsed).slice(0, 300)}.`);
+    }
+
+    return directProposals;
+  }
+
+  let response: OpenAiResponse;
+  try {
+    response = await createResponseWithRetry(
+      {
+        ...basePayload,
+        tools: buildTools(input.scope),
+      },
+      OPENAI_CALL_TIMEOUT_MS,
+      1
+    );
+  } catch (error) {
+    if (!isTimeoutLikeError(error)) {
+      throw error;
+    }
+
+    response = await createResponseWithRetry(
+      {
+        ...basePayload,
+      },
+      Math.min(60_000, OPENAI_CALL_TIMEOUT_MS),
+      1
+    );
+  }
+
   const text = getResponseText(response);
   if (!text) {
     throw new Error(`OpenAI returned empty content for response ${response.id}.`);
