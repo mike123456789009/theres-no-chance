@@ -527,6 +527,7 @@ ${serializedLeads}
 
 async function runScoutStage(input: GenerateProposalBatchInput, scoutModelName: string): Promise<ScoutLead[]> {
   const leadTarget = Math.max(Math.min(input.maxCandidates * 4, 64), 8);
+  const scoutTimeoutMs = Math.max(90_000, Math.min(OPENAI_CALL_TIMEOUT_MS, 180_000));
 
   const payload = {
     model: scoutModelName,
@@ -550,7 +551,7 @@ async function runScoutStage(input: GenerateProposalBatchInput, scoutModelName: 
     ],
   } as const satisfies Record<string, unknown>;
 
-  const response = await createResponseWithRetry(payload, Math.min(90_000, OPENAI_CALL_TIMEOUT_MS), 1);
+  const response = await createResponseWithRetry(payload, scoutTimeoutMs, 2);
   const parsed = parseResponseJson(response, "scout");
   const leads = toScoutLeads(parsed);
   if (leads.length === 0) {
