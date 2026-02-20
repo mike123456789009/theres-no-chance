@@ -2069,8 +2069,8 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   font-size: clamp(0.86rem, 1.1vw, 1.02rem);
   line-height: var(--market-tile-title-line-height);
   text-transform: uppercase;
-  min-height: calc(3 * 1em * var(--market-tile-title-line-height));
-  max-height: calc(3 * 1em * var(--market-tile-title-line-height));
+  min-height: calc(2 * 1em * var(--market-tile-title-line-height));
+  max-height: calc(2 * 1em * var(--market-tile-title-line-height));
   overflow: hidden;
 }
 
@@ -2079,7 +2079,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   text-decoration: none;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: var(--font-retro-ui);
