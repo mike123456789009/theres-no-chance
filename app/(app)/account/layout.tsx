@@ -7,9 +7,10 @@ export default function AccountLayout({ children }: Readonly<{ children: React.R
   return (
     <div className="account-shell">
       <aside className="account-pane" aria-label="Account navigation">
-        <Link className="account-logo" href="/" aria-label="There&apos;s No Chance landing">
+        {/* Hard navigation ensures the landing module script always re-initializes correctly. */}
+        <a className="account-logo" href="/" aria-label="There&apos;s No Chance landing">
           <TncLogo decorative />
-        </Link>
+        </a>
 
         <div className="account-pane-copy">
           <p className="create-kicker">Account</p>

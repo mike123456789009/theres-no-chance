@@ -37,3 +37,22 @@
   - Prefer `<a href="/">` over Next `<Link>` when the requirement is explicitly "full reload".
   - Validate using a real browser flow (navigate to `/login` then hit browser back + click logo).
 
+## 5) Navigation Reliability Is Non-Negotiable
+- Mistake:
+  - A clickable logo/link navigated to a landing state that looked blank because required visuals did not initialize.
+- Rule going forward:
+  - Any navigation action I ship must always load the destination page with complete intended visuals.
+  - For routes that require full re-initialization (like the landing 3D/module boot), use hard navigation.
+- Prevention:
+  - Treat brand logo navigation to landing as a hard `<a href="/">` by default.
+  - Before shipping nav changes, test the actual user flow from the source page (not just direct URL load).
+
+## 6) Meta-Note System (Automatic Feedback Capture)
+- Rule going forward:
+  - When you call out a repeated mistake or a decision you do not like, I must immediately record:
+    - what happened,
+    - why it was unacceptable,
+    - the permanent prevention rule/checklist item.
+- Prevention:
+  - Keep this `notes.md` as a living "do-not-repeat" ledger.
+  - Update it in the same fix commit when feedback is given, so the lesson and code change ship together.
