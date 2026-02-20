@@ -140,7 +140,11 @@ html[data-ui-style="modern"] .account-shell {
 html[data-ui-style="modern"] .account-pane {
   border-right-width: 1px;
   border-right-color: var(--border-soft);
-  background: linear-gradient(180deg, #f7f9fc 0%, #eef3fa 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-elevated) 65%, white) 0%,
+    var(--surface-muted) 100%
+  );
 }
 
 html[data-ui-style="modern"] .account-pane-copy h1,
@@ -245,7 +249,7 @@ html[data-ui-style="modern"] .auth-email {
   border-color: var(--border-soft);
   border-radius: 10px;
   box-shadow: none;
-  background: #f8fbff;
+  background: var(--field-bg);
 }
 
 html[data-ui-style="modern"] .tnc-data-table {

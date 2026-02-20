@@ -1,46 +1,48 @@
 html[data-ui-style="modern"] {
-  --bg: #f2f5f9;
-  --ink: #132030;
+  --bg: #f6f3ef;
+  --ink: #241d17;
 
-  --red-face: #2559d6;
-  --red-side: #1f49ae;
-  --gold-face: #0f9d83;
-  --gold-side: #0b7a66;
-  --slash-face: #d9e3f2;
-  --slash-side: #becde1;
-  --neutral-face: #cad7e9;
-  --neutral-side: #aebfd6;
+  --red-face: #2f2a24;
+  --red-side: #24201b;
+  --gold-face: #b97a4b;
+  --gold-side: #98623a;
+  --slash-face: #e7dbcd;
+  --slash-side: #cfbfad;
+  --neutral-face: #d8c9b7;
+  --neutral-side: #bfac97;
 
-  --surface-page: #f2f5f9;
-  --surface-elevated: #ffffff;
-  --surface-muted: #eef2f7;
-  --surface-inverse: #0d1827;
+  --surface-page: #f6f3ef;
+  --surface-elevated: #fffdfa;
+  --surface-muted: #f3ece3;
+  --surface-inverse: #191511;
+  --surface-overlay: rgba(255, 253, 250, 0.9);
+  --field-bg: #faf4eb;
 
-  --border-strong: #c5cfdd;
-  --border-soft: #d8dfeb;
+  --border-strong: #cbb9a5;
+  --border-soft: #ddd0c1;
 
-  --text-primary: #132030;
-  --text-muted: #5b697c;
-  --text-soft: #7a8799;
-  --text-inverse: #f8fbff;
+  --text-primary: #241d17;
+  --text-muted: #6f6256;
+  --text-soft: #918273;
+  --text-inverse: #fcf8f2;
 
-  --accent-primary: #2559d6;
-  --accent-secondary: #0f9d83;
-  --accent-tertiary: #e9f0ff;
+  --accent-primary: #2f2a24;
+  --accent-secondary: #b97a4b;
+  --accent-tertiary: #efe4d8;
 
-  --positive: #147a4f;
-  --negative: #b42318;
+  --positive: #2f7556;
+  --negative: #b3473a;
 
-  --shadow-soft: 0 10px 28px -18px rgba(15, 23, 42, 0.22);
-  --shadow-card: 0 18px 32px -24px rgba(15, 23, 42, 0.26);
-  --focus-ring: 0 0 0 3px rgba(37, 89, 214, 0.28);
+  --shadow-soft: 0 10px 28px -18px rgba(34, 27, 21, 0.21);
+  --shadow-card: 0 18px 32px -24px rgba(34, 27, 21, 0.27);
+  --focus-ring: 0 0 0 3px rgba(185, 122, 75, 0.28);
 
-  --toggle-bg: #f8fbff;
-  --toggle-border: #c5cfdd;
-  --toggle-text: #304156;
-  --toggle-active-bg: #2559d6;
-  --toggle-active-text: #fff;
-  --toggle-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.45);
+  --toggle-bg: #fffdfa;
+  --toggle-border: #cbb9a5;
+  --toggle-text: #56483c;
+  --toggle-active-bg: #2f2a24;
+  --toggle-active-text: #fcf8f2;
+  --toggle-shadow: 0 8px 20px -14px rgba(34, 27, 21, 0.45);
   --toggle-radius: 999px;
 }
 

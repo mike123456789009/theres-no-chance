@@ -1,6 +1,7 @@
 html[data-ui-style="modern"] .market-detail-page {
   background:
-    radial-gradient(130% 120% at 100% 0%, rgba(37, 89, 214, 0.08), transparent 52%),
+    radial-gradient(130% 120% at 100% 0%, rgba(185, 122, 75, 0.1), transparent 52%),
+    radial-gradient(120% 100% at 0% 0%, rgba(47, 42, 36, 0.05), transparent 54%),
     var(--surface-page);
   color: var(--text-primary);
   font-family: var(--font-modern-ui);
@@ -12,13 +13,17 @@ html[data-ui-style="modern"] .market-detail-shell {
   border-radius: 18px;
   box-shadow: var(--shadow-card);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 65%, white) 0%,
+      var(--surface-elevated) 100%
+    ),
     var(--surface-elevated);
 }
 
 html[data-ui-style="modern"] .market-detail-shell-warning {
   border-color: color-mix(in srgb, var(--negative) 48%, white);
-  box-shadow: 0 18px 28px -22px rgba(180, 35, 24, 0.46);
+  box-shadow: 0 18px 28px -22px color-mix(in srgb, var(--negative) 45%, transparent);
 }
 
 html[data-ui-style="modern"] .market-detail-top-links,
@@ -108,7 +113,7 @@ html[data-ui-style="modern"] .market-detail-chart-stage {
   border-color: var(--border-soft);
   border-radius: 12px;
   box-shadow: none;
-  background: #f9fbff;
+  background: var(--field-bg);
 }
 
 html[data-ui-style="modern"] .market-detail-chart-grid-line {
@@ -125,7 +130,7 @@ html[data-ui-style="modern"] .market-detail-chart-axis {
 }
 
 html[data-ui-style="modern"] .market-detail-chart-area {
-  fill: rgba(37, 89, 214, 0.16);
+  fill: color-mix(in srgb, var(--accent-secondary) 28%, transparent);
 }
 
 html[data-ui-style="modern"] .market-detail-chart-line {
@@ -186,7 +191,7 @@ html[data-ui-style="modern"] .trade-input-section input[type="number"] {
   border-width: 1px;
   border-color: var(--border-soft);
   border-radius: 10px;
-  background: #f8fbff;
+  background: var(--field-bg);
   color: var(--text-primary);
   box-shadow: none;
   font-family: var(--font-modern-ui);

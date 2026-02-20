@@ -3,13 +3,15 @@
 }
 
 html[data-ui-style="modern"] .markets-product-page {
-  background: var(--surface-page);
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(185, 122, 75, 0.08), transparent 54%),
+    var(--surface-page);
   color: var(--text-primary);
   font-family: var(--font-modern-ui);
 }
 
 html[data-ui-style="modern"] .markets-product-header {
-  background: rgba(249, 251, 255, 0.9);
+  background: var(--surface-overlay);
   border-bottom: 1px solid var(--border-soft);
   backdrop-filter: blur(14px);
 }
@@ -31,6 +33,11 @@ html[data-ui-style="modern"] .market-tile-open {
   border-radius: 10px;
   box-shadow: var(--shadow-soft);
   font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"] .markets-search-field input,
+html[data-ui-style="modern"] .markets-select-field select {
+  background: var(--field-bg);
 }
 
 html[data-ui-style="modern"] .markets-search-submit,
