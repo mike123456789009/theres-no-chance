@@ -48,6 +48,34 @@ function formatSignedCurrency(value: number): string {
   return value > 0 ? `+${absolute}` : `-${absolute}`;
 }
 
+function looksLikeLowInformationScheduleMarket(input: {
+  question: string;
+  description: string;
+  resolvesYesIf: string;
+  resolvesNoIf: string;
+  riskFlags: string[];
+}): boolean {
+  const question = input.question.toLowerCase();
+  const description = input.description.toLowerCase();
+  const resolvesYesIf = input.resolvesYesIf.toLowerCase();
+  const resolvesNoIf = input.resolvesNoIf.toLowerCase();
+  const riskFlags = input.riskFlags.join(" ").toLowerCase();
+
+  const scheduleSignal = /(officially\s+)?(begin|start|commence|open(?:ing)?|take place|be held)/.test(question);
+  const deadlineSignal =
+    /(on or before|by\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|q[1-4]|\d{1,2}[,\s]+\d{4}|\d{4}))/i.test(
+      question
+    ) || /\b(on or before|by)\b/.test(resolvesYesIf);
+  const noSideDelayCancelSignal =
+    /(after|postpon|delay|cancel|does not|do not|fails to|did not)/.test(resolvesNoIf) &&
+    /(start|begin|occur|happen|take place|commence|open)/.test(resolvesNoIf);
+  const tailRiskSignal = /(tail[\s-]?risk|postpon|delay|cancel|weather|disrupt|force[\s-]?majeure)/.test(
+    `${description} ${resolvesNoIf} ${riskFlags}`
+  );
+
+  return scheduleSignal && deadlineSignal && noSideDelayCancelSignal && tailRiskSignal;
+}
+
 export default async function MarketDetailPage({
   params,
 }: Readonly<{ params: Promise<{ marketId: string }> }>) {
@@ -142,6 +170,13 @@ export default async function MarketDetailPage({
   }
 
   const market = detail.market;
+  const isLowInformationMarket = looksLikeLowInformationScheduleMarket({
+    question: market.question,
+    description: market.description,
+    resolvesYesIf: market.resolvesYesIf,
+    resolvesNoIf: market.resolvesNoIf,
+    riskFlags: market.riskFlags,
+  });
 
   return (
     <main className="market-detail-page">
@@ -162,6 +197,12 @@ export default async function MarketDetailPage({
             Closes {formatDate(market.closeTime)} • Fee {(market.feeBps / 100).toFixed(2)}%
           </p>
         </div>
+        {isLowInformationMarket ? (
+          <p className="market-detail-quality-warning">
+            Low-information market warning: this market mainly prices postponement/cancellation tail-risk rather than
+            broad two-sided uncertainty.
+          </p>
+        ) : null}
 
         <section className="market-detail-top-layout" aria-label="Market stats and action panel">
           <MarketLiveOverview
