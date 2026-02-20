@@ -303,7 +303,7 @@ type ExistingMarketContextInput = {
 export async function listExistingMarketsForResearch(input: ExistingMarketContextInput): Promise<ExistingMarketContext[]> {
   const service = createServiceClient();
   const limit = Math.max(20, Math.min(400, input.limit ?? 180));
-  const activeStatuses = ["review", "open", "pending_resolution", "resolved", "finalized", "halted"];
+  const activeStatuses = ["review", "open", "trading_halted", "closed", "pending_resolution", "resolved", "finalized"];
 
   let query = service
     .from("markets")
