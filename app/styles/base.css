@@ -2324,20 +2324,6 @@ html[data-ui-style="modern"] .market-tile-probability a {
   color: #545454;
 }
 
-.market-detail-bootstrap-note {
-  margin-top: 0.45rem;
-  border-left: 3px solid var(--ink);
-  padding-left: 0.5rem;
-  color: #4f4f4f;
-}
-
-.market-detail-low-volume-note {
-  margin-top: 0.45rem;
-  border-left: 3px solid #9a7a1d;
-  padding-left: 0.5rem;
-  color: #6e5510;
-}
-
 .market-detail-stat {
   border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);

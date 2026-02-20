@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MarketDetailChartPointDTO } from "@/lib/markets/read-markets";
 
 const LIVE_REFRESH_INTERVAL_MS = 4_000;
-const LOW_TRADE_VOLUME_THRESHOLD = 250;
 
 type LiveMarketSnapshot = {
   chartPoints: MarketDetailChartPointDTO[];
@@ -232,26 +231,12 @@ export function MarketLiveOverview({ marketId, initialMarket }: MarketLiveOvervi
   const chartStartLabel = formatShortDate(market.chartPoints[0]?.timestamp ?? null);
   const chartMidLabel = formatShortDate(market.chartPoints[Math.floor((market.chartPoints.length - 1) / 2)]?.timestamp ?? null);
   const chartEndLabel = formatShortDate(market.chartPoints[market.chartPoints.length - 1]?.timestamp ?? null);
-  const hasExecutedVolume = market.poolShares > 0 || market.yesShares > 0 || market.noShares > 0;
-  const isNearMidpoint = Math.abs(market.priceYes - 0.5) < 0.001 && Math.abs(market.priceNo - 0.5) < 0.001;
-  const isBootstrapPrice = !hasExecutedVolume && isNearMidpoint;
-  const isLowTradeVolume = hasExecutedVolume && market.poolShares < LOW_TRADE_VOLUME_THRESHOLD;
 
   return (
     <div className="market-detail-market-pane">
       <article className="market-detail-strip-panel">
         <h2>Market strip</h2>
-        <p className="market-detail-strip-label">{isBootstrapPrice ? "Bootstrap odds (no fills yet)" : "Live implied odds"}</p>
-        {isBootstrapPrice ? (
-          <p className="market-detail-bootstrap-note">
-            50/50 is a starting quote. Uncertainty will move only after trades execute.
-          </p>
-        ) : null}
-        {isLowTradeVolume ? (
-          <p className="market-detail-low-volume-note">
-            Low trade volume warning: prices are still thin and can move sharply on small orders.
-          </p>
-        ) : null}
+        <p className="market-detail-strip-label">Live implied odds</p>
         <p className="market-detail-stat market-detail-stat-yes">YES {formatPercent(market.priceYes, 1)}</p>
         <p className="market-detail-stat market-detail-stat-no">NO {formatPercent(market.priceNo, 1)}</p>
 
@@ -279,7 +264,7 @@ export function MarketLiveOverview({ marketId, initialMarket }: MarketLiveOvervi
         <div className="market-detail-chart-header">
           <h2>Price + timeline</h2>
           <p>
-            {isBootstrapPrice ? "Provisional probability" : "YES probability"}
+            YES probability
             <span className="market-detail-chart-live-status">
               {isRefreshing ? " • updating..." : ` • updated ${formatUpdateTime(lastUpdated)}`}
             </span>
@@ -310,13 +295,7 @@ export function MarketLiveOverview({ marketId, initialMarket }: MarketLiveOvervi
           <span>{chartMidLabel}</span>
           <span>{chartEndLabel}</span>
         </div>
-        <p className="market-detail-chart-note">
-          {isBootstrapPrice
-            ? "No trade-driven price discovery yet. This line is still at the default bootstrap level."
-            : isLowTradeVolume
-              ? "Low trade volume warning: this probability is tradable but not deeply discovered yet."
-              : "Auto-refreshes every 4 seconds and after completed trades."}
-        </p>
+        <p className="market-detail-chart-note">Auto-refreshes every 4 seconds and after completed trades.</p>
       </article>
     </div>
   );

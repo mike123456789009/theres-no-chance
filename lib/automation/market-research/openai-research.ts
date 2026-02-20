@@ -498,8 +498,6 @@ Important:
 - include tags and riskFlags.
 - eventFingerprint should be stable across repeated scans for the same event.
 - if official source quality is unclear, do not include that proposal.
-- reject low-information "scheduled event happens as scheduled" markets where the only real uncertainty is postponement/cancellation tail-risk.
-- prefer markets with genuine two-sided disagreement and meaningful uncertainty.
 `.trim();
 
   if (scope === "public") {
