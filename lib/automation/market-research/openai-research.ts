@@ -407,6 +407,11 @@ Novelty and clutter control:
 - Do NOT suggest near-duplicates of existing markets.
 - Reject leads if the event, resolution condition, or timing window is too similar to an existing market.
 - Keep leads only if they add clear user value as a new edition or a materially different angle.
+
+Sports/Olympics lead quality:
+- Prefer markets on actual competitive outcomes (match winner, event winner, medal winner, podium finish, advancement, record-breaking thresholds).
+- Prefer high-information outcomes with clear two-sided uncertainty.
+- Avoid ceremony/schedule/administrative leads (for example, "will the games begin by date X") unless there is explicit, credible disruption risk.
 `.trim();
 
   if (scope === "public") {
@@ -498,6 +503,8 @@ Important:
 - include tags and riskFlags.
 - eventFingerprint should be stable across repeated scans for the same event.
 - if official source quality is unclear, do not include that proposal.
+- for sports categories, prioritize competitive outcomes (who wins/advances/medals) over administrative timing.
+- avoid low-information schedule-confirmation questions unless they capture a genuine contested uncertainty.
 `.trim();
 
   if (scope === "public") {
