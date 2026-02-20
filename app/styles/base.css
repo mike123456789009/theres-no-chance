@@ -2237,15 +2237,6 @@ html[data-ui-style="modern"] .market-tile-probability a {
   color: #5f5f5f;
 }
 
-.market-detail-quality-warning {
-  margin: 0.7rem 0 0;
-  border: 3px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
-  background: rgba(188, 89, 94, 0.16);
-  color: #6f2326;
-  padding: 0.5rem 0.6rem;
-}
-
 .market-detail-login-links {
   margin-top: 1rem;
   display: flex;
