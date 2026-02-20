@@ -110,8 +110,8 @@ let themeColors = { ...DEFAULT_COLORS };
 const wordMap = new Map();
 const hoverRaycaster = new THREE.Raycaster();
 const hoverPointer = new THREE.Vector2();
-let isAHovered = false;
-let isAPinned = false;
+let hoveredSwapKey = null;
+let pinnedSwapKey = "no";
 
 function setRenderMode(mode) {
   renderMode = mode;
@@ -264,7 +264,7 @@ function disposeWords() {
   }
   words = [];
   wordMap.clear();
-  isAHovered = false;
+  hoveredSwapKey = null;
 }
 
 function makeNoiseCanvas(size = 512) {
@@ -373,7 +373,8 @@ function applySwapState() {
   const slashWord = wordMap.get("slash");
   const aWord = wordMap.get("a");
   if (!noWord || !aWord) return;
-  const isAActive = isAHovered || isAPinned;
+  const activeSwapKey = hoveredSwapKey ?? pinnedSwapKey;
+  const isAActive = activeSwapKey === "a";
 
   if (slashWord) {
     setMeshOpacity(slashWord.mesh, 0.62);
@@ -389,58 +390,46 @@ function applySwapState() {
   needsRender = true;
 }
 
-function handleHeroPointerMove(event) {
+function getSwapKeyAtPointer(clientX, clientY) {
   const aWord = wordMap.get("a");
-  if (!aWord || !camera) return;
+  const noWord = wordMap.get("no");
+  if (!aWord || !noWord || !camera) return null;
 
   const rect = wrap.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
-    if (isAHovered) {
-      isAHovered = false;
-      applySwapState();
-      queueRender();
-    }
-    return;
-  }
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
 
   hoverPointer.x = (x / rect.width) * 2 - 1;
   hoverPointer.y = -(y / rect.height) * 2 + 1;
   hoverRaycaster.setFromCamera(hoverPointer, camera);
-  const hoveringA = hoverRaycaster.intersectObject(aWord.mesh, false).length > 0;
+  const intersections = hoverRaycaster.intersectObjects([aWord.mesh, noWord.mesh], false);
+  if (intersections.length === 0) return null;
+  return intersections[0].object === aWord.mesh ? "a" : "no";
+}
 
-  if (hoveringA !== isAHovered) {
-    isAHovered = hoveringA;
+function handleHeroPointerMove(event) {
+  const hoveredKey = getSwapKeyAtPointer(event.clientX, event.clientY);
+  if (hoveredKey !== hoveredSwapKey) {
+    hoveredSwapKey = hoveredKey;
     applySwapState();
     queueRender();
   }
 }
 
 function handleHeroPointerLeave() {
-  if (!isAHovered) return;
-  isAHovered = false;
+  if (hoveredSwapKey == null) return;
+  hoveredSwapKey = null;
   applySwapState();
   queueRender();
 }
 
 function handleHeroClick(event) {
-  const aWord = wordMap.get("a");
-  if (!aWord || !camera) return;
+  const clickedKey = getSwapKeyAtPointer(event.clientX, event.clientY);
+  if (!clickedKey) return;
 
-  const rect = wrap.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-
-  hoverPointer.x = (x / rect.width) * 2 - 1;
-  hoverPointer.y = -(y / rect.height) * 2 + 1;
-  hoverRaycaster.setFromCamera(hoverPointer, camera);
-  const clickedA = hoverRaycaster.intersectObject(aWord.mesh, false).length > 0;
-  if (!clickedA) return;
-
-  isAPinned = true;
-  isAHovered = true;
+  pinnedSwapKey = clickedKey;
+  hoveredSwapKey = clickedKey;
   applySwapState();
   queueRender();
 }
