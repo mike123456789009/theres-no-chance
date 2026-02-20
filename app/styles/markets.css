@@ -88,6 +88,7 @@ html[data-ui-style="modern"] .markets-card-grid {
 }
 
 html[data-ui-style="modern"] .market-tile {
+  --market-tile-title-line-height: 1.32;
   border-width: 1px;
   border-color: var(--border-strong);
   border-radius: 14px;
@@ -114,6 +115,7 @@ html[data-ui-style="modern"] .market-tile-question {
   font-family: var(--font-modern-display);
   letter-spacing: -0.01em;
   line-height: 1.32;
+  font-weight: 600;
 }
 
 html[data-ui-style="modern"] .market-tile-probability p {

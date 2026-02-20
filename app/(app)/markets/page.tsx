@@ -452,7 +452,9 @@ export default async function MarketsPage({
                 </div>
 
                 <h2 className="market-tile-question">
-                  <Link href={`/markets/${market.id}`}>{market.question}</Link>
+                  <Link href={`/markets/${market.id}`} title={market.question}>
+                    {market.question}
+                  </Link>
                 </h2>
 
                 <div className="market-tile-probability">

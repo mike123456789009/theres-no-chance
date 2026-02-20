@@ -2023,8 +2023,9 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .market-tile {
   --market-tile-shadow: #b9b9b9;
+  --market-tile-title-line-height: 1.28;
   border: 2px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--market-tile-shadow);
+  box-shadow: 5px 5px 0 var(--market-tile-shadow);
   background: #fbfaf6;
   padding: 0.56rem;
   display: grid;
@@ -2066,13 +2067,24 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 .market-tile-question {
   margin: 0;
   font-size: clamp(0.86rem, 1.1vw, 1.02rem);
-  line-height: 1.28;
+  line-height: var(--market-tile-title-line-height);
   text-transform: uppercase;
+  min-height: calc(3 * 1em * var(--market-tile-title-line-height));
+  max-height: calc(3 * 1em * var(--market-tile-title-line-height));
+  overflow: hidden;
 }
 
 .market-tile-question a {
   color: #111;
   text-decoration: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-retro-ui);
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .market-tile-question a:hover {
@@ -3244,7 +3256,7 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
   .market-tile {
     border-width: 2px;
-    box-shadow: 3px 3px 0 var(--market-tile-shadow);
+    box-shadow: 4px 4px 0 var(--market-tile-shadow);
     min-height: 0;
   }
 
