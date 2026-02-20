@@ -1881,12 +1881,19 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 }
 
 .markets-primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0 0.26rem;
   color: #303030;
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 100ms ease-out, color 100ms ease-out;
 }
 
 .markets-primary-link.is-active {

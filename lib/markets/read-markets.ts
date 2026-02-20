@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
+import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_SEARCH_QUERY, type MarketCategoryKey } from "@/lib/markets/taxonomy";
 import {
   DISCOVERABLE_MARKET_STATUSES,
   canViewerSeeMarket,
@@ -14,6 +15,7 @@ export const MARKET_DISCOVERY_ACCESS_FILTERS = ["all", "public", "institution"] 
 export type MarketDiscoverySort = (typeof MARKET_DISCOVERY_SORTS)[number];
 export type MarketDiscoveryAccessFilter = (typeof MARKET_DISCOVERY_ACCESS_FILTERS)[number];
 export type MarketDiscoveryStatusFilter = "all" | (typeof DISCOVERABLE_MARKET_STATUSES)[number];
+export type MarketDiscoveryCategoryFilter = MarketCategoryKey;
 
 export type MarketViewerContext = {
   userId: string | null;
@@ -22,6 +24,7 @@ export type MarketViewerContext = {
 
 export type MarketDiscoveryQuery = {
   search: string;
+  category: MarketDiscoveryCategoryFilter;
   status: MarketDiscoveryStatusFilter;
   access: MarketDiscoveryAccessFilter;
   sort: MarketDiscoverySort;
@@ -163,6 +166,20 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const MARKET_DISCOVERY_LIMIT = 120;
 const MARKET_DETAIL_CHART_POINTS = 9;
+const NEW_MARKET_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+const CATEGORY_MATCH_TERMS: Record<Exclude<MarketCategoryKey, "trending" | "new">, string[]> = {
+  politics: ["politics", "election", "vote", "government", "policy", "senate", "congress", "president", "white-house"],
+  sports: ["sports", "sport", "match", "game", "tournament", "playoff", "league", "olympic", "paralympic"],
+  crypto: ["crypto", "bitcoin", "ethereum", "solana", "token", "blockchain", "defi", "btc", "eth"],
+  finance: ["finance", "market", "stocks", "fed", "rate", "treasury", "earnings", "cpi", "inflation", "macro"],
+  geopolitics: ["geopolitics", "war", "conflict", "diplomacy", "sanction", "treaty", "nato", "china", "russia"],
+  tech: ["tech", "technology", "ai", "artificial intelligence", "software", "hardware", "semiconductor", "startup"],
+  culture: ["culture", "entertainment", "film", "music", "awards", "media", "celebrity", "tv"],
+  world: ["world", "global", "international", "foreign", "europe", "asia", "africa", "middle east", "latam"],
+  economy: ["economy", "economic", "gdp", "unemployment", "jobs", "recession", "consumer", "trade"],
+  climate_science: ["climate", "science", "weather", "temperature", "emissions", "environment", "hurricane", "el nino"],
+};
 
 function isSchemaMissingError(message: string): boolean {
   const normalized = message.toLowerCase();
@@ -306,13 +323,80 @@ function parseStatus(value: string): MarketDiscoveryStatusFilter {
   return "all";
 }
 
+function parseCategory(value: string): MarketDiscoveryCategoryFilter {
+  if ((MARKET_CATEGORY_KEYS as readonly string[]).includes(value)) {
+    return value as MarketDiscoveryCategoryFilter;
+  }
+  return "trending";
+}
+
+function inferLegacyCategoryFromSearch(search: string): MarketDiscoveryCategoryFilter | null {
+  if (!search) return null;
+
+  const normalized = search.trim().toLowerCase();
+  for (const [category, query] of Object.entries(MARKET_CATEGORY_SEARCH_QUERY) as Array<
+    [MarketCategoryKey, string | undefined]
+  >) {
+    if (!query) continue;
+    if (query.toLowerCase() === normalized) {
+      return category;
+    }
+  }
+
+  return null;
+}
+
+function shouldIncludeForCategory(options: {
+  category: MarketDiscoveryCategoryFilter;
+  market: MarketCardDTO;
+  nowMs: number;
+}): boolean {
+  const { category, market, nowMs } = options;
+
+  if (category === "trending") {
+    return true;
+  }
+
+  if (category === "new") {
+    const createdMs = Date.parse(market.createdAt);
+    if (!Number.isFinite(createdMs)) return false;
+    return nowMs - createdMs <= NEW_MARKET_WINDOW_MS;
+  }
+
+  const matchTerms = CATEGORY_MATCH_TERMS[category];
+  const tags = market.tags.map((tag) => tag.toLowerCase());
+  const question = market.question.toLowerCase();
+
+  return matchTerms.some((term) => {
+    if (question.includes(term)) return true;
+    return tags.some((tag) => tag === term || tag.includes(term) || term.includes(tag));
+  });
+}
+
+function shouldIncludeForSearch(market: MarketCardDTO, rawSearch: string): boolean {
+  const normalizedSearch = rawSearch.trim().toLowerCase();
+  if (!normalizedSearch) return true;
+
+  const haystack = `${market.question.toLowerCase()} ${market.tags.join(" ").toLowerCase()}`;
+  const tokens = normalizedSearch.split(/\s+/).filter((token) => token.length > 0);
+
+  return tokens.every((token) => haystack.includes(token));
+}
+
 function escapeIlikeValue(value: string): string {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
 export function parseMarketDiscoveryQuery(searchParams: URLSearchParams): MarketDiscoveryQuery {
+  const rawSearch = cleanText(searchParams.get("q")).slice(0, 100);
+  const parsedCategory = parseCategory(cleanText(searchParams.get("category")).toLowerCase());
+  const legacyCategory = inferLegacyCategoryFromSearch(rawSearch);
+  const category = parsedCategory !== "trending" ? parsedCategory : legacyCategory ?? "trending";
+  const search = category === (legacyCategory ?? "") ? "" : rawSearch;
+
   return {
-    search: cleanText(searchParams.get("q")).slice(0, 100),
+    search,
+    category,
     status: parseStatus(cleanText(searchParams.get("status")).toLowerCase()),
     access: parseAccess(cleanText(searchParams.get("access")).toLowerCase()),
     sort: parseSort(cleanText(searchParams.get("sort")).toLowerCase()),
@@ -381,10 +465,6 @@ export async function listDiscoveryMarketCards(options: {
     .in("status", [...DISCOVERABLE_MARKET_STATUSES])
     .limit(MARKET_DISCOVERY_LIMIT);
 
-  if (query.search) {
-    request = request.ilike("question", `%${escapeIlikeValue(query.search)}%`);
-  }
-
   if (query.status !== "all") {
     request = request.eq("status", query.status);
   }
@@ -419,6 +499,8 @@ export async function listDiscoveryMarketCards(options: {
   }
 
   const rows = (data ?? []) as MarketDiscoveryRow[];
+
+  const nowMs = Date.now();
 
   const markets = rows
     .map((row) => {
@@ -474,7 +556,9 @@ export async function listDiscoveryMarketCards(options: {
         actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
       } as MarketCardDTO;
     })
-    .filter((market): market is MarketCardDTO => market !== null);
+    .filter((market): market is MarketCardDTO => market !== null)
+    .filter((market) => shouldIncludeForCategory({ category: query.category, market, nowMs }))
+    .filter((market) => shouldIncludeForSearch(market, query.search));
 
   if (query.sort === "probability_high") {
     markets.sort((a, b) => b.priceYes - a.priceYes);

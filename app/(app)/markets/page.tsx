@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { MarketsCategoryNav } from "@/components/markets/markets-category-nav";
 import { MarketsFilterEnhancer } from "@/components/markets/markets-filter-enhancer";
 import { StyleToggle } from "@/components/theme/style-toggle";
 import { checkUserAdminAccess } from "@/lib/auth/admin";
@@ -104,22 +105,6 @@ function formatStatus(value: string): string {
 
 function toneToColor(tone: MarketCardShadowTone): string {
   return MARKET_CARD_SHADOW_COLORS[tone];
-}
-
-function buildQuickFilterHref(params: URLSearchParams, query: string | undefined): string {
-  const next = new URLSearchParams(params);
-  if (!query) {
-    next.delete("q");
-  } else {
-    next.set("q", query);
-  }
-  const qs = next.toString();
-  return qs ? `/markets?${qs}` : "/markets";
-}
-
-function isQuickFilterActive(activeQuery: string, filterQuery: string | undefined): boolean {
-  if (!filterQuery) return activeQuery.length === 0;
-  return activeQuery.toLowerCase() === filterQuery.toLowerCase();
 }
 
 function shouldWarnAccess(market: MarketCardDTO): boolean {
@@ -280,6 +265,7 @@ export default async function MarketsPage({
                 <span className="sr-only">Search markets</span>
                 <input type="search" name="q" defaultValue={query.search} placeholder="Search markets..." />
               </label>
+              <input type="hidden" name="category" value={query.category} />
               <input type="hidden" name="status" value={query.status} />
               <input type="hidden" name="access" value={query.access} />
               <input type="hidden" name="sort" value={query.sort} />
@@ -340,22 +326,13 @@ export default async function MarketsPage({
             </div>
           </div>
 
-          <nav className="markets-primary-nav" aria-label="Market categories">
-            {MARKET_PRIMARY_NAV_ITEMS.map((item) => (
-              <Link
-                key={item.label}
-                href={buildQuickFilterHref(search, item.query)}
-                className={isQuickFilterActive(query.search, item.query) ? "markets-primary-link is-active" : "markets-primary-link"}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <MarketsCategoryNav items={MARKET_PRIMARY_NAV_ITEMS} />
 
           <div className="markets-toolbar-row">
             <MarketsFilterEnhancer />
             <form className="markets-toolbar" action="/markets" method="get">
               <input type="hidden" name="q" value={query.search} />
+              <input type="hidden" name="category" value={query.category} />
 
               <label className="markets-select-field">
                 <span>Status</span>

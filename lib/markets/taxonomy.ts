@@ -65,5 +65,4 @@ export const CATEGORY_TO_CARD_TONE: Record<MarketCategoryKey, MarketCardShadowTo
 export const MARKET_PRIMARY_NAV_ITEMS = MARKET_CATEGORY_KEYS.map((category) => ({
   category,
   label: MARKET_CATEGORY_LABELS[category],
-  query: MARKET_CATEGORY_SEARCH_QUERY[category],
 }));
