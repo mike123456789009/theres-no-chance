@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { isAdminAllowlistConfigured, isEmailAllowlisted } from "@/lib/auth/admin";
+import { checkUserAdminAccess, getAdminAllowlistEmails, isAdminAllowlistConfigured } from "@/lib/auth/admin";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -29,8 +29,9 @@ export async function GET() {
 
     return NextResponse.json({
       email: user.email ?? null,
-      isAdmin: isEmailAllowlisted(user.email),
+      isAdmin: (await checkUserAdminAccess({ userId: user.id, email: user.email })).isAdmin,
       allowlistConfigured: isAdminAllowlistConfigured(),
+      allowlistCount: getAdminAllowlistEmails().length,
     });
   } catch (error) {
     return NextResponse.json(

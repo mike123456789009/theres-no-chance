@@ -1,8 +1,8 @@
 import { listRecentResearchRunsForAdmin, type AdminResearchRunCard } from "@/lib/automation/market-research/db";
-import { getAdminAllowlistEmails, isEmailAllowlisted } from "@/lib/auth/admin";
+import { checkUserAdminAccess, getAdminAllowlistEmails } from "@/lib/auth/admin";
 import { marketAccessBadge, normalizeAccessRules } from "@/lib/markets/view-access";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { createServiceClient, getMissingSupabaseServiceEnv } from "@/lib/supabase/service";
 
 export type AdminPageAccessResult =
   | {
@@ -177,23 +177,27 @@ export async function guardAdminPageAccess(): Promise<AdminPageAccessResult> {
 
   const email = user.email?.toLowerCase() ?? null;
   const allowlist = getAdminAllowlistEmails();
+  const adminAccess = await checkUserAdminAccess({
+    userId: user.id,
+    email: user.email,
+  });
 
-  if (!isEmailAllowlisted(email)) {
-    return {
-      ok: false,
-      reason: "forbidden",
-      email,
-      allowlist,
-    };
-  }
-
-  if (!isSupabaseServiceEnvConfigured()) {
+  if (adminAccess.roleCheckUnavailable && !adminAccess.isAdmin) {
     return {
       ok: false,
       reason: "missing_service_env",
       email,
       allowlist,
       missingEnv: getMissingSupabaseServiceEnv(),
+    };
+  }
+
+  if (!adminAccess.isAdmin) {
+    return {
+      ok: false,
+      reason: "forbidden",
+      email,
+      allowlist,
     };
   }
 

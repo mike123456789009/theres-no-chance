@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { TncLogo } from "@/components/branding/tnc-logo";
+import { checkUserAdminAccess } from "@/lib/auth/admin";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_PRIMARY_NAV_ITEMS } from "@/lib/markets/taxonomy";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
@@ -59,6 +60,7 @@ type ViewerAccountSummary = {
   cashUsd: number | null;
   avatarUrl: string;
   displayName: string;
+  isAdmin: boolean;
 };
 
 const DEFAULT_AVATAR_URL = PIXEL_AVATAR_OPTIONS[0]?.url ?? "/assets/avatars/pixel-scout.svg";
@@ -146,6 +148,7 @@ async function getViewerAccountSummary(options: {
       cashUsd: null,
       avatarUrl: DEFAULT_AVATAR_URL,
       displayName: "Guest",
+      isAdmin: false,
     };
   }
 
@@ -159,6 +162,7 @@ async function getViewerAccountSummary(options: {
     let cashUsd: number | null = null;
     let avatarUrl = DEFAULT_AVATAR_URL;
     let displayName = "Account";
+    let isAdmin = false;
 
     if (!walletResult.error) {
       const wallet = walletResult.data as WalletAccountSummaryRow;
@@ -174,11 +178,23 @@ async function getViewerAccountSummary(options: {
       displayName = clean(profile?.display_name) || "Account";
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id) {
+      const adminAccess = await checkUserAdminAccess({
+        userId: user.id,
+        email: user.email,
+      });
+      isAdmin = adminAccess.isAdmin;
+    }
+
     return {
       portfolioUsd,
       cashUsd,
       avatarUrl,
       displayName,
+      isAdmin,
     };
   } catch {
     return {
@@ -186,6 +202,7 @@ async function getViewerAccountSummary(options: {
       cashUsd: null,
       avatarUrl: DEFAULT_AVATAR_URL,
       displayName: "Account",
+      isAdmin: false,
     };
   }
 }
@@ -230,6 +247,7 @@ export default async function MarketsPage({
     cashUsd: null,
     avatarUrl: DEFAULT_AVATAR_URL,
     displayName: "Guest",
+    isAdmin: false,
   };
   let loadError: string | null = null;
 
@@ -302,7 +320,7 @@ export default async function MarketsPage({
                     <Link href="/account/wallet">Wallet</Link>
                     <Link href="/account/settings">Settings</Link>
                     <Link href="/account/activity">Activity</Link>
-                    <Link href="/account/admin/market-maker">Admin</Link>
+                    {accountSummary.isAdmin ? <Link href="/account/admin/market-maker">Admin</Link> : null}
                   </div>
                 </details>
               ) : (

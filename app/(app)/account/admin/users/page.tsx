@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
+import { AdminGrantControl } from "@/components/admin/admin-grant-control";
+import { getAdminAllowlistEmails, listPlatformAdminUserIds } from "@/lib/auth/admin";
 import { guardAdminPageAccess } from "@/lib/admin/account-dashboard";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -102,6 +104,10 @@ type MarketQuestionRow = {
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeEmail(value: unknown): string {
+  return clean(value).toLowerCase();
 }
 
 function toNumber(value: number | string | null | undefined, fallback = 0): number {
@@ -224,6 +230,8 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
     .sort((a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || ""));
 
   const userIds = users.map((user) => user.id);
+  const bootstrapAdminEmails = new Set(getAdminAllowlistEmails().map((value) => value.toLowerCase()));
+  const roleBasedAdminUserIds = new Set(await listPlatformAdminUserIds(1500));
 
   const [profilesResult, walletsResult] = await Promise.all([
     userIds.length
@@ -246,6 +254,11 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
   );
 
   const selectedUser = users.find((user) => user.id === requestedUserId) ?? users[0] ?? null;
+
+  const userIsAdmin = (user: UserListItem): boolean =>
+    roleBasedAdminUserIds.has(user.id) || bootstrapAdminEmails.has(normalizeEmail(user.email));
+
+  const selectedUserIsAdmin = selectedUser ? userIsAdmin(selectedUser) : false;
 
   let ledgerEntries: LedgerRow[] = [];
   let tradeFills: TradeFillRow[] = [];
@@ -342,6 +355,7 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                   <Link key={user.id} className={selected ? "admin-user-link is-active" : "admin-user-link"} href={`/account/admin/users?uid=${user.id}`}>
                     <strong>{displayName}</strong>
                     <span>{user.email || "No email"}</span>
+                    <span>{userIsAdmin(user) ? "Role: Platform admin" : "Role: Standard user"}</span>
                     <span>
                       Wallet: {wallet ? formatCurrency(toNumber(wallet.available_balance, 0) + toNumber(wallet.reserved_balance, 0)) : "$0.00"}
                     </span>
@@ -381,6 +395,9 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                   <strong>Display name:</strong> {displayNameFromUser(selectedUser, profileById)}
                 </p>
                 <p className="create-note">
+                  <strong>Admin status:</strong> {selectedUserIsAdmin ? "Platform admin" : "Standard user"}
+                </p>
+                <p className="create-note">
                   <strong>KYC:</strong> {formatStatus(clean(profileById.get(selectedUser.id)?.kyc_status) || "not_started")}
                 </p>
                 <p className="create-note">
@@ -389,6 +406,19 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
                 <p className="create-note">
                   <strong>Interests:</strong> {(profileById.get(selectedUser.id)?.interests ?? []).join(", ") || "N/A"}
                 </p>
+              </section>
+
+              <section className="create-section" aria-label="Admin role controls">
+                <h2>Admin role controls</h2>
+                <p className="create-note">
+                  Promote users to platform admin with a two-step confirmation check.
+                </p>
+                <AdminGrantControl
+                  targetUserId={selectedUser.id}
+                  targetUserEmail={selectedUser.email || ""}
+                  targetDisplayName={displayNameFromUser(selectedUser, profileById)}
+                  alreadyAdmin={selectedUserIsAdmin}
+                />
               </section>
 
               <section className="create-section" aria-label="Funding and deposit history">

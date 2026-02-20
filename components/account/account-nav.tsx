@@ -65,26 +65,28 @@ function resolveMode(pathname: string): AccountMode {
   return pathname.startsWith("/account/admin") ? "admin" : "account";
 }
 
-export function AccountNav() {
+export function AccountNav({ canAccessAdmin }: Readonly<{ canAccessAdmin: boolean }>) {
   const pathname = usePathname();
-  const mode = resolveMode(pathname);
+  const mode = canAccessAdmin ? resolveMode(pathname) : "account";
   const navItems = mode === "admin" ? ADMIN_NAV_ITEMS : ACCOUNT_NAV_ITEMS;
 
   return (
     <div className="account-nav-stack">
-      <section className="account-mode-pane" aria-label="Account mode">
-        <p className="account-nav-kicker">Mode</p>
-        <div className="account-mode-switch">
-          <Link className={mode === "account" ? "account-mode-link is-active" : "account-mode-link"} href="/account/overview">
-            <strong>Account</strong>
-            <span>Profile and balances</span>
-          </Link>
-          <Link className={mode === "admin" ? "account-mode-link is-active" : "account-mode-link"} href="/account/admin/market-maker">
-            <strong>Admin</strong>
-            <span>Platform controls</span>
-          </Link>
-        </div>
-      </section>
+      {canAccessAdmin ? (
+        <section className="account-mode-pane" aria-label="Account mode">
+          <p className="account-nav-kicker">Mode</p>
+          <div className="account-mode-switch">
+            <Link className={mode === "account" ? "account-mode-link is-active" : "account-mode-link"} href="/account/overview">
+              <strong>Account</strong>
+              <span>Profile and balances</span>
+            </Link>
+            <Link className={mode === "admin" ? "account-mode-link is-active" : "account-mode-link"} href="/account/admin/market-maker">
+              <strong>Admin</strong>
+              <span>Platform controls</span>
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="account-section-pane" aria-label={`${mode} pages`}>
         <p className="account-nav-kicker">{mode === "admin" ? "Admin pages" : "Account pages"}</p>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { isAdminAllowlistConfigured, isEmailAllowlisted } from "@/lib/auth/admin";
+import { checkUserAdminAccess } from "@/lib/auth/admin";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 type AdminAuthResult =
@@ -30,18 +30,6 @@ export async function requireAllowlistedAdmin(): Promise<AdminAuthResult> {
     };
   }
 
-  if (!isAdminAllowlistConfigured()) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        {
-          error: "Admin allowlist is not configured.",
-        },
-        { status: 503 }
-      ),
-    };
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,7 +43,25 @@ export async function requireAllowlistedAdmin(): Promise<AdminAuthResult> {
     };
   }
 
-  if (!isEmailAllowlisted(user.email)) {
+  const adminAccess = await checkUserAdminAccess({
+    userId: user.id,
+    email: user.email,
+  });
+
+  if (adminAccess.roleCheckUnavailable && !adminAccess.isAdmin) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: "Admin access check unavailable.",
+          detail: adminAccess.errorMessage,
+        },
+        { status: 503 }
+      ),
+    };
+  }
+
+  if (!adminAccess.isAdmin) {
     return {
       ok: false,
       response: NextResponse.json({ error: "Forbidden." }, { status: 403 }),

@@ -1541,6 +1541,52 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 0.9rem;
 }
 
+.admin-grant-card {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: #f8f6ef;
+  padding: 0.64rem;
+  display: grid;
+  gap: 0.52rem;
+}
+
+.admin-grant-card-active {
+  background: #e6f1da;
+}
+
+.admin-grant-step-two {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-grant-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.admin-grant-checkbox input {
+  margin-top: 0.1rem;
+}
+
+.admin-grant-status {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.admin-grant-status-success {
+  color: #286942;
+}
+
+.admin-grant-status-error {
+  color: #8f2f2f;
+}
+
 .admin-history-table {
   width: 100%;
   min-width: 620px;
@@ -2965,6 +3011,11 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   }
 
   .admin-user-link {
+    border-width: 2px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .admin-grant-card {
     border-width: 2px;
     box-shadow: 3px 3px 0 var(--ink);
   }
