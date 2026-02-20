@@ -1,8 +1,13 @@
 import { cookies } from "next/headers";
 
-import { UI_STYLE_COOKIE_KEY, UI_STYLE_DEFAULT } from "@/lib/theme/constants";
-import { parseUiStyle, resolveUiStyle } from "@/lib/theme/parse";
-import type { UiStyle } from "@/lib/theme/types";
+import {
+  UI_PALETTE_COOKIE_KEY,
+  UI_PALETTE_DEFAULT,
+  UI_STYLE_COOKIE_KEY,
+  UI_STYLE_DEFAULT,
+} from "@/lib/theme/constants";
+import { parseUiPalette, parseUiStyle, resolveUiPalette, resolveUiStyle } from "@/lib/theme/parse";
+import type { UiPalette, UiStyle } from "@/lib/theme/types";
 import { createClient, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 type ProfileUiStyleRow = {
@@ -49,4 +54,15 @@ export async function resolveInitialUiStyle(): Promise<UiStyle> {
   } catch {
     return UI_STYLE_DEFAULT;
   }
+}
+
+export async function resolveInitialUiPalette(): Promise<UiPalette> {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(UI_PALETTE_COOKIE_KEY)?.value;
+  const parsedCookieValue = parseUiPalette(cookieValue);
+  if (parsedCookieValue) return parsedCookieValue;
+
+  return resolveUiPalette({
+    fallback: UI_PALETTE_DEFAULT,
+  });
 }

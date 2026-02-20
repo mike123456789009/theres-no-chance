@@ -57,6 +57,12 @@
   box-shadow: var(--toggle-shadow);
 }
 
+.style-toggle-stack {
+  display: inline-grid;
+  gap: 0.34rem;
+  justify-items: end;
+}
+
 .style-toggle-button {
   border: 0;
   background: transparent;
@@ -80,6 +86,27 @@
 .style-toggle-button.is-active {
   background: var(--toggle-active-bg);
   color: var(--toggle-active-text);
+}
+
+.palette-cycle-button {
+  border: 1px solid var(--toggle-border);
+  border-radius: 999px;
+  background: var(--toggle-bg);
+  color: var(--toggle-text);
+  box-shadow: var(--toggle-shadow);
+  padding: 0.28rem 0.62rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.palette-cycle-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .tnc-error-text {

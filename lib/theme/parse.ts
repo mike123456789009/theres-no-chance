@@ -1,5 +1,5 @@
-import { UI_STYLE_DEFAULT } from "@/lib/theme/constants";
-import type { UiStyle } from "@/lib/theme/types";
+import { UI_PALETTE_DEFAULT, UI_STYLE_DEFAULT } from "@/lib/theme/constants";
+import type { UiPalette, UiStyle } from "@/lib/theme/types";
 
 export function isUiStyle(value: unknown): value is UiStyle {
   return value === "retro" || value === "modern";
@@ -11,7 +11,17 @@ export function parseUiStyle(value: unknown): UiStyle | null {
   return isUiStyle(normalized) ? normalized : null;
 }
 
-export function parseUiStyleCookie(cookieHeader: string | null | undefined, key: string): UiStyle | null {
+export function isUiPalette(value: unknown): value is UiPalette {
+  return value === "hearth" || value === "sand" || value === "onyx";
+}
+
+export function parseUiPalette(value: unknown): UiPalette | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return isUiPalette(normalized) ? normalized : null;
+}
+
+export function parseCookieValue(cookieHeader: string | null | undefined, key: string): string | null {
   if (!cookieHeader) return null;
 
   const segments = cookieHeader.split(";");
@@ -20,13 +30,17 @@ export function parseUiStyleCookie(cookieHeader: string | null | undefined, key:
     if (rawName?.trim() !== key) continue;
     const rawValue = rest.join("=");
     try {
-      return parseUiStyle(decodeURIComponent(rawValue));
+      return decodeURIComponent(rawValue);
     } catch {
-      return parseUiStyle(rawValue);
+      return rawValue;
     }
   }
 
   return null;
+}
+
+export function parseUiStyleCookie(cookieHeader: string | null | undefined, key: string): UiStyle | null {
+  return parseUiStyle(parseCookieValue(cookieHeader, key));
 }
 
 export function resolveUiStyle(options: {
@@ -41,4 +55,14 @@ export function resolveUiStyle(options: {
   if (fromProfile) return fromProfile;
 
   return options.fallback ?? UI_STYLE_DEFAULT;
+}
+
+export function resolveUiPalette(options: {
+  cookieValue?: unknown;
+  fallback?: UiPalette;
+}): UiPalette {
+  const fromCookie = parseUiPalette(options.cookieValue);
+  if (fromCookie) return fromCookie;
+
+  return options.fallback ?? UI_PALETTE_DEFAULT;
 }

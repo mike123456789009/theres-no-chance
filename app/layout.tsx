@@ -3,8 +3,13 @@ import "./globals.css";
 import "./trade-interface.css";
 
 import { UiStyleSync } from "@/components/theme/ui-style-sync";
-import { UI_STYLE_COOKIE_KEY, UI_STYLE_STORAGE_KEY } from "@/lib/theme/constants";
-import { resolveInitialUiStyle } from "@/lib/theme/server";
+import {
+  UI_PALETTE_COOKIE_KEY,
+  UI_PALETTE_STORAGE_KEY,
+  UI_STYLE_COOKIE_KEY,
+  UI_STYLE_STORAGE_KEY,
+} from "@/lib/theme/constants";
+import { resolveInitialUiPalette, resolveInitialUiStyle } from "@/lib/theme/server";
 import { resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
@@ -22,6 +27,7 @@ export default async function RootLayout({
 }>) {
   const supabasePublicConfig = resolveSupabasePublicConfigFromEnv();
   const initialUiStyle = await resolveInitialUiStyle();
+  const initialUiPalette = await resolveInitialUiPalette();
 
   const clientConfigScript = `window.__TNC_PUBLIC_CONFIG__=${JSON.stringify({
     supabaseUrl: supabasePublicConfig?.url ?? "",
@@ -32,23 +38,46 @@ export default async function RootLayout({
     try {
       const storageKey = "${UI_STYLE_STORAGE_KEY}";
       const cookieKey = "${UI_STYLE_COOKIE_KEY}";
-      const isValid = (value) => value === "retro" || value === "modern";
+      const paletteStorageKey = "${UI_PALETTE_STORAGE_KEY}";
+      const paletteCookieKey = "${UI_PALETTE_COOKIE_KEY}";
+      const isValidStyle = (value) => value === "retro" || value === "modern";
+      const isValidPalette = (value) => value === "hearth" || value === "sand" || value === "onyx";
       const cookiePairs = document.cookie ? document.cookie.split(";") : [];
       let cookieValue = null;
+      let paletteCookieValue = null;
 
       for (const pair of cookiePairs) {
         const [rawName, ...rest] = pair.split("=");
-        if (rawName && rawName.trim() === cookieKey) {
+        if (!rawName) continue;
+        const name = rawName.trim();
+
+        if (name === cookieKey) {
           cookieValue = decodeURIComponent(rest.join("="));
-          break;
+        }
+
+        if (name === paletteCookieKey) {
+          paletteCookieValue = decodeURIComponent(rest.join("="));
         }
       }
 
       const storageValue = window.localStorage.getItem(storageKey);
-      const resolved = isValid(cookieValue) ? cookieValue : isValid(storageValue) ? storageValue : null;
+      const paletteStorageValue = window.localStorage.getItem(paletteStorageKey);
+      const queryParams = new URLSearchParams(window.location.search);
+      const paletteQueryValue = queryParams.get("palette");
+      const resolved = isValidStyle(cookieValue) ? cookieValue : isValidStyle(storageValue) ? storageValue : null;
+      const resolvedPalette = isValidPalette(paletteQueryValue)
+        ? paletteQueryValue
+        : isValidPalette(paletteCookieValue)
+          ? paletteCookieValue
+          : isValidPalette(paletteStorageValue)
+            ? paletteStorageValue
+            : null;
 
       if (resolved) {
         document.documentElement.dataset.uiStyle = resolved;
+      }
+      if (resolvedPalette) {
+        document.documentElement.dataset.uiPalette = resolvedPalette;
       }
     } catch {
       // Ignore storage read issues in private browsing modes.
@@ -56,7 +85,7 @@ export default async function RootLayout({
   })();`;
 
   return (
-    <html lang="en" data-ui-style={initialUiStyle}>
+    <html lang="en" data-ui-style={initialUiStyle} data-ui-palette={initialUiPalette}>
       <head>
         <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
         <link rel="shortcut icon" href="/assets/favicon.svg" />
@@ -77,8 +106,10 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body data-render-mode="boot" data-ui-style={initialUiStyle}>
-        <UiStyleSync initialStyle={initialUiStyle}>{children}</UiStyleSync>
+      <body data-render-mode="boot" data-ui-style={initialUiStyle} data-ui-palette={initialUiPalette}>
+        <UiStyleSync initialStyle={initialUiStyle} initialPalette={initialUiPalette}>
+          {children}
+        </UiStyleSync>
       </body>
     </html>
   );

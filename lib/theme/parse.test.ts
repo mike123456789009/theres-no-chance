@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { parseUiStyle, parseUiStyleCookie, resolveUiStyle } from "@/lib/theme/parse";
+import {
+  parseCookieValue,
+  parseUiPalette,
+  parseUiStyle,
+  parseUiStyleCookie,
+  resolveUiPalette,
+  resolveUiStyle,
+} from "@/lib/theme/parse";
 
 describe("parseUiStyle", () => {
   it("returns valid style values", () => {
@@ -31,6 +38,35 @@ describe("parseUiStyleCookie", () => {
   });
 });
 
+describe("parseUiPalette", () => {
+  it("returns valid palette values", () => {
+    expect(parseUiPalette("hearth")).toBe("hearth");
+    expect(parseUiPalette("sand")).toBe("sand");
+    expect(parseUiPalette("onyx")).toBe("onyx");
+  });
+
+  it("normalizes spacing and casing", () => {
+    expect(parseUiPalette("  SAND ")).toBe("sand");
+    expect(parseUiPalette(" Onyx ")).toBe("onyx");
+  });
+
+  it("returns null for unsupported values", () => {
+    expect(parseUiPalette("retro")).toBeNull();
+    expect(parseUiPalette("")).toBeNull();
+    expect(parseUiPalette(undefined)).toBeNull();
+  });
+});
+
+describe("parseCookieValue", () => {
+  it("extracts arbitrary cookie values", () => {
+    expect(parseCookieValue("foo=1; tnc-ui-palette=sand; bar=2", "tnc-ui-palette")).toBe("sand");
+  });
+
+  it("returns null when key is missing", () => {
+    expect(parseCookieValue("foo=1; bar=2", "tnc-ui-palette")).toBeNull();
+  });
+});
+
 describe("resolveUiStyle", () => {
   it("prefers cookie values", () => {
     expect(
@@ -56,5 +92,23 @@ describe("resolveUiStyle", () => {
         profileValue: "legacy",
       })
     ).toBe("retro");
+  });
+});
+
+describe("resolveUiPalette", () => {
+  it("prefers cookie values", () => {
+    expect(
+      resolveUiPalette({
+        cookieValue: "onyx",
+      })
+    ).toBe("onyx");
+  });
+
+  it("falls back to hearth when cookie is invalid", () => {
+    expect(
+      resolveUiPalette({
+        cookieValue: "legacy",
+      })
+    ).toBe("hearth");
   });
 });

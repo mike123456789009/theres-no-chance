@@ -1,5 +1,22 @@
 # Change History
 
+## 2026-02-20 - Modern Palette Demo Switcher
+Status: completed
+
+Short description:
+- Added a modern colorway demo switcher that cycles through multiple palettes (`hearth`, `sand`, `onyx`) without changing layout or behavior.
+- Extended theme runtime sync to persist palette selection via cookie/local storage and apply it instantly via `data-ui-palette`.
+- Added SSR + hydration support for palette initialization, including optional `?palette=` URL override for quick demos.
+
+Files/areas touched:
+- Theme runtime: `app/layout.tsx`, `components/theme/ui-style-sync.tsx`, `components/theme/style-toggle.tsx`
+- Theme model/parsing: `lib/theme/types.ts`, `lib/theme/constants.ts`, `lib/theme/parse.ts`, `lib/theme/server.ts`
+- Tests: `lib/theme/parse.test.ts`
+- Styling tokens: `app/styles/theme-modern.css`, `app/styles/tokens.css`
+
+User-visible change:
+- In modern mode, you can now cycle colorways directly from the existing style control and demo multiple visual variants back-to-back without code changes or branching workflows.
+
 ## 2026-02-20 - Pre-Refactor Baseline Guardrail
 Status: noted
 
