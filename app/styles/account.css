@@ -123,6 +123,81 @@
   gap: 0.45rem;
 }
 
+.venmo-mandatory-banner {
+  margin: 0.7rem 0 0.8rem;
+  padding: 0.75rem 0.8rem;
+  border: 2px solid #b42318;
+  background: #fff1f0;
+}
+
+.venmo-mandatory-title {
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.venmo-mandatory-copy {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+}
+
+.venmo-steps-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.venmo-steps-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.venmo-note-code-wrap {
+  margin-top: 0.25rem;
+  border: 2px solid #111111;
+  background: #fff7d1;
+  padding: 0.6rem;
+}
+
+.venmo-note-code-label {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.venmo-note-code {
+  margin: 0.4rem 0;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.venmo-note-code code {
+  display: inline-block;
+  background: #fff;
+  border: 1px solid #232323;
+  padding: 0.25rem 0.4rem;
+}
+
+.venmo-note-code-warning {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #8a2419;
+  text-transform: uppercase;
+}
+
+.venmo-code-pending {
+  margin-top: 0.8rem;
+  border: 1px solid #969696;
+  background: #f3f3f3;
+  padding: 0.6rem 0.65rem;
+}
+
 .venmo-instructions-actions {
   display: flex;
   flex-wrap: wrap;

@@ -253,7 +253,14 @@ export function DepositPanel({
       <div className="deposit-panel-grid">
         <article className="deposit-provider-card">
           <h3>Venmo (manual, fee-aware)</h3>
-          <p className="create-note">Pay to @{displayUsername}. Your note must include your generated invoice code.</p>
+          <p className="create-note">Pay to @{displayUsername}. Your deposit is credited only after note-based invoice matching.</p>
+
+          <div className="venmo-mandatory-banner" role="alert" aria-live="polite">
+            <p className="venmo-mandatory-title">Required: paste your generated invoice code in the Venmo note.</p>
+            <p className="venmo-mandatory-copy">
+              Missing or edited codes can block automatic matching and send your payment to manual review.
+            </p>
+          </div>
           {venmoPreview ? (
             <div className="deposit-breakdown">
               <p className="create-note">
@@ -276,14 +283,26 @@ export function DepositPanel({
 
           {venmoIntent ? (
             <div className="venmo-instructions">
-              <p className="create-note">
-                <strong>Required Venmo note:</strong> <code>{venmoIntent.requiredNote}</code>
-              </p>
+              <p className="venmo-steps-title">Required steps</p>
+              <ol className="venmo-steps-list">
+                <li>Copy the code below.</li>
+                <li>Open Venmo and send payment to @{displayUsername}.</li>
+                <li>Paste the exact code into the payment note before sending.</li>
+              </ol>
+
+              <div className="venmo-note-code-wrap">
+                <p className="venmo-note-code-label">Paste this exact note value</p>
+                <p className="venmo-note-code">
+                  <code>{venmoIntent.requiredNote}</code>
+                </p>
+                <p className="venmo-note-code-warning">Do not edit this code. Do not remove characters.</p>
+              </div>
+
               <div className="venmo-instructions-actions">
-                <button type="button" className="create-submit create-submit-muted" onClick={copyRequiredNote}>
+                <button type="button" className="create-submit" onClick={copyRequiredNote}>
                   {copyLabel === "copied" ? "Copied" : copyLabel === "unsupported" ? "Copy unavailable" : "Copy note"}
                 </button>
-                <a className="create-submit create-submit-muted" href={displayPayUrl} target="_blank" rel="noreferrer">
+                <a className="create-submit" href={displayPayUrl} target="_blank" rel="noreferrer">
                   Open Venmo
                 </a>
               </div>
@@ -298,7 +317,19 @@ export function DepositPanel({
                 {formatCurrency(venmoIntent.estimatedNetCreditUsd)} net credit
               </p>
             </div>
-          ) : null}
+          ) : (
+            <div className="venmo-code-pending">
+              <p className="create-note">
+                Step 1: click <strong>Generate Venmo payment code</strong>.
+              </p>
+              <p className="create-note">
+                Step 2: we show your required note code in a large block here.
+              </p>
+              <p className="create-note">
+                Step 3: paste it into Venmo note exactly before sending payment.
+              </p>
+            </div>
+          )}
         </article>
 
         <article className="deposit-provider-card">
