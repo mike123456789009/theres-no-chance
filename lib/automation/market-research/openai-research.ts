@@ -248,10 +248,15 @@ Institution scan requirements:
 }
 
 function buildUserPrompt(input: GenerateProposalBatchInput): string {
+  const nowIso = new Date().toISOString();
+
   if (input.scope === "public") {
     return `
+Current UTC time: ${nowIso}
+
 Generate up to ${input.maxCandidates} candidate PUBLIC market proposals.
-Only include events with expected close windows between 24 hours and 45 days from now.
+Only include events with expected close windows between 24 hours and 45 days from the current UTC time above.
+Do not include any event that is already in the past.
 Ensure at least some global non-U.S. opportunities while remaining U.S.-first.
 `.trim();
   }
@@ -259,12 +264,15 @@ Ensure at least some global non-U.S. opportunities while remaining U.S.-first.
   const organization = input.organization;
   const domains = organization?.domains.map((domain) => domain.domain).join(", ") || "(none provided)";
   return `
+Current UTC time: ${nowIso}
+
 Generate up to ${input.maxCandidates} candidate INSTITUTION market proposals for:
 - Organization name: ${organization?.name ?? "Unknown organization"}
 - Organization slug: ${organization?.slug ?? "unknown"}
 - Verified domains: ${domains}
 
 All candidates should be institution-relevant and private-friendly.
+Do not include any event that is already in the past.
 `.trim();
 }
 
