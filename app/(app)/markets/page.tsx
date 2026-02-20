@@ -302,6 +302,7 @@ export default async function MarketsPage({
                     <Link href="/account/wallet">Wallet</Link>
                     <Link href="/account/settings">Settings</Link>
                     <Link href="/account/activity">Activity</Link>
+                    <Link href="/account/admin/market-maker">Admin</Link>
                   </div>
                 </details>
               ) : (

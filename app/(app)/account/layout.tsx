@@ -15,7 +15,7 @@ export default function AccountLayout({ children }: Readonly<{ children: React.R
         <div className="account-pane-copy">
           <p className="create-kicker">Account</p>
           <h1>Control Center</h1>
-          <p>Manage your profile, portfolio, wallet, and account activity from one place.</p>
+          <p>Switch between account and admin panes to manage profile, wallet, market operations, and moderation.</p>
         </div>
 
         <AccountNav />
