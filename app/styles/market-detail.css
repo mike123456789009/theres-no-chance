@@ -10,8 +10,8 @@ html[data-ui-style="modern"] .market-detail-page {
 html[data-ui-style="modern"] .market-detail-shell {
   border-width: 1px;
   border-color: var(--border-strong);
-  border-radius: 18px;
-  box-shadow: var(--shadow-card);
+  border-radius: 0;
+  box-shadow: none;
   background:
     linear-gradient(
       180deg,
@@ -23,7 +23,7 @@ html[data-ui-style="modern"] .market-detail-shell {
 
 html[data-ui-style="modern"] .market-detail-shell-warning {
   border-color: color-mix(in srgb, var(--negative) 48%, white);
-  box-shadow: 0 18px 28px -22px color-mix(in srgb, var(--negative) 45%, transparent);
+  box-shadow: none;
 }
 
 html[data-ui-style="modern"] .market-detail-top-links,
@@ -63,6 +63,7 @@ html[data-ui-style="modern"] .market-detail-section h2 {
 html[data-ui-style="modern"] .market-detail-copy-muted,
 html[data-ui-style="modern"] .market-detail-strip-label,
 html[data-ui-style="modern"] .market-detail-chart-header p,
+html[data-ui-style="modern"] .market-detail-chart-live-status,
 html[data-ui-style="modern"] .market-detail-chart-note,
 html[data-ui-style="modern"] .market-detail-strip-grid span,
 html[data-ui-style="modern"] .market-detail-position-grid span,
@@ -310,8 +311,6 @@ html[data-ui-style="modern"] .market-detail-source-list a {
 }
 
 @media (max-width: 640px) {
-  html[data-ui-style="modern"] .market-detail-shell,
-  html[data-ui-style="modern"] .market-detail-shell-warning,
   html[data-ui-style="modern"] .market-detail-strip-panel,
   html[data-ui-style="modern"] .market-detail-chart-panel,
   html[data-ui-style="modern"] .market-detail-action-panel,

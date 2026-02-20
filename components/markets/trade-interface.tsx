@@ -250,6 +250,8 @@ export function TradeInterface({
         error: null,
       });
 
+      window.dispatchEvent(new CustomEvent("tnc-market-refresh"));
+
       setOrderSize("25");
       setQuoteState({ status: "idle", data: null, error: null });
     } catch (error) {

@@ -2170,16 +2170,19 @@ html[data-ui-style="modern"] .market-tile-probability a {
 
 .market-detail-page {
   min-height: 100vh;
-  padding: clamp(1rem, 3vw, 2.5rem) var(--stage-pad);
+  padding: 0;
 }
 
 .market-detail-shell {
-  width: min(1140px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
   border: 6px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--ink);
+  border-left-width: 0;
+  border-right-width: 0;
+  box-shadow: none;
   background: var(--bg);
-  padding: clamp(1rem, 3vw, 1.8rem);
+  padding: clamp(0.9rem, 1.8vw, 1.4rem) clamp(0.9rem, 2.4vw, 2rem) clamp(1.2rem, 2vw, 1.7rem);
 }
 
 .market-detail-shell-warning {
@@ -2268,11 +2271,18 @@ html[data-ui-style="modern"] .market-tile-probability a {
 }
 
 .market-detail-top-layout {
-  margin-top: 1rem;
+  margin-top: 0.8rem;
   display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: 0.76rem;
+  grid-template-columns: minmax(0, 1.68fr) minmax(0, 0.88fr);
+  gap: 0.82rem;
   align-items: start;
+}
+
+.market-detail-market-pane {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.82rem;
 }
 
 .market-detail-strip-panel,
@@ -2372,18 +2382,26 @@ html[data-ui-style="modern"] .market-tile-probability a {
   color: #5f5f5f;
 }
 
+.market-detail-chart-live-status {
+  color: #686868;
+  font-size: 0.7rem;
+}
+
 .market-detail-chart-stage {
   margin-top: 0.58rem;
   border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);
   background: #fcfbf7;
-  padding: 0.32rem 0.28rem 0.24rem;
+  padding: 0.5rem 0.44rem 0.36rem;
+  height: clamp(21rem, 53vh, 38rem);
+  display: flex;
 }
 
 .market-detail-chart-svg {
   display: block;
+  flex: 1 1 auto;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 .market-detail-chart-grid-line {
@@ -2394,7 +2412,7 @@ html[data-ui-style="modern"] .market-tile-probability a {
 .market-detail-chart-grid-label {
   fill: #686868;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .market-detail-chart-area {
@@ -2403,7 +2421,7 @@ html[data-ui-style="modern"] .market-tile-probability a {
 
 .market-detail-chart-line {
   stroke: var(--red-face);
-  stroke-width: 4;
+  stroke-width: 5;
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -2442,6 +2460,7 @@ html[data-ui-style="modern"] .market-tile-probability a {
 .market-detail-right-rail {
   display: grid;
   gap: 0.74rem;
+  align-content: start;
 }
 
 .market-detail-order-tabs {
@@ -2545,8 +2564,20 @@ html[data-ui-style="modern"] .market-tile-probability a {
   opacity: 0.85;
 }
 
-.market-detail-section {
+.market-detail-bottom-grid {
   margin-top: 0.88rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.82rem;
+  align-items: start;
+}
+
+.market-detail-section {
+  margin-top: 0;
+}
+
+.market-detail-section-context {
+  min-height: 100%;
 }
 
 .market-detail-meta-grid {
@@ -2963,6 +2994,26 @@ html[data-ui-style="modern"] .market-tile-probability a {
   .markets-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .market-detail-top-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .market-detail-right-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-detail-bottom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-detail-section-context {
+    grid-column: 1 / -1;
+  }
+
+  .market-detail-chart-stage {
+    height: clamp(20rem, 48vh, 34rem);
+  }
 }
 
 @media (max-width: 640px) {
@@ -3285,6 +3336,10 @@ html[data-ui-style="modern"] .market-tile-probability a {
     grid-template-columns: 1fr;
   }
 
+  .market-detail-market-pane {
+    grid-template-rows: auto auto;
+  }
+
   .market-detail-strip-panel,
   .market-detail-chart-panel,
   .market-detail-action-panel,
@@ -3306,6 +3361,15 @@ html[data-ui-style="modern"] .market-tile-probability a {
   .market-detail-chart-stage {
     border-width: 2px;
     box-shadow: 3px 3px 0 var(--ink);
+    height: clamp(15.5rem, 44vh, 24rem);
+  }
+
+  .market-detail-right-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .market-detail-bottom-grid {
+    grid-template-columns: 1fr;
   }
 
   .market-detail-order-grid,

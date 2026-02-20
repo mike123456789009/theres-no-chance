@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { MarketLiveOverview } from "@/components/markets/market-live-overview";
 import { TradeInterface } from "@/components/markets/trade-interface";
 
 export const dynamic = "force-dynamic";
@@ -16,17 +17,6 @@ function formatDate(value: string | null): string {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
-}
-
-function formatShortDate(value: string | null): string {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
   }).format(date);
 }
 
@@ -56,64 +46,6 @@ function formatSignedCurrency(value: number): string {
   if (value === 0) return formatCurrency(0);
   const absolute = formatCurrency(Math.abs(value));
   return value > 0 ? `+${absolute}` : `-${absolute}`;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function buildChartGeometry(points: Array<{ priceYes: number }>): {
-  linePath: string;
-  areaPath: string;
-  markerX: number;
-  markerY: number;
-  yTicks: Array<{ y: number; label: string }>;
-} {
-  const width = 640;
-  const height = 272;
-  const paddingX = 24;
-  const paddingTop = 18;
-  const paddingBottom = 30;
-  const chartWidth = width - paddingX * 2;
-  const chartHeight = height - paddingTop - paddingBottom;
-
-  const safePoints =
-    points.length >= 2
-      ? points.map((point) => ({
-          priceYes: clamp(point.priceYes, 0, 1),
-        }))
-      : [{ priceYes: 0.5 }, { priceYes: 0.5 }];
-
-  const coordinates = safePoints.map((point, index) => {
-    const x = paddingX + (chartWidth * index) / (safePoints.length - 1);
-    const y = paddingTop + (1 - point.priceYes) * chartHeight;
-    return { x, y };
-  });
-
-  const linePath = coordinates
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
-    .join(" ");
-
-  const baselineY = paddingTop + chartHeight;
-  const first = coordinates[0];
-  const last = coordinates[coordinates.length - 1];
-
-  const areaPath = `${linePath} L ${last.x.toFixed(2)} ${baselineY.toFixed(2)} L ${first.x.toFixed(
-    2
-  )} ${baselineY.toFixed(2)} Z`;
-
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((tick) => ({
-    y: paddingTop + (1 - tick) * chartHeight,
-    label: `${Math.round(tick * 100)}%`,
-  }));
-
-  return {
-    linePath,
-    areaPath,
-    markerX: last.x,
-    markerY: last.y,
-    yTicks,
-  };
 }
 
 export default async function MarketDetailPage({
@@ -210,14 +142,6 @@ export default async function MarketDetailPage({
   }
 
   const market = detail.market;
-  const chartGeometry = buildChartGeometry(market.chartPoints);
-  const chartStartLabel = formatShortDate(market.chartPoints[0]?.timestamp ?? market.createdAt);
-  const chartMidLabel = formatShortDate(
-    market.chartPoints[Math.floor((market.chartPoints.length - 1) / 2)]?.timestamp ?? null
-  );
-  const chartEndLabel = formatShortDate(market.chartPoints[market.chartPoints.length - 1]?.timestamp ?? market.closeTime);
-  const impliedNoPrice = formatPercent(market.priceNo, 1);
-  const yesPrice = formatPercent(market.priceYes, 1);
 
   return (
     <main className="market-detail-page">
@@ -240,66 +164,18 @@ export default async function MarketDetailPage({
         </div>
 
         <section className="market-detail-top-layout" aria-label="Market stats and action panel">
-          <article className="market-detail-strip-panel">
-            <h2>Market strip</h2>
-            <p className="market-detail-strip-label">Live implied odds</p>
-            <p className="market-detail-stat market-detail-stat-yes">YES {yesPrice}</p>
-            <p className="market-detail-stat market-detail-stat-no">NO {impliedNoPrice}</p>
-
-            <div className="market-detail-strip-grid">
-              <p>
-                <span>Pool shares</span>
-                <strong>{formatShares(market.poolShares)}</strong>
-              </p>
-              <p>
-                <span>YES shares</span>
-                <strong>{formatShares(market.yesShares)}</strong>
-              </p>
-              <p>
-                <span>NO shares</span>
-                <strong>{formatShares(market.noShares)}</strong>
-              </p>
-              <p>
-                <span>Liquidity parameter</span>
-                <strong>{formatShares(market.liquidityParameter)}</strong>
-              </p>
-            </div>
-          </article>
-
-          <article className="market-detail-chart-panel">
-            <div className="market-detail-chart-header">
-              <h2>Price + timeline</h2>
-              <p>YES probability</p>
-            </div>
-            <div className="market-detail-chart-stage" aria-hidden="true">
-              <svg
-                className="market-detail-chart-svg"
-                viewBox="0 0 640 272"
-                role="img"
-                aria-label={`YES probability currently ${yesPrice}`}
-              >
-                {chartGeometry.yTicks.map((tick) => (
-                  <g key={tick.label}>
-                    <line x1="24" y1={tick.y} x2="616" y2={tick.y} className="market-detail-chart-grid-line" />
-                    <text x="10" y={tick.y + 4} className="market-detail-chart-grid-label">
-                      {tick.label}
-                    </text>
-                  </g>
-                ))}
-                <path d={chartGeometry.areaPath} className="market-detail-chart-area" />
-                <path d={chartGeometry.linePath} className="market-detail-chart-line" />
-                <circle cx={chartGeometry.markerX} cy={chartGeometry.markerY} r="5" className="market-detail-chart-marker" />
-              </svg>
-            </div>
-            <div className="market-detail-chart-axis">
-              <span>{chartStartLabel}</span>
-              <span>{chartMidLabel}</span>
-              <span>{chartEndLabel}</span>
-            </div>
-            <p className="market-detail-chart-note">
-              Live trading interface now active. Quote and execute APIs are fully integrated with real-time price updates.
-            </p>
-          </article>
+          <MarketLiveOverview
+            marketId={marketId}
+            initialMarket={{
+              chartPoints: market.chartPoints,
+              priceYes: market.priceYes,
+              priceNo: market.priceNo,
+              poolShares: market.poolShares,
+              yesShares: market.yesShares,
+              noShares: market.noShares,
+              liquidityParameter: market.liquidityParameter,
+            }}
+          />
 
           <aside className="market-detail-right-rail" aria-label="Action and position rail">
             <TradeInterface
@@ -377,67 +253,69 @@ export default async function MarketDetailPage({
           </aside>
         </section>
 
-        <section className="market-detail-section" aria-label="Market context">
-          <h2>Market context</h2>
-          <p>{market.description}</p>
-          <div className="market-detail-meta-grid">
-            <p>
-              Created: <strong>{formatDate(market.createdAt)}</strong>
-            </p>
-            <p>
-              Closes: <strong>{formatDate(market.closeTime)}</strong>
-            </p>
-            <p>
-              Expected resolution: <strong>{formatDate(market.expectedResolutionTime)}</strong>
-            </p>
-            <p>
-              Fee: <strong>{(market.feeBps / 100).toFixed(2)}%</strong>
-            </p>
-          </div>
-          {market.tags.length > 0 ? <p>Tags: {market.tags.join(", ")}</p> : null}
-          {market.riskFlags.length > 0 ? <p>Risk flags: {market.riskFlags.join(", ")}</p> : null}
-        </section>
+        <div className="market-detail-bottom-grid">
+          <section className="market-detail-section market-detail-section-context" aria-label="Market context">
+            <h2>Market context</h2>
+            <p>{market.description}</p>
+            <div className="market-detail-meta-grid">
+              <p>
+                Created: <strong>{formatDate(market.createdAt)}</strong>
+              </p>
+              <p>
+                Closes: <strong>{formatDate(market.closeTime)}</strong>
+              </p>
+              <p>
+                Expected resolution: <strong>{formatDate(market.expectedResolutionTime)}</strong>
+              </p>
+              <p>
+                Fee: <strong>{(market.feeBps / 100).toFixed(2)}%</strong>
+              </p>
+            </div>
+            {market.tags.length > 0 ? <p>Tags: {market.tags.join(", ")}</p> : null}
+            {market.riskFlags.length > 0 ? <p>Risk flags: {market.riskFlags.join(", ")}</p> : null}
+          </section>
 
-        <section className="market-detail-section" aria-label="Resolution details">
-          <h2>Resolution details</h2>
-          <p>
-            <strong>Resolves YES if:</strong> {market.resolvesYesIf}
-          </p>
-          <p>
-            <strong>Resolves NO if:</strong> {market.resolvesNoIf}
-          </p>
-          <p>
-            <strong>Resolver authority:</strong> Platform admin final (v1)
-          </p>
-          {market.evidenceRules ? (
+          <section className="market-detail-section" aria-label="Resolution details">
+            <h2>Resolution details</h2>
             <p>
-              <strong>Evidence rules:</strong> {market.evidenceRules}
+              <strong>Resolves YES if:</strong> {market.resolvesYesIf}
             </p>
-          ) : null}
-          {market.disputeRules ? (
             <p>
-              <strong>Dispute rules:</strong> {market.disputeRules}
+              <strong>Resolves NO if:</strong> {market.resolvesNoIf}
             </p>
-          ) : null}
-        </section>
+            <p>
+              <strong>Resolver authority:</strong> Platform admin final (v1)
+            </p>
+            {market.evidenceRules ? (
+              <p>
+                <strong>Evidence rules:</strong> {market.evidenceRules}
+              </p>
+            ) : null}
+            {market.disputeRules ? (
+              <p>
+                <strong>Dispute rules:</strong> {market.disputeRules}
+              </p>
+            ) : null}
+          </section>
 
-        <section className="market-detail-section" aria-label="Market sources">
-          <h2>Official and supporting sources</h2>
-          {market.sources.length === 0 ? (
-            <p>No sources were attached to this market.</p>
-          ) : (
-            <ul className="market-detail-source-list">
-              {market.sources.map((source, index) => (
-                <li key={`${source.url}-${index}`}>
-                  <span>{source.type.toUpperCase()}</span>
-                  <a href={source.url} target="_blank" rel="noreferrer">
-                    {source.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          <section className="market-detail-section" aria-label="Market sources">
+            <h2>Official and supporting sources</h2>
+            {market.sources.length === 0 ? (
+              <p>No sources were attached to this market.</p>
+            ) : (
+              <ul className="market-detail-source-list">
+                {market.sources.map((source, index) => (
+                  <li key={`${source.url}-${index}`}>
+                    <span>{source.type.toUpperCase()}</span>
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </section>
     </main>
   );
