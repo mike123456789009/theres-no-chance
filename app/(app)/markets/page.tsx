@@ -458,8 +458,12 @@ export default async function MarketsPage({
                 </h2>
 
                 <div className="market-tile-probability">
-                  <p className="market-tile-prob-yes">YES {formatPercent(market.priceYes)}</p>
-                  <p className="market-tile-prob-no">NO {formatPercent(market.priceNo)}</p>
+                  <Link className="market-tile-prob-yes" href={`/markets/${market.id}`} aria-label={`Open ${market.question}`}>
+                    YES {formatPercent(market.priceYes)}
+                  </Link>
+                  <Link className="market-tile-prob-no" href={`/markets/${market.id}`} aria-label={`Open ${market.question}`}>
+                    NO {formatPercent(market.priceNo)}
+                  </Link>
                 </div>
 
                 <div className="market-tile-meta">

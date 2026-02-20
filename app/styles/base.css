@@ -2097,7 +2097,8 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 0.34rem;
 }
 
-.market-tile-probability p {
+.market-tile-probability p,
+.market-tile-probability a {
   margin: 0;
   border: 2px solid var(--ink);
   text-align: center;
@@ -2106,6 +2107,9 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.2rem 0.3rem;
+  text-decoration: none;
+  color: #111;
+  display: block;
 }
 
 .market-tile-prob-yes {
@@ -2114,6 +2118,12 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .market-tile-prob-no {
   background: rgba(188, 89, 94, 0.2);
+}
+
+html[data-ui-style="modern"] .market-tile-probability a {
+  border-width: 1px;
+  border-radius: 10px;
+  font-family: var(--font-modern-mono);
 }
 
 .market-tile-meta {
