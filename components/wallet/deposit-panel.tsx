@@ -2,22 +2,30 @@
 
 import { useMemo, useState } from "react";
 
-import type { CoinbaseCatalogItem } from "@/lib/payments/coinbase";
-import type { StripeCatalogItem, StripeCheckoutIntent } from "@/lib/payments/stripe";
-
 type DepositPanelProps = {
-  stripeTokenPacks: StripeCatalogItem[];
-  stripeSubscriptions: StripeCatalogItem[];
-  coinbaseTokenPacks: CoinbaseCatalogItem[];
+  minDepositUsd: number;
+  maxDepositUsd: number;
+  quickAmountsUsd: number[];
+  venmoUsername: string;
+  venmoPayUrl: string;
+  venmoQrImageUrl: string;
+  venmoFeePercent: number;
+  venmoFeeFixedUsd: number;
 };
 
-function formatKeyLabel(key: string): string {
-  return key
-    .split(/[_-]+/g)
-    .filter((part) => part.length > 0)
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join(" ");
-}
+type VenmoIntentResult = {
+  fundingIntentId: string;
+  invoiceCode: string;
+  requiredNote: string;
+  grossAmountUsd: number;
+  estimatedFeeUsd: number;
+  estimatedNetCreditUsd: number;
+  venmo?: {
+    username?: string;
+    payUrl?: string;
+    qrImageUrl?: string;
+  };
+};
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -31,65 +39,126 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function parseAmountInput(value: string): number | null {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.round(parsed * 100) / 100;
+}
+
 function getErrorText(result: unknown): string | null {
   if (!result || typeof result !== "object" || Array.isArray(result)) return null;
   const record = result as Record<string, unknown>;
   return clean(record.error) || clean(record.detail) || null;
 }
 
-export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTokenPacks }: DepositPanelProps) {
+function computeFeePreview(amountUsd: number, feePercent: number, fixedFeeUsd: number): {
+  grossAmountUsd: number;
+  feeAmountUsd: number;
+  netAmountUsd: number;
+} {
+  const grossCents = Math.max(0, Math.round(amountUsd * 100));
+  const fixedCents = Math.max(0, Math.round(fixedFeeUsd * 100));
+  const feeCents = Math.min(grossCents, Math.max(0, Math.round((grossCents * feePercent) / 100 + fixedCents)));
+  const netCents = Math.max(0, grossCents - feeCents);
+
+  return {
+    grossAmountUsd: grossCents / 100,
+    feeAmountUsd: feeCents / 100,
+    netAmountUsd: netCents / 100,
+  };
+}
+
+export function DepositPanel({
+  minDepositUsd,
+  maxDepositUsd,
+  quickAmountsUsd,
+  venmoUsername,
+  venmoPayUrl,
+  venmoQrImageUrl,
+  venmoFeePercent,
+  venmoFeeFixedUsd,
+}: DepositPanelProps) {
+  const defaultAmount = quickAmountsUsd[0] ?? Math.max(minDepositUsd, 25);
+  const [amountInput, setAmountInput] = useState<string>(defaultAmount.toFixed(2));
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [venmoIntent, setVenmoIntent] = useState<VenmoIntentResult | null>(null);
+  const [copyLabel, setCopyLabel] = useState<"idle" | "copied" | "unsupported">("idle");
 
-  const hasStripe = useMemo(() => stripeTokenPacks.length > 0 || stripeSubscriptions.length > 0, [stripeTokenPacks, stripeSubscriptions]);
-  const hasCoinbase = useMemo(() => coinbaseTokenPacks.length > 0, [coinbaseTokenPacks]);
+  const parsedAmount = useMemo(() => parseAmountInput(amountInput), [amountInput]);
+  const venmoPreview = useMemo(
+    () => (parsedAmount ? computeFeePreview(parsedAmount, venmoFeePercent, venmoFeeFixedUsd) : null),
+    [parsedAmount, venmoFeePercent, venmoFeeFixedUsd]
+  );
 
-  async function startStripe(intent: StripeCheckoutIntent, key: string) {
+  async function createVenmoIntent() {
     setErrorMessage("");
-    const actionKey = `stripe:${intent}:${key}`;
-    setPendingKey(actionKey);
+    setCopyLabel("idle");
+    setPendingKey("venmo");
+
+    if (parsedAmount === null) {
+      setErrorMessage("Enter a valid deposit amount.");
+      setPendingKey(null);
+      return;
+    }
+
+    if (parsedAmount < minDepositUsd || parsedAmount > maxDepositUsd) {
+      setErrorMessage(`Amount must be between ${formatCurrency(minDepositUsd)} and ${formatCurrency(maxDepositUsd)}.`);
+      setPendingKey(null);
+      return;
+    }
 
     try {
-      const response = await fetch("/api/payments/stripe/checkout", {
+      const response = await fetch("/api/payments/venmo/intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          intent,
-          key,
+          amountUsd: parsedAmount,
         }),
       });
 
       const result = (await response.json().catch(() => null)) as unknown;
       if (!response.ok) {
-        setErrorMessage(getErrorText(result) ?? "Stripe checkout initialization failed.");
+        setErrorMessage(getErrorText(result) ?? "Venmo intent initialization failed.");
         return;
       }
 
       if (!result || typeof result !== "object" || Array.isArray(result)) {
-        setErrorMessage("Stripe checkout returned malformed response.");
+        setErrorMessage("Venmo intent returned malformed response.");
         return;
       }
 
-      const url = clean((result as any)?.checkout?.url);
-      if (!url) {
-        setErrorMessage("Stripe checkout did not return a redirect URL.");
+      const typed = result as VenmoIntentResult;
+      if (!clean(typed.invoiceCode) || !clean(typed.requiredNote) || !clean(typed.fundingIntentId)) {
+        setErrorMessage("Venmo intent response is missing required fields.");
         return;
       }
 
-      window.location.assign(url);
+      setVenmoIntent(typed);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Network error starting Stripe checkout.");
+      setErrorMessage(error instanceof Error ? error.message : "Network error creating Venmo intent.");
     } finally {
       setPendingKey(null);
     }
   }
 
-  async function startCoinbase(key: string) {
+  async function startCoinbaseCharge() {
     setErrorMessage("");
-    const actionKey = `coinbase:token_pack:${key}`;
-    setPendingKey(actionKey);
+    setPendingKey("coinbase");
+
+    if (parsedAmount === null) {
+      setErrorMessage("Enter a valid deposit amount.");
+      setPendingKey(null);
+      return;
+    }
+
+    if (parsedAmount < minDepositUsd || parsedAmount > maxDepositUsd) {
+      setErrorMessage(`Amount must be between ${formatCurrency(minDepositUsd)} and ${formatCurrency(maxDepositUsd)}.`);
+      setPendingKey(null);
+      return;
+    }
 
     try {
       const response = await fetch("/api/payments/coinbase/charge", {
@@ -98,8 +167,7 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          intent: "token_pack",
-          key,
+          amountUsd: parsedAmount,
         }),
       });
 
@@ -114,7 +182,7 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
         return;
       }
 
-      const url = clean((result as any)?.charge?.url);
+      const url = clean((result as { charge?: { url?: string } }).charge?.url);
       if (!url) {
         setErrorMessage("Coinbase charge did not return a redirect URL.");
         return;
@@ -128,110 +196,135 @@ export function DepositPanel({ stripeTokenPacks, stripeSubscriptions, coinbaseTo
     }
   }
 
+  async function copyRequiredNote() {
+    if (!venmoIntent) return;
+    if (!navigator.clipboard?.writeText) {
+      setCopyLabel("unsupported");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(venmoIntent.requiredNote);
+      setCopyLabel("copied");
+      setTimeout(() => setCopyLabel("idle"), 1800);
+    } catch {
+      setCopyLabel("unsupported");
+    }
+  }
+
+  const venmoDisplay = venmoIntent?.venmo ?? {};
+  const displayUsername = clean(venmoDisplay.username) || venmoUsername;
+  const displayPayUrl = clean(venmoDisplay.payUrl) || venmoPayUrl;
+  const displayQr = clean(venmoDisplay.qrImageUrl) || venmoQrImageUrl;
+
   return (
     <section className="create-section" aria-label="Deposit options">
       <h2>Deposit</h2>
       <p className="create-note">
-        Fund your wallet via card (Stripe) or USDC on Base (Coinbase Commerce). Credits are applied by webhook and may take a moment.
+        Venmo credits are posted net of Venmo processing fees. We store gross, fee, and net values in your ledger and admin
+        reconciliation tools.
       </p>
 
-      {errorMessage ? (
-        <p className="create-note tnc-error-text">
-          {errorMessage}
-        </p>
-      ) : null}
+      {errorMessage ? <p className="create-note tnc-error-text">{errorMessage}</p> : null}
+
+      <div className="deposit-amount-box">
+        <label className="create-field">
+          <span>Deposit amount (USD)</span>
+          <input
+            type="number"
+            min={minDepositUsd}
+            max={maxDepositUsd}
+            step="0.01"
+            value={amountInput}
+            onChange={(event) => setAmountInput(event.target.value)}
+          />
+        </label>
+        {quickAmountsUsd.length ? (
+          <div className="deposit-quick-row" role="group" aria-label="Quick amount options">
+            {quickAmountsUsd.map((amount) => (
+              <button key={amount} type="button" className="create-submit create-submit-muted" onClick={() => setAmountInput(amount.toFixed(2))}>
+                {formatCurrency(amount)}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <div className="deposit-panel-grid">
         <article className="deposit-provider-card">
-          <h3>Card (Stripe)</h3>
-          {!hasStripe ? <p className="create-note">No Stripe products configured in environment variables.</p> : null}
-
-          {stripeTokenPacks.length > 0 ? (
-            <>
+          <h3>Venmo (manual, fee-aware)</h3>
+          <p className="create-note">Pay to @{displayUsername}. Your note must include your generated invoice code.</p>
+          {venmoPreview ? (
+            <div className="deposit-breakdown">
               <p className="create-note">
-                Token packs
+                You pay: <strong>{formatCurrency(venmoPreview.grossAmountUsd)}</strong>
               </p>
-              <div className="deposit-provider-stack">
-                {stripeTokenPacks.map((item) => {
-                  const actionKey = `stripe:token_pack:${item.key}`;
-                  const isPending = pendingKey === actionKey;
-                  return (
-                    <div key={item.key} className="deposit-provider-row">
-                      <div>
-                        <strong>{formatKeyLabel(item.key)}</strong>
-                        <div className="create-note">{item.tokensGranted} tokens</div>
-                      </div>
-                      <button
-                        type="button"
-                        className="create-submit"
-                        disabled={Boolean(pendingKey)}
-                        onClick={() => startStripe("token_pack", item.key)}
-                      >
-                        {isPending ? "Starting..." : "Checkout"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
-
-          {stripeSubscriptions.length > 0 ? (
-            <>
               <p className="create-note">
-                Subscriptions
+                Venmo fee: <strong>{formatCurrency(venmoPreview.feeAmountUsd)}</strong>
               </p>
-              <div className="deposit-provider-stack">
-                {stripeSubscriptions.map((item) => {
-                  const actionKey = `stripe:subscription:${item.key}`;
-                  const isPending = pendingKey === actionKey;
-                  return (
-                    <div key={item.key} className="deposit-provider-row">
-                      <div>
-                        <strong>{formatKeyLabel(item.key)}</strong>
-                        <div className="create-note">{item.tokensGranted} tokens / month (configured)</div>
-                      </div>
-                      <button
-                        type="button"
-                        className="create-submit"
-                        disabled={Boolean(pendingKey)}
-                        onClick={() => startStripe("subscription", item.key)}
-                      >
-                        {isPending ? "Starting..." : "Subscribe"}
-                      </button>
-                    </div>
-                  );
-                })}
+              <p className="create-note">
+                You are credited: <strong>{formatCurrency(venmoPreview.netAmountUsd)}</strong>
+              </p>
+            </div>
+          ) : (
+            <p className="create-note">Enter a valid amount to preview gross, fee, and net credit.</p>
+          )}
+
+          <button type="button" className="create-submit" disabled={Boolean(pendingKey)} onClick={createVenmoIntent}>
+            {pendingKey === "venmo" ? "Generating..." : "Generate Venmo payment code"}
+          </button>
+
+          {venmoIntent ? (
+            <div className="venmo-instructions">
+              <p className="create-note">
+                <strong>Required Venmo note:</strong> <code>{venmoIntent.requiredNote}</code>
+              </p>
+              <div className="venmo-instructions-actions">
+                <button type="button" className="create-submit create-submit-muted" onClick={copyRequiredNote}>
+                  {copyLabel === "copied" ? "Copied" : copyLabel === "unsupported" ? "Copy unavailable" : "Copy note"}
+                </button>
+                <a className="create-submit create-submit-muted" href={displayPayUrl} target="_blank" rel="noreferrer">
+                  Open Venmo
+                </a>
               </div>
-            </>
+
+              <img className="venmo-qr-image" src={displayQr} alt={`Venmo QR for @${displayUsername}`} />
+
+              <p className="create-note">
+                Funding intent: <code>{venmoIntent.fundingIntentId}</code>
+              </p>
+              <p className="create-note">
+                Breakdown: {formatCurrency(venmoIntent.grossAmountUsd)} gross / {formatCurrency(venmoIntent.estimatedFeeUsd)} fee /{" "}
+                {formatCurrency(venmoIntent.estimatedNetCreditUsd)} net credit
+              </p>
+            </div>
           ) : null}
         </article>
 
         <article className="deposit-provider-card">
           <h3>USDC (Coinbase Commerce)</h3>
-          {!hasCoinbase ? <p className="create-note">No Coinbase token packs configured in environment variables.</p> : null}
-
-          {coinbaseTokenPacks.length > 0 ? (
-            <div className="deposit-provider-stack">
-              {coinbaseTokenPacks.map((item) => {
-                const actionKey = `coinbase:token_pack:${item.key}`;
-                const isPending = pendingKey === actionKey;
-                return (
-                  <div key={item.key} className="deposit-provider-row">
-                    <div>
-                      <strong>{formatKeyLabel(item.key)}</strong>
-                      <div className="create-note">
-                        {formatCurrency(item.amountUsd)} · {item.tokensGranted} tokens
-                      </div>
-                    </div>
-                    <button type="button" className="create-submit" disabled={Boolean(pendingKey)} onClick={() => startCoinbase(item.key)}>
-                      {isPending ? "Starting..." : "Pay with USDC"}
-                    </button>
-                  </div>
-                );
-              })}
+          <p className="create-note">
+            Coinbase deposits are credited dollar-for-dollar. No Venmo fee is applied to this provider.
+          </p>
+          {parsedAmount ? (
+            <div className="deposit-breakdown">
+              <p className="create-note">
+                You pay: <strong>{formatCurrency(parsedAmount)}</strong>
+              </p>
+              <p className="create-note">
+                Coinbase fee in app credit: <strong>{formatCurrency(0)}</strong>
+              </p>
+              <p className="create-note">
+                You are credited: <strong>{formatCurrency(parsedAmount)}</strong>
+              </p>
             </div>
-          ) : null}
+          ) : (
+            <p className="create-note">Enter a valid amount to continue.</p>
+          )}
+
+          <button type="button" className="create-submit" disabled={Boolean(pendingKey)} onClick={startCoinbaseCharge}>
+            {pendingKey === "coinbase" ? "Starting..." : "Pay with Coinbase"}
+          </button>
         </article>
       </div>
     </section>

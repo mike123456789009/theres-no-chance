@@ -3,8 +3,9 @@ import Link from "next/link";
 import { DepositPanel } from "@/components/wallet/deposit-panel";
 import { DepositStatusBanner } from "@/components/wallet/deposit-status-banner";
 import { LedgerTable } from "@/components/wallet/ledger-table";
-import { getCoinbaseCatalog } from "@/lib/payments/coinbase";
-import { getStripeCatalog } from "@/lib/payments/stripe";
+import { getDepositConfig } from "@/lib/payments/deposit-config";
+import { getVenmoFeeConfig } from "@/lib/payments/venmo-fees";
+import { getVenmoPayUrl, getVenmoQrImageUrl, getVenmoUsername } from "@/lib/payments/venmo";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,10 @@ type FundingIntentRow = {
   intent: string;
   key: string;
   tokens_granted: number | null;
+  requested_amount_usd: number | string | null;
+  estimated_fee_usd: number | string | null;
+  estimated_net_credit_usd: number | string | null;
+  invoice_code: string | null;
   status: string;
   ledger_entry_id: string | null;
   created_at: string;
@@ -109,7 +114,6 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
   const checkoutState = clean(params.get("checkout")).toLowerCase();
   const checkoutProvider = clean(params.get("provider")).toLowerCase();
   const fundingIntentId = clean(params.get("funding_intent_id"));
-  const sessionId = clean(params.get("session_id"));
 
   const supabase = await createClient();
   const {
@@ -138,9 +142,8 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
     );
   }
 
-  const stripeTokenPacks = getStripeCatalog("token_pack");
-  const stripeSubscriptions = getStripeCatalog("subscription");
-  const coinbaseTokenPacks = getCoinbaseCatalog("token_pack");
+  const depositConfig = getDepositConfig();
+  const venmoFeeConfig = getVenmoFeeConfig();
 
   let wallet: { cashUsd: number; reservedUsd: number; totalUsd: number } = { cashUsd: 0, reservedUsd: 0, totalUsd: 0 };
   let ledgerEntries: Array<{ id: string; entryType: string; amount: number; currency: string; createdAt: string; metadata: Record<string, unknown> }> = [];
@@ -186,7 +189,9 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
   if (fundingIntentId) {
     const { data: fundingData, error: fundingError } = await supabase
       .from("funding_intents")
-      .select("id, provider, intent, key, tokens_granted, status, ledger_entry_id, created_at, updated_at")
+      .select(
+        "id, provider, intent, key, tokens_granted, requested_amount_usd, estimated_fee_usd, estimated_net_credit_usd, invoice_code, status, ledger_entry_id, created_at, updated_at"
+      )
       .eq("id", fundingIntentId)
       .maybeSingle();
 
@@ -232,16 +237,26 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
         showRefresh: true,
       };
     } else if (fundingIntent.status === "credited") {
+      const gross = toNumber(fundingIntent.requested_amount_usd, 0);
+      const fee = toNumber(fundingIntent.estimated_fee_usd, 0);
+      const net = toNumber(fundingIntent.estimated_net_credit_usd, 0);
       banner = {
         kind: "credited",
         title: "Deposit credited",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} (${fundingIntent.key}) credited. Funding intent id: ${fundingIntent.id}`,
+        detail: `${fundingIntent.provider} ${fundingIntent.intent} credited. Gross ${formatCurrency(gross)} · Fee ${formatCurrency(
+          fee
+        )} · Net ${formatCurrency(net)}. Funding intent id: ${fundingIntent.id}`,
       };
     } else {
+      const gross = toNumber(fundingIntent.requested_amount_usd, 0);
+      const fee = toNumber(fundingIntent.estimated_fee_usd, 0);
+      const net = toNumber(fundingIntent.estimated_net_credit_usd, 0);
       banner = {
         kind: "pending",
         title: "Deposit pending",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} (${fundingIntent.key}) is still pending credit. Refresh in a moment.`,
+        detail: `${fundingIntent.provider} ${fundingIntent.intent} is still pending credit. Gross ${formatCurrency(gross)} · Fee ${formatCurrency(
+          fee
+        )} · Net ${formatCurrency(net)}. Refresh in a moment.`,
         showRefresh: true,
       };
     }
@@ -252,6 +267,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       <p className="create-kicker">Wallet</p>
       <h1 className="create-title">Balances + deposits</h1>
       <p className="create-copy">View wallet balances, deposit methods, and your most recent ledger entries.</p>
+      <p className="create-note">Venmo deposits are credited net of Venmo processing fee. Coinbase deposits are credited at gross amount.</p>
 
       <div className="create-actions account-actions-top">
         <Link className="create-submit create-submit-muted" href="/markets">
@@ -288,7 +304,16 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
         </p>
       ) : null}
 
-      <DepositPanel stripeTokenPacks={stripeTokenPacks} stripeSubscriptions={stripeSubscriptions} coinbaseTokenPacks={coinbaseTokenPacks} />
+      <DepositPanel
+        minDepositUsd={depositConfig.minUsd}
+        maxDepositUsd={depositConfig.maxUsd}
+        quickAmountsUsd={depositConfig.quickAmountsUsd}
+        venmoUsername={getVenmoUsername()}
+        venmoPayUrl={getVenmoPayUrl()}
+        venmoQrImageUrl={getVenmoQrImageUrl()}
+        venmoFeePercent={venmoFeeConfig.feePercent}
+        venmoFeeFixedUsd={venmoFeeConfig.fixedFeeUsd}
+      />
 
       <section className="create-section" aria-label="Recent ledger entries">
         <h2>Recent ledger entries</h2>
@@ -301,11 +326,6 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
         )}
       </section>
 
-      {sessionId ? (
-        <p className="create-note account-note-top">
-          Stripe session: <code>{sessionId}</code>
-        </p>
-      ) : null}
       {checkoutProvider ? (
         <p className="create-note">
           Provider: <code>{checkoutProvider}</code>

@@ -60,53 +60,49 @@ export default function MarketingPage() {
             <section className="token-economy reveal-item" data-reveal-delay="2" aria-label="Payments and token economy">
               <h2 className="token-title">Payments &amp; Token Economy</h2>
               <p className="token-copy">
-                Fund your account two ways: subscribe for the best token value each month, or buy one-time token
-                packs whenever you need them.
+                Fund your account in USD and trade with wallet balance. Current funding methods are Venmo and Coinbase
+                Commerce.
               </p>
 
               <div className="payment-grid">
                 <article className="payment-card">
-                  <h3 className="payment-title">Subscription tiers (best deal)</h3>
-                  <p className="payment-note">Each tier lowers your cost per token.</p>
+                  <h3 className="payment-title">Venmo deposits (manual reconciliation)</h3>
+                  <p className="payment-note">Each Venmo deposit requires a generated invoice code in the payment note.</p>
                   <ul className="plan-list">
                     <li>
-                      <span className="plan-name">Starter</span>
-                      <span>$29/mo · 260 tokens · $0.11/token</span>
+                      <span className="plan-name">You pay</span>
+                      <span>Enter any amount within wallet limits.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Pro</span>
-                      <span>$79/mo · 830 tokens · $0.095/token</span>
+                      <span className="plan-name">Required note</span>
+                      <span>Use the invoice code exactly as shown in wallet.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Premium</span>
-                      <span>$179/mo · 2,060 tokens · $0.087/token</span>
+                      <span className="plan-name">Fee-aware credit</span>
+                      <span>Wallet credit is posted at gross minus Venmo fee.</span>
                     </li>
                   </ul>
                 </article>
 
                 <article className="payment-card">
-                  <h3 className="payment-title">One-time token purchases</h3>
-                  <p className="payment-note">Pay once with no recurring commitment.</p>
+                  <h3 className="payment-title">Coinbase Commerce (USDC on Base)</h3>
+                  <p className="payment-note">Hosted checkout for fixed USD wallet topups.</p>
                   <ul className="plan-list">
                     <li>
-                      <span className="plan-name">Quick Start</span>
-                      <span>$20 · 120 tokens · $0.167/token</span>
+                      <span className="plan-name">USD funding</span>
+                      <span>Choose your amount and complete hosted payment.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Standard</span>
-                      <span>$50 · 330 tokens · $0.152/token</span>
-                    </li>
-                    <li>
-                      <span className="plan-name">Large</span>
-                      <span>$100 · 700 tokens · $0.143/token</span>
+                      <span className="plan-name">Crediting</span>
+                      <span>Coinbase deposits are credited at gross amount.</span>
                     </li>
                   </ul>
                 </article>
               </div>
 
               <p className="redeem-note">
-                Tokens are redeemable and withdrawable. When markets settle, winnings and unused token value can be
-                converted and withdrawn from your account.
+                Wallet and admin reconciliation views display gross payment, fee, and net credit details for deposit
+                transparency.
               </p>
             </section>
 
@@ -128,8 +124,8 @@ export default function MarketingPage() {
                     <h3>How do markets resolve?</h3>
                     <p>
                       Every market includes explicit yes/no resolution criteria, an expected resolution window, and
-                      official source guidance. In v1, platform admins apply the final ruling based on those posted
-                      criteria.
+                      official source guidance. Markets can use admin resolution or community resolution with admin
+                      adjudication before finalization.
                     </p>
                   </article>
 
@@ -137,7 +133,8 @@ export default function MarketingPage() {
                     <h3>What is the dispute process and timing?</h3>
                     <p>
                       After resolution, disputes can be filed during a configurable review window (default 48 hours).
-                      Admin actions and evidence are logged before a market is finalized.
+                      If you successfully challenge an incorrect resolution, you share a Successful Challenge Bonus paid
+                      from the same resolver reward pool used for settlement work.
                     </p>
                   </article>
 

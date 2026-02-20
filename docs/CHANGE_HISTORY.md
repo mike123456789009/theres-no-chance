@@ -1,5 +1,47 @@
 # Change History
 
+## 2026-02-20 - Venmo Fee-Aware Deposits + Reconciliation Queue
+Status: completed
+
+Short description:
+- Replaced Stripe wallet funding with a Venmo-first manual flow that requires invoice codes in payment notes.
+- Added net-of-fee Venmo crediting using configurable fee formula (`VENMO_FEE_PERCENT`, `VENMO_FEE_FIXED_USD`).
+- Converted Coinbase funding to amount-based USD deposits and ledger `deposit` credits.
+- Added secure Venmo reconcile API for Gmail parser ingestion and automatic exact matching by invoice code + gross amount.
+- Added admin payments page for review-required rows with manual `match + credit` and `ignore` actions.
+- Added normalized deposit receipt/audit tables and fee-aware funding intent fields in Supabase schema.
+
+Files/areas touched:
+- Migrations: `supabase/migrations/202602200003_step19_venmo_dollar_deposits.sql`
+- New payment modules/routes:
+  - `lib/payments/venmo-fees.ts`
+  - `lib/payments/venmo.ts`
+  - `lib/payments/deposit-config.ts`
+  - `app/api/payments/venmo/intent/route.ts`
+  - `app/api/payments/venmo/reconcile/route.ts`
+- Updated payment/webhook routes:
+  - `app/api/payments/coinbase/charge/route.ts`
+  - `lib/payments/coinbase.ts`
+  - `lib/payments/coinbase-webhook.ts`
+  - `app/api/payments/stripe/checkout/route.ts`
+  - `app/api/webhooks/stripe/route.ts`
+- Wallet/admin UI:
+  - `components/wallet/deposit-panel.tsx`
+  - `components/wallet/ledger-table.tsx`
+  - `app/(app)/account/wallet/page.tsx`
+  - `components/account/account-nav.tsx`
+  - `components/admin/admin-venmo-reconcile-queue.tsx`
+  - `app/(app)/account/admin/payments/page.tsx`
+  - `lib/admin/account-dashboard.ts`
+  - `app/styles/account.css`
+- Marketing copy: `app/(marketing)/page.tsx`
+- Runbooks:
+  - `docs/VENMO_GMAIL_PARSER_APPS_SCRIPT.md`
+  - `docs/VENMO_PAYMENTS_RUNBOOK.md`
+
+User-visible change:
+- Wallet now supports Venmo + Coinbase USD deposits, shows gross/fee/net breakdown for Venmo, and requires a generated invoice code in Venmo notes for trackable reconciliation.
+
 ## 2026-02-20 - Expanded Modern Palette Library
 Status: completed
 

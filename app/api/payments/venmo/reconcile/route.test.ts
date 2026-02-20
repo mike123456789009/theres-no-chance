@@ -1,0 +1,258 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { POST } from "./route";
+
+vi.mock("@/lib/supabase/service", () => ({
+  createServiceClient: vi.fn(),
+  isSupabaseServiceEnvConfigured: vi.fn(() => true),
+  getMissingSupabaseServiceEnv: vi.fn(() => []),
+}));
+
+import { createServiceClient } from "@/lib/supabase/service";
+
+const ORIGINAL_ENV = { ...process.env };
+
+type QueryResolver = (input: {
+  table: string;
+  operation: "select" | "insert" | "update" | "upsert";
+  filters: Record<string, unknown>;
+  payload: Record<string, unknown> | null;
+  terminal: "await" | "single" | "maybeSingle";
+}) => Promise<{ data: unknown; error: { message: string } | null }>;
+
+class MockQuery {
+  private table: string;
+  private resolver: QueryResolver;
+  private operation: "select" | "insert" | "update" | "upsert" = "select";
+  private filters: Record<string, unknown> = {};
+  private payload: Record<string, unknown> | null = null;
+
+  constructor(table: string, resolver: QueryResolver) {
+    this.table = table;
+    this.resolver = resolver;
+  }
+
+  select() {
+    if (this.operation === "select") {
+      this.operation = "select";
+    }
+    return this;
+  }
+
+  eq(column: string, value: unknown) {
+    this.filters[column] = value;
+    return this;
+  }
+
+  in(column: string, value: unknown) {
+    this.filters[column] = value;
+    return this;
+  }
+
+  insert(payload: Record<string, unknown>) {
+    this.operation = "insert";
+    this.payload = payload;
+    return this;
+  }
+
+  update(payload: Record<string, unknown>) {
+    this.operation = "update";
+    this.payload = payload;
+    return this;
+  }
+
+  upsert(payload: Record<string, unknown>) {
+    this.operation = "upsert";
+    this.payload = payload;
+    return this;
+  }
+
+  async single() {
+    return this.resolver({
+      table: this.table,
+      operation: this.operation,
+      filters: this.filters,
+      payload: this.payload,
+      terminal: "single",
+    });
+  }
+
+  async maybeSingle() {
+    return this.resolver({
+      table: this.table,
+      operation: this.operation,
+      filters: this.filters,
+      payload: this.payload,
+      terminal: "maybeSingle",
+    });
+  }
+
+  then<TResult1 = unknown, TResult2 = never>(
+    onfulfilled?: ((value: { data: unknown; error: { message: string } | null }) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return this.resolver({
+      table: this.table,
+      operation: this.operation,
+      filters: this.filters,
+      payload: this.payload,
+      terminal: "await",
+    }).then(onfulfilled as any, onrejected as any);
+  }
+}
+
+function createMockService(options: { existingCredited: boolean }) {
+  const rpc = vi.fn().mockResolvedValue({
+    data: {
+      ledgerEntryId: "ledger-1",
+      reused: false,
+    },
+    error: null,
+  });
+
+  const resolver: QueryResolver = async ({ table, operation, filters, terminal }) => {
+    if (table === "venmo_incoming_payments" && operation === "select" && terminal === "maybeSingle") {
+      if (filters.provider_payment_id && options.existingCredited) {
+        return {
+          data: {
+            id: "incoming-existing",
+            gmail_message_id: "msg-1",
+            provider_payment_id: String(filters.provider_payment_id),
+            match_status: "credited",
+            ledger_entry_id: "ledger-existing",
+          },
+          error: null,
+        };
+      }
+
+      return {
+        data: null,
+        error: null,
+      };
+    }
+
+    if (table === "funding_intents" && operation === "select" && terminal === "await") {
+      return {
+        data: [
+          {
+            id: "fi-1",
+            user_id: "user-1",
+            requested_amount_usd: 10,
+            status: "awaiting_payment",
+          },
+        ],
+        error: null,
+      };
+    }
+
+    if (table === "deposit_receipts" && operation === "upsert" && terminal === "single") {
+      return {
+        data: { id: "receipt-1" },
+        error: null,
+      };
+    }
+
+    if (table === "venmo_incoming_payments" && operation === "insert" && terminal === "single") {
+      return {
+        data: { id: "incoming-1" },
+        error: null,
+      };
+    }
+
+    if (
+      (table === "deposit_receipts" || table === "funding_intents" || table === "venmo_incoming_payments") &&
+      operation === "update" &&
+      terminal === "await"
+    ) {
+      return {
+        data: null,
+        error: null,
+      };
+    }
+
+    return {
+      data: null,
+      error: null,
+    };
+  };
+
+  return {
+    from: vi.fn((table: string) => new MockQuery(table, resolver)),
+    rpc,
+  };
+}
+
+describe("POST /api/payments/venmo/reconcile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = {
+      ...ORIGINAL_ENV,
+      VENMO_RECONCILE_BEARER_SECRET: "test-secret",
+    };
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  it("credits net amount (not gross) when payment auto-matches", async () => {
+    const service = createMockService({ existingCredited: false });
+    vi.mocked(createServiceClient).mockReturnValue(service as any);
+
+    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-secret",
+      },
+      body: JSON.stringify({
+        payments: [
+          {
+            gmailMessageId: "msg-1",
+            venmoTransactionId: "tx-1",
+            amountUsd: 10,
+            note: "Payment note VC-ABCD23",
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.credited).toBe(1);
+    expect(json.creditedNetTotalUsd).toBe(9.71);
+    expect(service.rpc).toHaveBeenCalledTimes(1);
+    expect(service.rpc.mock.calls[0][1].p_amount).toBe(9.71);
+  });
+
+  it("treats already-credited incoming rows as duplicates", async () => {
+    const service = createMockService({ existingCredited: true });
+    vi.mocked(createServiceClient).mockReturnValue(service as any);
+
+    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-secret",
+      },
+      body: JSON.stringify({
+        payments: [
+          {
+            gmailMessageId: "msg-1",
+            venmoTransactionId: "tx-1",
+            amountUsd: 10,
+            note: "Payment note VC-ABCD23",
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.duplicates).toBe(1);
+    expect(json.credited).toBe(0);
+    expect(service.rpc).not.toHaveBeenCalled();
+  });
+});

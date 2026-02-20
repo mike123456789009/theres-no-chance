@@ -73,6 +73,18 @@
   gap: 1rem;
 }
 
+.deposit-amount-box {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.deposit-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .deposit-provider-card {
   border: 1px solid #101010;
   padding: 0.85rem;
@@ -93,6 +105,35 @@
   justify-content: space-between;
   gap: 0.7rem;
   align-items: center;
+}
+
+.deposit-breakdown {
+  margin: 0.65rem 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed #8a8a8a;
+  background: #f7f7f7;
+}
+
+.venmo-instructions {
+  margin-top: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid #7f7f7f;
+  background: #f8fbff;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.venmo-instructions-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.venmo-qr-image {
+  width: min(240px, 100%);
+  height: auto;
+  border: 1px solid #767676;
+  background: white;
 }
 
 .deposit-status-banner {

@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { parseCoinbaseChargeIntent } from "@/lib/payments/coinbase";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
@@ -20,8 +19,6 @@ type CoinbaseWebhookProcessResult = {
 type WalletCreditRpcResult = {
   reused: boolean;
   ledgerEntryId: string;
-  walletAccountId: string;
-  walletAvailableBalance: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,20 +29,14 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function parsePositiveInt(value: unknown, fallback = 0): number {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return Math.floor(parsed);
-}
-
-function parseMoneyCents(value: unknown): number {
+function parseUsd(value: unknown): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
-  return Math.round(parsed * 100);
+  return Math.round(parsed * 100) / 100;
 }
 
-function parseUsdCentsFromCharge(charge: Record<string, unknown>, metadata: Record<string, unknown>): number {
-  const metadataAmount = parseMoneyCents(metadata.local_amount_usd);
+function parseUsdFromCharge(charge: Record<string, unknown>, metadata: Record<string, unknown>): number {
+  const metadataAmount = parseUsd(metadata.local_amount_usd);
   if (metadataAmount > 0) return metadataAmount;
 
   const pricing = isRecord(charge.pricing) ? charge.pricing : null;
@@ -53,124 +44,49 @@ function parseUsdCentsFromCharge(charge: Record<string, unknown>, metadata: Reco
 
   const local = isRecord(pricing.local) ? pricing.local : null;
   if (local && clean(local.currency).toUpperCase() === "USD") {
-    return parseMoneyCents(local.amount);
+    return parseUsd(local.amount);
   }
 
   const usd = isRecord(pricing.usd) ? pricing.usd : null;
   if (usd) {
-    return parseMoneyCents(usd.amount);
+    return parseUsd(usd.amount);
   }
 
   return 0;
 }
 
-function isFundingIntentsSchemaMissing(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return (
-    (normalized.includes("relation") && normalized.includes("funding_intents")) ||
-    normalized.includes("could not find the table") ||
-    normalized.includes("schema cache")
-  );
-}
-
-async function markFundingIntentCredited(options: {
+async function resolveUserId(options: {
   service: ServiceClient;
-  provider: "coinbase";
-  fundingIntentId: string | null;
-  coinbaseChargeId: string;
-  userId: string;
-  ledgerEntryId: string;
+  metadataUserId: string;
+  fundingIntentId: string;
 }): Promise<string | null> {
-  try {
-    const updatePayload = {
-      status: "credited",
-      ledger_entry_id: options.ledgerEntryId,
-      coinbase_charge_id: options.coinbaseChargeId,
-    };
+  if (options.metadataUserId) return options.metadataUserId;
+  if (!options.fundingIntentId) return null;
 
-    let request = options.service.from("funding_intents").update(updatePayload).eq("provider", options.provider);
-
-    if (options.fundingIntentId) {
-      request = request.eq("id", options.fundingIntentId).eq("user_id", options.userId);
-    } else {
-      request = request.eq("coinbase_charge_id", options.coinbaseChargeId);
-    }
-
-    const { data, error } = await request.select("id").maybeSingle();
-    if (error) {
-      if (isFundingIntentsSchemaMissing(error.message)) return null;
-      return `Funding intent update failed: ${error.message}`;
-    }
-
-    if (!data) {
-      return "Funding intent not found to mark credited.";
-    }
-
-    return "Funding intent marked credited.";
-  } catch (error) {
-    return error instanceof Error ? `Funding intent update failed: ${error.message}` : "Funding intent update failed.";
-  }
-}
-
-async function getExistingTokenGrant(options: {
-  service: ServiceClient;
-  ledgerEntryId: string;
-}): Promise<boolean> {
   const { data, error } = await options.service
-    .from("token_grants")
-    .select("id")
-    .eq("ledger_entry_id", options.ledgerEntryId)
-    .limit(1)
+    .from("funding_intents")
+    .select("user_id")
+    .eq("id", options.fundingIntentId)
     .maybeSingle();
 
-  if (error) {
-    return false;
-  }
-
-  return Boolean(data);
-}
-
-async function writeTokenGrantIfMissing(options: {
-  service: ServiceClient;
-  userId: string;
-  source: string;
-  amountTokens: number;
-  ledgerEntryId: string;
-}): Promise<void> {
-  const exists = await getExistingTokenGrant({
-    service: options.service,
-    ledgerEntryId: options.ledgerEntryId,
-  });
-
-  if (exists) return;
-
-  const { error } = await options.service.from("token_grants").insert({
-    user_id: options.userId,
-    source: options.source,
-    amount_tokens: options.amountTokens,
-    ledger_entry_id: options.ledgerEntryId,
-  });
-
-  if (error) {
-    throw new Error(`Unable to write token grant: ${error.message}`);
-  }
+  if (error || !data) return null;
+  return clean((data as { user_id?: string }).user_id) || null;
 }
 
 async function callWalletCreditRpc(options: {
   service: ServiceClient;
   userId: string;
-  amount: number;
+  amountUsd: number;
   idempotencyKey: string;
-  referenceTable: string;
-  referenceId: string | null;
+  referenceId: string;
   metadata: Record<string, unknown>;
 }): Promise<WalletCreditRpcResult> {
   const { data, error } = await options.service.rpc("apply_wallet_credit", {
     p_user_id: options.userId,
-    p_amount: options.amount,
-    p_entry_type: "pack_purchase",
+    p_amount: options.amountUsd,
+    p_entry_type: "deposit",
     p_idempotency_key: options.idempotencyKey,
-    p_reference_table: options.referenceTable,
+    p_reference_table: "deposit_receipts",
     p_reference_id: options.referenceId,
     p_metadata: options.metadata,
   });
@@ -184,19 +100,13 @@ async function callWalletCreditRpc(options: {
   }
 
   const ledgerEntryId = clean(data.ledgerEntryId);
-  const walletAccountId = clean(data.walletAccountId);
-  const walletAvailableBalance = Number(data.walletAvailableBalance);
-  const reused = data.reused === true;
-
-  if (!ledgerEntryId || !walletAccountId || !Number.isFinite(walletAvailableBalance)) {
-    throw new Error("Wallet credit failed: incomplete RPC response.");
+  if (!ledgerEntryId) {
+    throw new Error("Wallet credit failed: missing ledger entry id.");
   }
 
   return {
-    reused,
+    reused: data.reused === true,
     ledgerEntryId,
-    walletAccountId,
-    walletAvailableBalance,
   };
 }
 
@@ -207,15 +117,6 @@ async function processConfirmedCharge(options: {
   const charge = options.event.data;
 
   const chargeId = clean(charge.id);
-  const chargeCode = clean(charge.code);
-  const metadata = isRecord(charge.metadata) ? charge.metadata : {};
-  const intent = parseCoinbaseChargeIntent(clean(metadata.intent));
-  const key = clean(metadata.key);
-  const userId = clean(metadata.user_id);
-  const tokensGranted = parsePositiveInt(metadata.tokens_granted, 0);
-  const amountPaidCents = parseUsdCentsFromCharge(charge, metadata);
-  const fundingIntentId = clean(metadata.funding_intent_id) || clean(metadata.fundingIntentId);
-
   if (!chargeId) {
     return {
       processed: false,
@@ -224,93 +125,114 @@ async function processConfirmedCharge(options: {
     };
   }
 
-  if (!intent || !key || !userId || tokensGranted <= 0) {
+  const metadata = isRecord(charge.metadata) ? charge.metadata : {};
+  const fundingIntentId = clean(metadata.funding_intent_id) || clean(metadata.fundingIntentId);
+  const metadataUserId = clean(metadata.user_id);
+  const userId = await resolveUserId({
+    service: options.service,
+    metadataUserId,
+    fundingIntentId,
+  });
+
+  const amountPaidUsd = parseUsdFromCharge(charge, metadata);
+  if (!userId || amountPaidUsd <= 0) {
     return {
       processed: false,
       ignored: true,
-      details: ["Coinbase charge event missing required metadata for wallet crediting."],
+      details: ["Coinbase charge event missing user or positive USD amount."],
     };
   }
 
-  let purchaseId: string | null = null;
+  const paidAt = clean((charge as { confirmed_at?: unknown }).confirmed_at) || clean((charge as { timeline?: unknown }).timeline);
+  const payerDisplayName = clean(metadata.payer_display_name);
+  const payerHandle = clean(metadata.payer_handle);
+  const note = clean(metadata.note);
 
-  const { data: purchaseData, error: purchaseError } = await options.service
-    .from("token_pack_purchases")
-    .insert({
-      user_id: userId,
-      pack_key: key,
-      amount_paid_cents: amountPaidCents,
-      tokens_granted: tokensGranted,
-      coinbase_charge_id: chargeId,
-    })
+  const { data: receiptData, error: receiptError } = await options.service
+    .from("deposit_receipts")
+    .upsert(
+      {
+        user_id: userId,
+        funding_intent_id: fundingIntentId || null,
+        provider: "coinbase",
+        provider_payment_id: chargeId,
+        gross_amount_usd: amountPaidUsd,
+        fee_amount_usd: 0,
+        net_amount_usd: amountPaidUsd,
+        currency: "USD",
+        payer_display_name: payerDisplayName || null,
+        payer_handle: payerHandle || null,
+        payment_note: note || null,
+        paid_at: paidAt || null,
+        source: "coinbase_webhook",
+        raw_payload: charge,
+      },
+      {
+        onConflict: "provider,provider_payment_id",
+      }
+    )
     .select("id")
-    .maybeSingle();
+    .single();
 
-  if (!purchaseError && purchaseData) {
-    purchaseId = clean((purchaseData as { id?: string }).id);
+  if (receiptError || !receiptData) {
+    throw new Error(`Unable to upsert Coinbase deposit receipt: ${receiptError?.message ?? "Unknown error."}`);
   }
 
-  if (purchaseError && purchaseError.code !== "23505") {
-    throw new Error(`Unable to write Coinbase token pack receipt: ${purchaseError.message}`);
+  const depositReceiptId = clean((receiptData as { id?: string }).id);
+  if (!depositReceiptId) {
+    throw new Error("Unable to upsert Coinbase deposit receipt: missing id.");
   }
 
-  if (purchaseError && purchaseError.code === "23505") {
-    const { data: existingPurchase, error: existingPurchaseError } = await options.service
-      .from("token_pack_purchases")
-      .select("id")
-      .eq("coinbase_charge_id", chargeId)
-      .maybeSingle();
-
-    if (existingPurchaseError) {
-      throw new Error(`Unable to load existing Coinbase token pack receipt: ${existingPurchaseError.message}`);
-    }
-
-    purchaseId = clean((existingPurchase as { id?: string } | null)?.id);
-  }
-
-  const { ledgerEntryId, reused } = await callWalletCreditRpc({
+  const creditResult = await callWalletCreditRpc({
     service: options.service,
     userId,
-    amount: tokensGranted,
-    idempotencyKey: `coinbase:charge:${chargeId}:pack_credit`,
-    referenceTable: "token_pack_purchases",
-    referenceId: purchaseId,
+    amountUsd: amountPaidUsd,
+    idempotencyKey: `coinbase:charge:${chargeId}:deposit`,
+    referenceId: depositReceiptId,
     metadata: {
+      provider: "coinbase",
       coinbaseEventId: options.event.id,
       coinbaseEventType: options.event.type,
       coinbaseChargeId: chargeId,
-      coinbaseChargeCode: chargeCode || null,
-      intent,
-      key,
-      tokensGranted,
-      network: "base",
+      grossAmountUsd: amountPaidUsd,
+      feeAmountUsd: 0,
+      netAmountUsd: amountPaidUsd,
       fundingIntentId: fundingIntentId || null,
     },
   });
 
-  await writeTokenGrantIfMissing({
-    service: options.service,
-    userId,
-    source: `coinbase_pack:${key}`,
-    amountTokens: tokensGranted,
-    ledgerEntryId,
-  });
+  const { error: receiptLedgerError } = await options.service
+    .from("deposit_receipts")
+    .update({
+      ledger_entry_id: creditResult.ledgerEntryId,
+    })
+    .eq("id", depositReceiptId);
 
-  const fundingIntentNote = await markFundingIntentCredited({
-    service: options.service,
-    provider: "coinbase",
-    fundingIntentId: fundingIntentId || null,
-    coinbaseChargeId: chargeId,
-    userId,
-    ledgerEntryId,
-  });
+  if (receiptLedgerError) {
+    throw new Error(`Unable to update Coinbase deposit receipt ledger link: ${receiptLedgerError.message}`);
+  }
+
+  if (fundingIntentId) {
+    const { error: fundingIntentError } = await options.service
+      .from("funding_intents")
+      .update({
+        status: "credited",
+        ledger_entry_id: creditResult.ledgerEntryId,
+        coinbase_charge_id: chargeId,
+      })
+      .eq("id", fundingIntentId)
+      .eq("provider", "coinbase");
+
+    if (fundingIntentError) {
+      throw new Error(`Unable to update Coinbase funding intent: ${fundingIntentError.message}`);
+    }
+  }
 
   return {
     processed: true,
     ignored: false,
     details: [
-      reused ? "Coinbase pack credit reused existing idempotent ledger entry." : "Coinbase pack credit applied.",
-      ...(fundingIntentNote ? [fundingIntentNote] : []),
+      creditResult.reused ? "Coinbase deposit reused existing idempotent ledger entry." : "Coinbase deposit credited.",
     ],
   };
 }

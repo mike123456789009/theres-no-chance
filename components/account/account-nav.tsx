@@ -55,6 +55,11 @@ const ADMIN_NAV_ITEMS: AccountNavItem[] = [
     href: "/account/admin/moderation",
     description: "Resolution and disputes",
   },
+  {
+    label: "Payments",
+    href: "/account/admin/payments",
+    description: "Venmo reconciliation queue",
+  },
 ];
 
 function isActive(pathname: string, href: string): boolean {

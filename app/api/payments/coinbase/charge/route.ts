@@ -1,32 +1,34 @@
-import { NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { NextResponse } from "next/server";
 
-import {
-  COINBASE_CHARGE_INTENTS,
-  createCoinbaseCharge,
-  getCoinbaseCatalog,
-  getCoinbaseCatalogItem,
-  parseCoinbaseChargeIntent,
-} from "@/lib/payments/coinbase";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createCoinbaseCharge } from "@/lib/payments/coinbase";
+import { getDepositConfig } from "@/lib/payments/deposit-config";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 type ChargeBody = {
-  intent?: string;
-  key?: string;
+  amountUsd?: unknown;
 };
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+function parseUsdAmount(raw: unknown): number | null {
+  const parsed = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return Math.round(parsed * 100) / 100;
 }
 
 function mergeMissingEnv(serverMissing: string[], serviceMissing: string[]): string[] {
   return Array.from(new Set([...serverMissing, ...serviceMissing]));
 }
 
+function clean(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function isSchemaMissingError(message: string): boolean {
   const normalized = message.toLowerCase();
-  return normalized.includes("relation") && normalized.includes("funding_intents");
+  return normalized.includes("relation") || normalized.includes("column") || normalized.includes("funding_intents");
 }
 
 export async function POST(request: Request) {
@@ -50,37 +52,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
   }
 
-  const intent = parseCoinbaseChargeIntent(clean(body.intent));
-  const key = clean(body.key).toLowerCase();
-
-  if (!intent) {
+  const amountUsd = parseUsdAmount(body.amountUsd);
+  if (amountUsd === null) {
     return NextResponse.json(
       {
         error: "Validation failed.",
-        details: [`intent must be one of: ${COINBASE_CHARGE_INTENTS.join(", ")}`],
+        details: ["amountUsd must be a positive USD amount."],
       },
       { status: 400 }
     );
   }
 
-  if (!key) {
+  const depositConfig = getDepositConfig();
+  if (amountUsd < depositConfig.minUsd || amountUsd > depositConfig.maxUsd) {
     return NextResponse.json(
       {
         error: "Validation failed.",
-        details: ["key is required."],
-      },
-      { status: 400 }
-    );
-  }
-
-  const catalog = getCoinbaseCatalog(intent);
-  const item = getCoinbaseCatalogItem(intent, key);
-  if (!item) {
-    return NextResponse.json(
-      {
-        error: "Charge item is not configured.",
-        detail: `No Coinbase charge config found for intent '${intent}' and key '${key}'.`,
-        availableKeys: catalog.map((entry) => entry.key),
+        details: [`amountUsd must be between ${depositConfig.minUsd.toFixed(2)} and ${depositConfig.maxUsd.toFixed(2)}.`],
       },
       { status: 400 }
     );
@@ -104,10 +92,13 @@ export async function POST(request: Request) {
       id: fundingIntentId,
       user_id: user.id,
       provider: "coinbase",
-      intent,
-      key: item.key,
-      tokens_granted: item.tokensGranted,
+      intent: "usd_topup",
+      key: "usd_topup",
+      tokens_granted: 0,
       status: "created",
+      requested_amount_usd: amountUsd,
+      estimated_fee_usd: 0,
+      estimated_net_credit_usd: amountUsd,
     });
 
     if (intentInsertError) {
@@ -121,8 +112,7 @@ export async function POST(request: Request) {
     }
 
     const charge = await createCoinbaseCharge({
-      intent,
-      item,
+      amountUsd,
       userId: user.id,
       request,
       fundingIntentId,
@@ -142,17 +132,17 @@ export async function POST(request: Request) {
         charge: {
           provider: "coinbase",
           network: "base",
-          intent,
-          key: item.key,
-          tokensGranted: item.tokensGranted,
-          amountUsd: item.amountUsd,
+          intent: "usd_topup",
+          grossAmountUsd: amountUsd,
+          estimatedFeeUsd: 0,
+          estimatedNetCreditUsd: amountUsd,
           chargeId: charge.id,
           code: charge.code,
           url: charge.hostedUrl,
           expiresAt: charge.expiresAt,
         },
         fundingIntentId,
-        warning: intentUpdateError ? intentUpdateError.message : null,
+        warning: intentUpdateError ? clean(intentUpdateError.message) : null,
       },
       { status: 201 }
     );

@@ -49,11 +49,22 @@ function extractMarketId(metadata: Record<string, unknown>): string | null {
   return marketId || null;
 }
 
+function parseMoneyValue(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+}
+
 function renderMeta(metadata: Record<string, unknown>): React.ReactNode {
   const marketId = extractMarketId(metadata);
   const intent = clean(metadata.intent);
   const key = clean(metadata.key);
   const tokensGranted = clean(metadata.tokensGranted) || clean(metadata.tokens_granted);
+  const provider = clean(metadata.provider);
+  const invoiceCode = clean(metadata.invoiceCode) || clean(metadata.invoice_code);
+  const grossAmountUsd = parseMoneyValue(metadata.grossAmountUsd ?? metadata.gross_amount_usd);
+  const feeAmountUsd = parseMoneyValue(metadata.feeAmountUsd ?? metadata.fee_amount_usd);
+  const netAmountUsd = parseMoneyValue(metadata.netAmountUsd ?? metadata.net_amount_usd);
 
   if (marketId) {
     return (
@@ -62,6 +73,17 @@ function renderMeta(metadata: Record<string, unknown>): React.ReactNode {
         <Link href={`/markets/${marketId}`} className="ledger-market-link">
           {marketId.slice(0, 8)}…
         </Link>
+      </span>
+    );
+  }
+
+  if (grossAmountUsd !== null || feeAmountUsd !== null || netAmountUsd !== null) {
+    return (
+      <span>
+        {provider ? `${provider} ` : ""}
+        gross {formatCurrency(Math.max(0, grossAmountUsd ?? 0))} · fee {formatCurrency(Math.max(0, feeAmountUsd ?? 0))} · net{" "}
+        {formatCurrency(Math.max(0, netAmountUsd ?? 0))}
+        {invoiceCode ? ` · ${invoiceCode}` : ""}
       </span>
     );
   }

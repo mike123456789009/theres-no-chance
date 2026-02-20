@@ -2,16 +2,6 @@ import crypto from "node:crypto";
 
 import { requiredEnv } from "@/lib/env";
 
-export const COINBASE_CHARGE_INTENTS = ["token_pack"] as const;
-
-export type CoinbaseChargeIntent = (typeof COINBASE_CHARGE_INTENTS)[number];
-
-export type CoinbaseCatalogItem = {
-  key: string;
-  amountUsd: number;
-  tokensGranted: number;
-};
-
 export type CoinbaseChargeResult = {
   id: string;
   code: string;
@@ -25,71 +15,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeKey(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-}
-
-function toPositiveInt(raw: string | undefined, fallback: number): number {
-  const parsed = Number(raw);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.floor(parsed);
-  }
-  return fallback;
-}
-
-function parsePositiveUsd(raw: string | undefined): number | null {
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-  return Math.round(parsed * 100) / 100;
-}
-
-function parseCoinbaseTokenPackCatalogFromEnv(): CoinbaseCatalogItem[] {
-  const items: CoinbaseCatalogItem[] = [];
-
-  Object.entries(process.env).forEach(([name, value]) => {
-    if (!name.startsWith("COINBASE_PRICE_USD_PACK_")) return;
-
-    const amountUsd = parsePositiveUsd(clean(value));
-    if (amountUsd === null) return;
-
-    const suffix = name.slice("COINBASE_PRICE_USD_PACK_".length);
-    if (!suffix) return;
-
-    const key = normalizeKey(suffix);
-    const tokensGranted = toPositiveInt(process.env[`COINBASE_PACK_TOKENS_${suffix}`], 100);
-
-    items.push({
-      key,
-      amountUsd,
-      tokensGranted,
-    });
-  });
-
-  return items.sort((a, b) => a.key.localeCompare(b.key));
-}
-
-export function getCoinbaseCatalog(intent: CoinbaseChargeIntent): CoinbaseCatalogItem[] {
-  if (intent === "token_pack") {
-    return parseCoinbaseTokenPackCatalogFromEnv();
-  }
-
-  return [];
-}
-
-export function getCoinbaseCatalogItem(intent: CoinbaseChargeIntent, key: string): CoinbaseCatalogItem | null {
-  const normalizedKey = normalizeKey(key);
-  return getCoinbaseCatalog(intent).find((item) => item.key === normalizedKey) ?? null;
-}
-
-export function parseCoinbaseChargeIntent(value: string): CoinbaseChargeIntent | null {
-  if ((COINBASE_CHARGE_INTENTS as readonly string[]).includes(value)) {
-    return value as CoinbaseChargeIntent;
-  }
-  return null;
 }
 
 function getCoinbaseChargeCreateEndpoint(): string {
@@ -119,8 +44,7 @@ function unwrapCoinbaseChargeResponse(value: unknown): Record<string, unknown> |
 }
 
 export async function createCoinbaseCharge(input: {
-  intent: CoinbaseChargeIntent;
-  item: CoinbaseCatalogItem;
+  amountUsd: number;
   userId: string;
   request: Request;
   fundingIntentId: string;
@@ -128,9 +52,9 @@ export async function createCoinbaseCharge(input: {
   const apiKey = requiredEnv("COINBASE_COMMERCE_API_KEY");
   const endpoint = getCoinbaseChargeCreateEndpoint();
   const baseUrl = getCoinbaseChargeBaseUrl(input.request);
-  const successUrl = `${baseUrl}/account/wallet?checkout=success&provider=coinbase&intent=${encodeURIComponent(
-    input.intent
-  )}&key=${encodeURIComponent(input.item.key)}&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
+  const successUrl = `${baseUrl}/account/wallet?checkout=success&provider=coinbase&intent=usd_topup&funding_intent_id=${encodeURIComponent(
+    input.fundingIntentId
+  )}`;
   const cancelUrl = `${baseUrl}/account/wallet?checkout=cancel&provider=coinbase&funding_intent_id=${encodeURIComponent(input.fundingIntentId)}`;
 
   const response = await fetch(endpoint, {
@@ -141,22 +65,19 @@ export async function createCoinbaseCharge(input: {
       "X-CC-Version": clean(process.env.COINBASE_COMMERCE_API_VERSION) || "2018-03-22",
     },
     body: JSON.stringify({
-      name: `Token Pack ${input.item.key.toUpperCase()}`,
-      description: `Theres No Chance token pack (${input.item.key})`,
+      name: "USD Wallet Deposit",
+      description: "Theres No Chance account funding",
       pricing_type: "fixed_price",
       local_price: {
-        amount: input.item.amountUsd.toFixed(2),
+        amount: input.amountUsd.toFixed(2),
         currency: "USD",
       },
       redirect_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
-        intent: input.intent,
-        key: input.item.key,
+        intent: "usd_topup",
         user_id: input.userId,
-        tokens_granted: String(input.item.tokensGranted),
-        local_amount_usd: input.item.amountUsd.toFixed(2),
-        network: "base",
+        local_amount_usd: input.amountUsd.toFixed(2),
         funding_intent_id: input.fundingIntentId,
       },
     }),
