@@ -330,7 +330,9 @@ export function TradeInterface({
             setSelectedSide("yes");
             setSelectedAction("buy");
           }}
-          className={selectedSide === "yes" && selectedAction === "buy" ? "active" : ""}
+          className={`trade-order-tab trade-order-tab-buy ${
+            selectedSide === "yes" && selectedAction === "buy" ? "active" : ""
+          }`}
           disabled={!canTrade || executeState.status === "loading"}
         >
           Buy YES
@@ -341,7 +343,9 @@ export function TradeInterface({
             setSelectedSide("no");
             setSelectedAction("buy");
           }}
-          className={selectedSide === "no" && selectedAction === "buy" ? "active" : ""}
+          className={`trade-order-tab trade-order-tab-buy ${
+            selectedSide === "no" && selectedAction === "buy" ? "active" : ""
+          }`}
           disabled={!canTrade || executeState.status === "loading"}
         >
           Buy NO
@@ -352,7 +356,9 @@ export function TradeInterface({
             setSelectedSide("yes");
             setSelectedAction("sell");
           }}
-          className={selectedSide === "yes" && selectedAction === "sell" ? "active" : ""}
+          className={`trade-order-tab trade-order-tab-sell ${
+            selectedSide === "yes" && selectedAction === "sell" ? "active" : ""
+          }`}
           disabled={!canTrade || executeState.status === "loading"}
         >
           Sell YES
@@ -363,7 +369,9 @@ export function TradeInterface({
             setSelectedSide("no");
             setSelectedAction("sell");
           }}
-          className={selectedSide === "no" && selectedAction === "sell" ? "active" : ""}
+          className={`trade-order-tab trade-order-tab-sell ${
+            selectedSide === "no" && selectedAction === "sell" ? "active" : ""
+          }`}
           disabled={!canTrade || executeState.status === "loading"}
         >
           Sell NO
@@ -472,7 +480,7 @@ export function TradeInterface({
         <button
           type="button"
           onClick={handleExecuteTrade}
-          className="market-detail-action-button"
+          className={`market-detail-action-button market-detail-action-button-${selectedAction}`}
           disabled={
             executeState.status === "loading" ||
             quoteState.status === "loading" ||
