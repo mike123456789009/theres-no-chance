@@ -279,7 +279,6 @@ export async function generateProposalBatch(input: GenerateProposalBatchInput): 
   const useWebSearch = cleanBoolean(process.env.MARKET_RESEARCH_USE_WEB_SEARCH);
   const basePayload = {
     model: input.modelName,
-    reasoning: { effort: "low" },
     text: {
       format: {
         type: "json_schema",
