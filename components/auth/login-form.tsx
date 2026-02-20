@@ -1,12 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,8 +37,7 @@ export function LoginForm() {
       }
 
       setSuccessMessage("Logged in. Redirecting...");
-      router.push("/");
-      router.refresh();
+      window.location.assign("/");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to log in right now.");
     } finally {
