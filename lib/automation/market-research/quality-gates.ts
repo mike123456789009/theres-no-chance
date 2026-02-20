@@ -139,6 +139,38 @@ function withinCloseWindow(closeTime: Date, nowMs: number): boolean {
   return delta >= MIN_CLOSE_WINDOW_MS && delta <= MAX_CLOSE_WINDOW_MS;
 }
 
+function looksLikeLowUncertaintyScheduleMarket(input: {
+  question: string;
+  description: string;
+  resolvesYesIf: string;
+  resolvesNoIf: string;
+  rationale: string;
+  riskFlags: string[];
+  confidence: number;
+}): boolean {
+  const question = normalizeWhitespace(input.question).toLowerCase();
+  const description = normalizeWhitespace(input.description).toLowerCase();
+  const resolvesYesIf = normalizeWhitespace(input.resolvesYesIf).toLowerCase();
+  const resolvesNoIf = normalizeWhitespace(input.resolvesNoIf).toLowerCase();
+  const rationale = normalizeWhitespace(input.rationale).toLowerCase();
+  const riskFlags = input.riskFlags.map((flag) => flag.toLowerCase()).join(" ");
+
+  const scheduleSignal = /(officially\s+)?(begin|start|commence|open(?:ing)?|take place|be held)/.test(question);
+  const deadlineSignal =
+    /(on or before|by\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|q[1-4]|\d{1,2}[,\s]+\d{4}|\d{4}))/i.test(
+      question
+    ) || /\b(on or before|by)\b/.test(resolvesYesIf);
+  const noSideDelayCancelSignal =
+    /(after|postpon|delay|cancel|does not|do not|fails to|did not)/.test(resolvesNoIf) &&
+    /(start|begin|occur|happen|take place|commence|open)/.test(resolvesNoIf);
+  const tailRiskSignal = /(tail[\s-]?risk|postpon|delay|cancel|weather|disrupt|force[\s-]?majeure)/.test(
+    `${description} ${resolvesNoIf} ${rationale} ${riskFlags}`
+  );
+  const veryHighConfidence = input.confidence >= 0.9;
+
+  return scheduleSignal && deadlineSignal && noSideDelayCancelSignal && (tailRiskSignal || veryHighConfidence);
+}
+
 export function validateGeneratedProposal(input: ValidateGeneratedProposalInput): ProposalValidationResult {
   const raw = input.generated as unknown as Record<string, unknown>;
 
@@ -148,9 +180,11 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
   const resolvesNoIf = typeof raw.resolvesNoIf === "string" ? normalizeWhitespace(raw.resolvesNoIf).slice(0, 1500) : "";
   const evidenceRulesRaw = typeof raw.evidenceRules === "string" ? normalizeWhitespace(raw.evidenceRules).slice(0, 1500) : "";
   const disputeRulesRaw = typeof raw.disputeRules === "string" ? normalizeWhitespace(raw.disputeRules).slice(0, 1500) : "";
+  const rationale = typeof raw.rationale === "string" ? normalizeWhitespace(raw.rationale).slice(0, 1000) : "";
   const confidence = confidenceFromUnknown(raw.confidence);
   const category = typeof raw.category === "string" ? raw.category.trim().toLowerCase() : "";
   const usFocus = raw.usFocus === true;
+  const riskFlags = normalizeStringList(raw.riskFlags, 10);
   const sources = normalizeSources(raw.sources);
 
   const closeDate = parseDateValue(typeof raw.closeTime === "string" ? raw.closeTime : null);
@@ -255,6 +289,30 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
     };
   }
 
+  if (
+    looksLikeLowUncertaintyScheduleMarket({
+      question,
+      description,
+      resolvesYesIf,
+      resolvesNoIf,
+      rationale,
+      riskFlags,
+      confidence,
+    })
+  ) {
+    return {
+      ok: false,
+      kind: "quality",
+      reason:
+        "Proposal appears to be a low-uncertainty schedule confirmation market (mostly postponement/cancellation tail-risk).",
+      question,
+      category,
+      confidence,
+      eventFingerprint,
+      sourcesSnapshot: sources,
+    };
+  }
+
   if (sources.length === 0 || !sources.some((source) => source.type === "official")) {
     return {
       ok: false,
@@ -292,7 +350,6 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
   const feeBps = Number.isFinite(feeBpsRaw) ? Math.max(0, Math.min(10000, Math.floor(feeBpsRaw))) : DEFAULT_FEE_BPS;
 
   const tags = normalizeStringList(raw.tags, 12);
-  const riskFlags = normalizeStringList(raw.riskFlags, 10);
 
   const proposal: AutomationMarketProposalInput = {
     question,
@@ -315,7 +372,7 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
     organizationId: input.organization?.id ?? null,
     runId: input.runId,
     confidence,
-    rationale: typeof raw.rationale === "string" ? normalizeWhitespace(raw.rationale).slice(0, 1000) : "",
+    rationale,
   };
 
   return {
