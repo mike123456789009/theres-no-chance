@@ -7,6 +7,7 @@ import { createRunDeadline, type RunDeadline } from "@/lib/automation/market-res
 type PublicScanInput = {
   runId: string;
   modelName: string;
+  scoutModelName: string;
   maxToSubmit: number;
   submit: boolean;
   deadline?: RunDeadline;
@@ -14,6 +15,7 @@ type PublicScanInput = {
 
 type PublicScanResult = ProcessCandidateSummary & {
   usedModel: string;
+  usedScoutModel: string;
 };
 
 function rebalancePublicCandidates(candidates: GeneratedMarketProposal[], maxToSubmit: number): GeneratedMarketProposal[] {
@@ -48,6 +50,7 @@ export async function runPublicScan(input: PublicScanInput): Promise<PublicScanR
   const generated = await generateProposalBatch({
     scope: "public",
     modelName: input.modelName,
+    scoutModelName: input.scoutModelName,
     maxCandidates,
   });
 
@@ -65,5 +68,6 @@ export async function runPublicScan(input: PublicScanInput): Promise<PublicScanR
   return {
     ...result,
     usedModel: input.modelName,
+    usedScoutModel: input.scoutModelName,
   };
 }

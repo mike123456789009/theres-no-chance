@@ -8,6 +8,7 @@ type ResearchRunSummary = {
   runId: string;
   status: "completed" | "partial" | "failed" | "skipped";
   modelName: string;
+  scoutModelName?: string;
   startedAt: string;
   completedAt?: string;
   generated: number;
@@ -26,6 +27,7 @@ type RunnerArgs = {
   max: number | null;
   organizationId: string | null;
   modelName: string | null;
+  scoutModelName: string | null;
 };
 
 function isKnownScopeValue(value: string): value is "public" | "institution" {
@@ -70,6 +72,7 @@ function parseArgs(argv: string[]): RunnerArgs {
   let max: number | null = null;
   let organizationId: string | null = null;
   let modelName: string | null = null;
+  let scoutModelName: string | null = null;
 
   for (const arg of argv) {
     if (arg.startsWith("--scope=")) {
@@ -105,6 +108,11 @@ function parseArgs(argv: string[]): RunnerArgs {
       modelName = value.length > 0 ? value : null;
       continue;
     }
+    if (arg.startsWith("--scout-model=")) {
+      const value = arg.slice("--scout-model=".length).trim();
+      scoutModelName = value.length > 0 ? value : null;
+      continue;
+    }
   }
 
   if (!isKnownScopeValue(scopeRaw)) {
@@ -117,6 +125,7 @@ function parseArgs(argv: string[]): RunnerArgs {
     max,
     organizationId,
     modelName,
+    scoutModelName,
   };
 }
 
@@ -128,6 +137,9 @@ function renderSummaryMarkdown(summary: ResearchRunSummary): string {
   lines.push(`- Run id: \`${summary.runId}\``);
   lines.push(`- Status: \`${summary.status}\``);
   lines.push(`- Model: \`${summary.modelName}\``);
+  if (summary.scoutModelName) {
+    lines.push(`- Scout model: \`${summary.scoutModelName}\``);
+  }
   lines.push(`- Started: ${summary.startedAt}`);
   lines.push(`- Completed: ${summary.completedAt ?? "in-progress"}`);
   lines.push(`- Generated: ${summary.generated}`);
@@ -158,7 +170,7 @@ function renderSummaryMarkdown(summary: ResearchRunSummary): string {
 
 async function main() {
   loadRunnerEnv();
-  const { DEFAULT_INSTITUTION_MAX_PER_ORG, DEFAULT_PUBLIC_MAX, DEFAULT_RESEARCH_MODEL } = await import(
+  const { DEFAULT_INSTITUTION_MAX_PER_ORG, DEFAULT_PUBLIC_MAX, DEFAULT_RESEARCH_MODEL, DEFAULT_SCOUT_MODEL } = await import(
     "../lib/automation/market-research/constants"
   );
   const { isKnownScope, runInstitutionResearch, runPublicResearch } = await import(
@@ -170,12 +182,14 @@ async function main() {
     throw new Error("Missing or invalid --scope. Use --scope=public or --scope=institution.");
   }
   const modelName = args.modelName ?? DEFAULT_RESEARCH_MODEL;
+  const scoutModelName = args.scoutModelName ?? DEFAULT_SCOUT_MODEL;
 
   if (args.scope === "public") {
     const summary = await runPublicResearch({
       submit: args.submit,
       maxToSubmit: args.max ?? DEFAULT_PUBLIC_MAX,
       modelName,
+      scoutModelName,
     });
     console.log(renderSummaryMarkdown(summary));
     if (summary.status === "failed") {
@@ -188,6 +202,7 @@ async function main() {
     submit: args.submit,
     maxPerOrganization: args.max ?? DEFAULT_INSTITUTION_MAX_PER_ORG,
     modelName,
+    scoutModelName,
     organizationId: args.organizationId ?? undefined,
   });
   console.log(renderSummaryMarkdown(summary));

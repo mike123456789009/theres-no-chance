@@ -45,6 +45,7 @@ export type ResearchRunSummary = {
   runId: string;
   status: Exclude<ResearchRunStatus, "running">;
   modelName: string;
+  scoutModelName?: string;
   startedAt: string;
   completedAt?: string;
   generated: number;

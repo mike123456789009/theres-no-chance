@@ -1,4 +1,5 @@
 export const DEFAULT_RESEARCH_MODEL = process.env.MARKET_RESEARCH_MODEL?.trim() || "gpt-5";
+export const DEFAULT_SCOUT_MODEL = process.env.MARKET_RESEARCH_SCOUT_MODEL?.trim() || "gpt-5-mini";
 
 export const QUALITY_CONFIDENCE_MIN = 0.62;
 export const MIN_CLOSE_WINDOW_MS = 24 * 60 * 60 * 1000;

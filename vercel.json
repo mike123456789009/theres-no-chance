@@ -1,15 +1,5 @@
 {
   "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/automation/market-research/public",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/automation/market-research/institution",
-      "schedule": "30 14 * * *"
-    }
-  ],
   "redirects": [
     {
       "source": "/(.*)",

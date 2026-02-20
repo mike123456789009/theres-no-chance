@@ -1,0 +1,111 @@
+name: Market Research Runner
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Which scan scope to run"
+        type: choice
+        required: true
+        default: both
+        options:
+          - both
+          - public
+          - institution
+      submit:
+        description: "Submit valid proposals (true) or dry-run (false)"
+        type: boolean
+        required: true
+        default: true
+      public_max:
+        description: "Optional override max public submissions"
+        type: string
+        required: false
+      institution_max:
+        description: "Optional override max submissions per institution"
+        type: string
+        required: false
+      model:
+        description: "Optional override thinking model"
+        type: string
+        required: false
+      scout_model:
+        description: "Optional override scout model"
+        type: string
+        required: false
+
+jobs:
+  run-market-research:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MARKET_RESEARCH_BOT_USER_ID: ${{ secrets.MARKET_RESEARCH_BOT_USER_ID }}
+      MARKET_RESEARCH_ENABLED: "true"
+      MARKET_RESEARCH_USE_WEB_SEARCH: ${{ vars.MARKET_RESEARCH_USE_WEB_SEARCH }}
+      MARKET_RESEARCH_MODEL: ${{ vars.MARKET_RESEARCH_MODEL }}
+      MARKET_RESEARCH_SCOUT_MODEL: ${{ vars.MARKET_RESEARCH_SCOUT_MODEL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run market research scan(s)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCOPE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.scope || 'both' }}"
+          SUBMIT="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.submit || 'true' }}"
+          PUBLIC_MAX="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.public_max || '' }}"
+          INSTITUTION_MAX="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.institution_max || '' }}"
+          MODEL_OVERRIDE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.model || '' }}"
+          SCOUT_MODEL_OVERRIDE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.scout_model || '' }}"
+
+          if [[ "$SUBMIT" == "true" ]]; then
+            SUBMIT_FLAG="--submit"
+          else
+            SUBMIT_FLAG="--dry-run"
+          fi
+
+          MODEL_FLAG=""
+          if [[ -n "$MODEL_OVERRIDE" ]]; then
+            MODEL_FLAG="--model=$MODEL_OVERRIDE"
+          fi
+
+          SCOUT_MODEL_FLAG=""
+          if [[ -n "$SCOUT_MODEL_OVERRIDE" ]]; then
+            SCOUT_MODEL_FLAG="--scout-model=$SCOUT_MODEL_OVERRIDE"
+          fi
+
+          if [[ "$SCOPE" == "both" || "$SCOPE" == "public" ]]; then
+            PUBLIC_MAX_FLAG=""
+            if [[ -n "$PUBLIC_MAX" ]]; then
+              PUBLIC_MAX_FLAG="--max=$PUBLIC_MAX"
+            fi
+
+            echo "Running public market research"
+            npx tsx scripts/market-research-runner.ts --scope=public "$SUBMIT_FLAG" $PUBLIC_MAX_FLAG $MODEL_FLAG $SCOUT_MODEL_FLAG
+          fi
+
+          if [[ "$SCOPE" == "both" || "$SCOPE" == "institution" ]]; then
+            INSTITUTION_MAX_FLAG=""
+            if [[ -n "$INSTITUTION_MAX" ]]; then
+              INSTITUTION_MAX_FLAG="--max=$INSTITUTION_MAX"
+            fi
+
+            echo "Running institution market research"
+            npx tsx scripts/market-research-runner.ts --scope=institution "$SUBMIT_FLAG" $INSTITUTION_MAX_FLAG $MODEL_FLAG $SCOUT_MODEL_FLAG
+          fi

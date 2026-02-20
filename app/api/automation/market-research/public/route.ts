@@ -39,12 +39,14 @@ export async function GET(request: Request) {
 
   const maxToSubmit = parsePositiveInt(process.env.MARKET_RESEARCH_PUBLIC_MAX_PER_CRON, 6);
   const modelName = process.env.MARKET_RESEARCH_MODEL?.trim() || "gpt-5";
+  const scoutModelName = process.env.MARKET_RESEARCH_SCOUT_MODEL?.trim() || "gpt-5-mini";
 
   try {
     const summary = await runPublicResearch({
       submit: true,
       maxToSubmit,
       modelName,
+      scoutModelName,
     });
 
     return NextResponse.json({ summary }, { status: 200 });
@@ -58,4 +60,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

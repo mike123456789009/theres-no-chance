@@ -8,6 +8,7 @@ import { createRunDeadline, type RunDeadline } from "@/lib/automation/market-res
 type InstitutionScanInput = {
   runId: string;
   modelName: string;
+  scoutModelName: string;
   maxPerOrganization: number;
   submit: boolean;
   organizationId?: string;
@@ -18,6 +19,7 @@ type InstitutionScanResult = ProcessCandidateSummary & {
   organizationsScanned: number;
   organizationsSkippedNoDomain: number;
   usedModel: string;
+  usedScoutModel: string;
   failuresByInstitution: Array<{
     organizationId: string;
     organizationName: string;
@@ -82,6 +84,7 @@ export async function runInstitutionScan(input: InstitutionScanInput): Promise<I
       const generated = await generateProposalBatch({
         scope: "institution",
         modelName: input.modelName,
+        scoutModelName: input.scoutModelName,
         maxCandidates,
         organization,
       });
@@ -112,6 +115,7 @@ export async function runInstitutionScan(input: InstitutionScanInput): Promise<I
     organizationsScanned,
     organizationsSkippedNoDomain,
     usedModel: input.modelName,
+    usedScoutModel: input.scoutModelName,
     failuresByInstitution,
   };
 }

@@ -1,4 +1,10 @@
-import { DEFAULT_INSTITUTION_MAX_PER_ORG, DEFAULT_PUBLIC_MAX, DEFAULT_RESEARCH_MODEL, RUN_TIMEOUT_MS } from "@/lib/automation/market-research/constants";
+import {
+  DEFAULT_INSTITUTION_MAX_PER_ORG,
+  DEFAULT_PUBLIC_MAX,
+  DEFAULT_RESEARCH_MODEL,
+  DEFAULT_SCOUT_MODEL,
+  RUN_TIMEOUT_MS,
+} from "@/lib/automation/market-research/constants";
 import { completeResearchRun, requireMarketResearchEnabled, startResearchRun } from "@/lib/automation/market-research/db";
 import { runInstitutionScan } from "@/lib/automation/market-research/institution-scan";
 import { runPublicScan } from "@/lib/automation/market-research/public-scan";
@@ -9,12 +15,14 @@ type RunPublicResearchInput = {
   submit: boolean;
   maxToSubmit?: number;
   modelName?: string;
+  scoutModelName?: string;
 };
 
 type RunInstitutionResearchInput = {
   submit: boolean;
   maxPerOrganization?: number;
   modelName?: string;
+  scoutModelName?: string;
   organizationId?: string;
 };
 
@@ -36,6 +44,7 @@ function summarizeStatus(input: {
 export async function runPublicResearch(input: RunPublicResearchInput): Promise<ResearchRunSummary> {
   requireMarketResearchEnabled();
   const modelName = input.modelName?.trim() || DEFAULT_RESEARCH_MODEL;
+  const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
   const maxToSubmit = Math.max(1, Math.min(50, input.maxToSubmit ?? DEFAULT_PUBLIC_MAX));
   const startedAt = nowIso();
 
@@ -52,6 +61,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
       runId: runStart.runId,
       status: "skipped",
       modelName,
+      scoutModelName,
       startedAt: runStart.startedAt,
       completedAt: nowIso(),
       generated: 0,
@@ -70,6 +80,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
     const result = await runPublicScan({
       runId: runStart.runId,
       modelName,
+      scoutModelName,
       maxToSubmit,
       submit: input.submit,
       deadline,
@@ -85,6 +96,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
       runId: runStart.runId,
       status,
       modelName,
+      scoutModelName,
       startedAt,
       completedAt: nowIso(),
       generated: result.generated,
@@ -110,6 +122,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
       runId: runStart.runId,
       status: "failed",
       modelName,
+      scoutModelName,
       startedAt,
       completedAt: nowIso(),
       generated: 0,
@@ -135,6 +148,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
 export async function runInstitutionResearch(input: RunInstitutionResearchInput): Promise<ResearchRunSummary> {
   requireMarketResearchEnabled();
   const modelName = input.modelName?.trim() || DEFAULT_RESEARCH_MODEL;
+  const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
   const maxPerOrganization = Math.max(1, Math.min(20, input.maxPerOrganization ?? DEFAULT_INSTITUTION_MAX_PER_ORG));
   const startedAt = nowIso();
 
@@ -151,6 +165,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
       runId: runStart.runId,
       status: "skipped",
       modelName,
+      scoutModelName,
       startedAt: runStart.startedAt,
       completedAt: nowIso(),
       generated: 0,
@@ -170,6 +185,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
     const result = await runInstitutionScan({
       runId: runStart.runId,
       modelName,
+      scoutModelName,
       maxPerOrganization,
       submit: input.submit,
       organizationId: input.organizationId,
@@ -187,6 +203,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
       runId: runStart.runId,
       status,
       modelName,
+      scoutModelName,
       startedAt,
       completedAt: nowIso(),
       generated: result.generated,
@@ -217,6 +234,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
       runId: runStart.runId,
       status: "failed",
       modelName,
+      scoutModelName,
       startedAt,
       completedAt: nowIso(),
       generated: 0,
