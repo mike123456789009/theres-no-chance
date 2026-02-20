@@ -55,6 +55,7 @@ const wordMap = new Map();
 const hoverRaycaster = new THREE.Raycaster();
 const hoverPointer = new THREE.Vector2();
 let isAHovered = false;
+let isAPinned = false;
 
 function setRenderMode(mode) {
   renderMode = mode;
@@ -316,12 +317,13 @@ function applySwapState() {
   const slashWord = wordMap.get("slash");
   const aWord = wordMap.get("a");
   if (!noWord || !aWord) return;
+  const isAActive = isAHovered || isAPinned;
 
   if (slashWord) {
     setMeshOpacity(slashWord.mesh, 0.62);
   }
 
-  if (isAHovered) {
+  if (isAActive) {
     setMeshOpacity(aWord.mesh, 1);
     setMeshOpacity(noWord.mesh, 0.22);
   } else {
@@ -362,6 +364,27 @@ function handleHeroPointerMove(event) {
 function handleHeroPointerLeave() {
   if (!isAHovered) return;
   isAHovered = false;
+  applySwapState();
+  queueRender();
+}
+
+function handleHeroClick(event) {
+  const aWord = wordMap.get("a");
+  if (!aWord || !camera) return;
+
+  const rect = wrap.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+
+  hoverPointer.x = (x / rect.width) * 2 - 1;
+  hoverPointer.y = -(y / rect.height) * 2 + 1;
+  hoverRaycaster.setFromCamera(hoverPointer, camera);
+  const clickedA = hoverRaycaster.intersectObject(aWord.mesh, false).length > 0;
+  if (!clickedA) return;
+
+  isAPinned = true;
+  isAHovered = true;
   applySwapState();
   queueRender();
 }
@@ -663,6 +686,7 @@ async function main() {
 
     wrap.addEventListener("mousemove", handleHeroPointerMove, { passive: true });
     wrap.addEventListener("mouseleave", handleHeroPointerLeave);
+    wrap.addEventListener("click", handleHeroClick);
 
     window.addEventListener("resize", () => {
       layout(font);
