@@ -46,6 +46,16 @@ export async function GET(_request: Request, context: { params: Promise<{ market
       );
     }
 
+    if (detail.kind === "institution_verification_required") {
+      return NextResponse.json(
+        {
+          error: "Institution verification required to view this market.",
+          code: "INSTITUTION_VERIFICATION_REQUIRED",
+        },
+        { status: 403 }
+      );
+    }
+
     if (detail.kind === "not_found") {
       return NextResponse.json(
         {

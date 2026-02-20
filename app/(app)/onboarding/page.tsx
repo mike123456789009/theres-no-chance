@@ -7,7 +7,8 @@ export default function OnboardingPage() {
         <p className="onboarding-kicker">Profile setup</p>
         <h1 className="onboarding-title">Tell us your local context</h1>
         <p className="onboarding-subtitle">
-          This helps personalize market discovery, onboarding recommendations, and institution access controls.
+          This helps personalize market discovery and onboarding recommendations. Institution verification is managed in
+          account settings.
         </p>
 
         <OnboardingForm />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
+import { InstitutionAccessPanel } from "@/components/account/institution-access-panel";
 import { ProfileEditor } from "@/components/account/profile-editor";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
@@ -92,6 +93,8 @@ export default async function AccountSettingsPage() {
       ) : null}
 
       <ProfileEditor initialDisplayName={initialDisplayName} initialAvatarUrl={initialAvatarUrl} />
+
+      <InstitutionAccessPanel />
 
       <section className="create-section" aria-label="Additional settings">
         <h2>More account settings</h2>

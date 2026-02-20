@@ -1,41 +1,18 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { FormEvent, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
 const INTEREST_OPTIONS = ["Sports", "Politics", "Education", "Weather", "Local Economy", "Campus Life"];
 
-function parseInstitutionDomain(email: string): string | null {
-  const normalized = email.trim().toLowerCase();
-  if (!normalized) return null;
-
-  const parts = normalized.split("@");
-  if (parts.length !== 2 || !parts[1]) {
-    return null;
-  }
-
-  return parts[1];
-}
-
-function isInstitutionDomain(domain: string | null): boolean {
-  if (!domain) return false;
-  return domain.endsWith(".edu");
-}
-
 export function OnboardingForm() {
   const [cityRegion, setCityRegion] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [institutionEmail, setInstitutionEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const institutionDomain = useMemo(() => parseInstitutionDomain(institutionEmail), [institutionEmail]);
-  const institutionEligible = useMemo(
-    () => isInstitutionDomain(institutionDomain),
-    [institutionDomain]
-  );
 
   function toggleInterest(label: string) {
     setSelectedInterests((current) =>
@@ -53,11 +30,6 @@ export function OnboardingForm() {
       return;
     }
 
-    if (institutionEmail.trim() && !institutionEligible) {
-      setErrorMessage("Institution email must use an educational domain (for example, @college.edu).");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -65,9 +37,6 @@ export function OnboardingForm() {
       const payload = {
         onboarding_city_region: cityRegion.trim(),
         onboarding_interests: selectedInterests,
-        onboarding_institution_email: institutionEmail.trim() || null,
-        onboarding_institution_domain: institutionDomain,
-        onboarding_institution_domain_verified: institutionEligible,
         onboarding_completed_at: new Date().toISOString(),
       };
 
@@ -121,25 +90,9 @@ export function OnboardingForm() {
         </div>
       </fieldset>
 
-      <label className="onboarding-field">
-        <span>Institution email (optional)</span>
-        <input
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="you@students.college.edu"
-          value={institutionEmail}
-          onChange={(event) => setInstitutionEmail(event.target.value)}
-        />
-      </label>
-
-      {institutionEmail.trim() ? (
-        <p className={institutionEligible ? "onboarding-hint onboarding-hint-ok" : "onboarding-hint onboarding-hint-warn"}>
-          {institutionEligible
-            ? `Eligible institution domain detected: ${institutionDomain}`
-            : "Domain is not currently eligible for institution-gated onboarding."}
-        </p>
-      ) : null}
+      <p className="onboarding-hint onboarding-hint-warn">
+        Institution access now requires verified .edu email confirmation in <Link href="/account/settings">account settings</Link>.
+      </p>
 
       <button className="onboarding-submit" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "SAVING..." : "SAVE ONBOARDING"}

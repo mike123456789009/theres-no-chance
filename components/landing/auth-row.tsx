@@ -48,8 +48,8 @@ export function LandingAuthRow() {
       </div>
 
       <p className="auth-row-note">
-        Exploring first? <Link href="/markets">Browse public markets</Link>. Institution markets require login and
-        actions require an account.
+        Exploring first? <Link href="/markets">Browse public markets</Link>. Institution markets unlock after login +
+        verified .edu institution access.
       </p>
     </div>
   );

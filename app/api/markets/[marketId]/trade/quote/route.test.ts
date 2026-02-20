@@ -67,6 +67,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
     sources: [],
     cardShadowTone: "mint" as const,
     actionRequired: "account_ready" as const,
+    viewerCanTrade: true,
+    viewerReadOnlyReason: null,
   };
 
   function okMarketDetail(overrides: Partial<typeof baseMarketDetail> = {}) {
@@ -107,6 +109,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: true,
         userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
@@ -205,6 +209,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: false,
         userId: null,
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       const response = await POST(mockRequest, mockContext);
@@ -237,6 +243,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: true,
         userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       vi.mocked(getMarketDetail).mockResolvedValue({
@@ -275,6 +283,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: true,
         userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       vi.mocked(getMarketDetail).mockResolvedValue({
@@ -311,6 +321,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: true,
         userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail({ status: "closed" }));
@@ -348,6 +360,8 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       vi.mocked(getMarketViewerContext).mockResolvedValue({
         isAuthenticated: true,
         userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
       });
 
       vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());

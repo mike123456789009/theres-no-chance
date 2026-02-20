@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
+import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
 import {
   getMarketViewerContext,
   listDiscoveryMarketCards,
@@ -107,6 +108,67 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    let enforcedAccessRules = validation.data.accessRules;
+
+    if (hasInstitutionAccessRule(validation.data.accessRules)) {
+      if (validation.data.visibility !== "private") {
+        return NextResponse.json(
+          {
+            error: "Institution-gated markets must use private visibility.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const requiredOrganizationId = extractRequiredOrganizationId(validation.data.accessRules);
+
+      const { data: membershipData, error: membershipError } = await supabase
+        .from("organization_memberships")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("verified_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (membershipError) {
+        return NextResponse.json(
+          {
+            error: "Unable to validate institution membership for market creation.",
+            detail: membershipError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      const activeOrganizationId =
+        typeof membershipData?.organization_id === "string" ? membershipData.organization_id.toLowerCase() : "";
+
+      if (!activeOrganizationId) {
+        return NextResponse.json(
+          {
+            error: "Institution verification required before creating institution-gated markets.",
+          },
+          { status: 403 }
+        );
+      }
+
+      if (!requiredOrganizationId || requiredOrganizationId !== activeOrganizationId) {
+        return NextResponse.json(
+          {
+            error: "Institution-gated market must target your active institution membership.",
+          },
+          { status: 403 }
+        );
+      }
+
+      enforcedAccessRules = {
+        ...validation.data.accessRules,
+        institutionOnly: true,
+        organizationId: activeOrganizationId,
+      };
+    }
+
     const marketStatus = validation.data.submissionMode === "review" ? "review" : "draft";
 
     const { data: market, error: marketError } = await supabase
@@ -124,7 +186,7 @@ export async function POST(request: Request) {
         status: marketStatus,
         visibility: validation.data.visibility,
         resolution_mode: validation.data.resolutionMode,
-        access_rules: validation.data.accessRules,
+        access_rules: enforcedAccessRules,
         tags: validation.data.tags,
         risk_flags: validation.data.riskFlags,
         creator_id: user.id,

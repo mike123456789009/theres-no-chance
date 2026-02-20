@@ -151,6 +151,24 @@ export default async function MarketDetailPage({
     );
   }
 
+  if (detail.kind === "institution_verification_required") {
+    return (
+      <main className="market-detail-page">
+        <section className="market-detail-shell" aria-label="Institution verification required">
+          <p className="market-detail-kicker">Institution market</p>
+          <h1 className="market-detail-title">Institution verification required</h1>
+          <p className="market-detail-copy">
+            Verify a .edu institution email in account settings to access institution market details and trading.
+          </p>
+          <div className="market-detail-login-links">
+            <Link href="/account/settings">Open settings</Link>
+            <Link href="/markets">Back to markets</Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   const market = detail.market;
 
   return (
@@ -196,6 +214,12 @@ export default async function MarketDetailPage({
               currentPriceNo={market.priceNo}
               viewerUserId={viewer.userId ?? undefined}
               isAuthenticated={viewer.isAuthenticated}
+              canTrade={market.viewerCanTrade}
+              tradeDisabledReason={
+                market.viewerReadOnlyReason === "legacy_institution_access"
+                  ? "Read-only access: existing position retained after institution switch."
+                  : undefined
+              }
             />
 
             <article className="market-detail-position-panel">

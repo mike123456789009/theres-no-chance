@@ -1,4 +1,4 @@
-import { hasInstitutionAccessRule } from "@/lib/markets/view-access";
+import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
 
 export const MARKET_VISIBILITIES = ["public", "unlisted", "private"] as const;
 export const MARKET_SUBMISSION_MODES = ["draft", "review"] as const;
@@ -128,6 +128,8 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
   const feeBps = Number.isFinite(feeBpsRaw) ? Math.floor(feeBpsRaw) : 200;
 
   const accessRules = isRecord(raw.accessRules) ? raw.accessRules : {};
+  const institutionScoped = hasInstitutionAccessRule(accessRules);
+  const requiredOrganizationId = extractRequiredOrganizationId(accessRules);
   const resolutionModeRaw = cleanText(raw.resolutionMode, 16).toLowerCase();
   const resolutionMode = isOneOf(resolutionModeRaw, MARKET_RESOLUTION_MODES)
     ? resolutionModeRaw
@@ -170,6 +172,16 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
 
   if (feeBps < 0 || feeBps > 10_000) {
     errors.push("Fee basis points must be between 0 and 10000.");
+  }
+
+  if (institutionScoped) {
+    if (visibility !== "private") {
+      errors.push("Institution-gated markets must use private visibility.");
+    }
+
+    if (!requiredOrganizationId) {
+      errors.push("Institution-gated markets must include a valid organizationId in access rules.");
+    }
   }
 
   const rawSources = Array.isArray(raw.sources) ? raw.sources : [];

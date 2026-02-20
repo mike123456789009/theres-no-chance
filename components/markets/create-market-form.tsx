@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import type { MarketResolutionMode, MarketSourceType } from "@/lib/markets/create-market";
 import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
@@ -10,6 +10,15 @@ type SourceDraft = {
   label: string;
   url: string;
   type: MarketSourceType;
+};
+
+type InstitutionAccessSnapshot = {
+  activeMembership: {
+    organizationId: string;
+    organizationName: string;
+    organizationSlug: string;
+    verifiedAt: string | null;
+  } | null;
 };
 
 const SOURCE_TYPE_OPTIONS: Array<{ value: MarketSourceType; label: string }> = [
@@ -75,6 +84,7 @@ export function CreateMarketForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [institutionAccess, setInstitutionAccess] = useState<InstitutionAccessSnapshot | null>(null);
 
   const sourceLimitReached = sources.length >= 8;
 
@@ -82,7 +92,34 @@ export function CreateMarketForm() {
     () => sources.filter((source) => source.type === "official").length,
     [sources]
   );
-  const defaultResolutionMode = visibility === "private" ? "community" : "admin";
+  const institutionMarketSelected = visibility === "institution";
+  const activeInstitution = institutionAccess?.activeMembership ?? null;
+  const hasActiveInstitution = Boolean(activeInstitution?.organizationId);
+  const defaultResolutionMode = visibility === "private" || visibility === "institution" ? "community" : "admin";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInstitutionAccess() {
+      try {
+        const response = await fetch("/api/account/institution-access", { method: "GET", cache: "no-store" });
+        const result = (await response.json().catch(() => null)) as InstitutionAccessSnapshot | null;
+        if (!response.ok || !result) return;
+        if (!cancelled) {
+          setInstitutionAccess(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setInstitutionAccess(null);
+        }
+      }
+    }
+
+    void loadInstitutionAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function updateSource(id: string, key: keyof SourceDraft, value: string) {
     setSources((current) =>
@@ -126,6 +163,11 @@ export function CreateMarketForm() {
     const closeTime = toIsoDateTime(closeTimeLocal);
     const expectedResolutionTime = expectedResolutionLocal ? toIsoDateTime(expectedResolutionLocal) : null;
 
+    if (institutionMarketSelected && !hasActiveInstitution) {
+      setErrorMessage("Institution-gated markets require an active verified institution membership.");
+      return;
+    }
+
     if (!closeTime) {
       setErrorMessage("Close time must be a valid date.");
       return;
@@ -143,6 +185,16 @@ export function CreateMarketForm() {
         ? cardShadowTone
         : "mint";
 
+      const payloadVisibility = institutionMarketSelected ? "private" : visibility;
+      const accessRulesPayload: Record<string, unknown> = {
+        cardShadowTone: safeCardShadowTone,
+      };
+
+      if (institutionMarketSelected && activeInstitution) {
+        accessRulesPayload.organizationId = activeInstitution.organizationId;
+        accessRulesPayload.institutionOnly = true;
+      }
+
       const response = await fetch("/api/markets", {
         method: "POST",
         headers: {
@@ -158,14 +210,12 @@ export function CreateMarketForm() {
           expectedResolutionTime,
           evidenceRules,
           disputeRules,
-          visibility,
+          visibility: payloadVisibility,
           resolutionMode: resolutionMode || undefined,
           feeBps: Number(feeBps),
           tags: splitListInput(tagsInput),
           riskFlags: splitListInput(riskFlagsInput),
-          accessRules: {
-            cardShadowTone: safeCardShadowTone,
-          },
+          accessRules: accessRulesPayload,
           sources: sources.map(({ label, url, type }) => ({ label, url, type })),
         }),
       });
@@ -231,6 +281,9 @@ export function CreateMarketForm() {
               <option value="public">Public</option>
               <option value="unlisted">Unlisted</option>
               <option value="private">Private</option>
+              <option value="institution" disabled={!hasActiveInstitution}>
+                Institution
+              </option>
             </select>
           </label>
 
@@ -260,6 +313,18 @@ export function CreateMarketForm() {
         <p className="create-note">
           Submitting to review charges a <strong>$0.50 listing fee</strong> from your wallet balance.
         </p>
+        {institutionMarketSelected ? (
+          hasActiveInstitution && activeInstitution ? (
+            <p className="create-note">
+              Institution binding: <strong>{activeInstitution.organizationName}</strong>. This market is discoverable and
+              tradable only by your active institution members.
+            </p>
+          ) : (
+            <p className="create-note tnc-error-text">
+              Institution visibility is disabled until a verified .edu institution membership is active in account settings.
+            </p>
+          )
+        ) : null}
       </section>
 
       <section className="create-section" aria-label="Resolution rules">

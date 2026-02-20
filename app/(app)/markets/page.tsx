@@ -224,6 +224,8 @@ export default async function MarketsPage({
   let viewer: MarketViewerContext = {
     userId: null,
     isAuthenticated: false,
+    activeOrganizationId: null,
+    hasActiveInstitution: false,
   };
   let result: Awaited<ReturnType<typeof listDiscoveryMarketCards>> = {
     markets: [],
@@ -384,8 +386,14 @@ export default async function MarketsPage({
       <div className="markets-product-wrap">
         {!viewer.isAuthenticated ? (
           <p className="markets-access-note">
-            Guest mode: view public markets now. Institution-specific markets require login. Trading actions require an
-            account.
+            Guest mode: view public markets now. Institution-specific markets are hidden until you log in.
+          </p>
+        ) : null}
+
+        {viewer.isAuthenticated && !viewer.hasActiveInstitution ? (
+          <p className="markets-access-note">
+            Logged in without institution access: institution cards are visible, but full detail and trading require a
+            verified .edu institution email in account settings.
           </p>
         ) : null}
 

@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_SEARCH_QUERY, type MarketCategoryKey } from "@/lib/markets/taxonomy";
+import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import {
   DISCOVERABLE_MARKET_STATUSES,
-  canViewerSeeMarket,
+  canViewerAccessMarketDetail,
+  canViewerDiscoverMarket,
+  hasInstitutionAccessRule,
   marketAccessBadge,
   normalizeAccessRules,
   requiresAuthenticatedViewer,
@@ -20,6 +23,8 @@ export type MarketDiscoveryCategoryFilter = MarketCategoryKey;
 export type MarketViewerContext = {
   userId: string | null;
   isAuthenticated: boolean;
+  activeOrganizationId: string | null;
+  hasActiveInstitution: boolean;
 };
 
 export type MarketDiscoveryQuery = {
@@ -108,11 +113,14 @@ export type MarketDetailDTO = {
   sources: MarketSourceDTO[];
   cardShadowTone: MarketCardShadowTone;
   actionRequired: "create_account" | "account_ready";
+  viewerCanTrade: boolean;
+  viewerReadOnlyReason: "legacy_institution_access" | null;
 };
 
 export type MarketDetailFetchResult =
   | { kind: "ok"; market: MarketDetailDTO }
   | { kind: "login_required" }
+  | { kind: "institution_verification_required" }
   | { kind: "not_found" }
   | { kind: "schema_missing"; message: string }
   | { kind: "error"; message: string };
@@ -185,6 +193,10 @@ type PositionRow = {
   average_entry_price_no: number | string | null;
   realized_pnl: number | string | null;
 };
+
+type ActiveMembershipRow = {
+  organization_id: string;
+} | null;
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -484,12 +496,36 @@ export async function getMarketViewerContext(
     return {
       userId: null,
       isAuthenticated: false,
+      activeOrganizationId: null,
+      hasActiveInstitution: false,
     };
+  }
+
+  let activeOrganizationId: string | null = null;
+
+  try {
+    const { data: membershipData, error: membershipError } = await supabase
+      .from("organization_memberships")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("verified_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!membershipError) {
+      const membership = (membershipData ?? null) as ActiveMembershipRow;
+      activeOrganizationId = cleanText(membership?.organization_id).toLowerCase() || null;
+    }
+  } catch {
+    activeOrganizationId = null;
   }
 
   return {
     userId: user.id,
     isAuthenticated: true,
+    activeOrganizationId,
+    hasActiveInstitution: Boolean(activeOrganizationId),
   };
 }
 
@@ -543,18 +579,56 @@ export async function listDiscoveryMarketCards(options: {
 
   const rows = (data ?? []) as MarketDiscoveryRow[];
 
+  if (viewer.isAuthenticated && !viewer.hasActiveInstitution && isSupabaseServiceEnvConfigured()) {
+    try {
+      const service = createServiceClient();
+      let serviceRequest = service
+        .from("markets")
+        .select(
+          "id, question, status, resolution_mode, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
+        )
+        .in("status", [...DISCOVERABLE_MARKET_STATUSES])
+        .limit(MARKET_DISCOVERY_LIMIT);
+
+      if (query.status !== "all") {
+        serviceRequest = serviceRequest.eq("status", query.status);
+      }
+
+      if (query.sort === "newest") {
+        serviceRequest = serviceRequest.order("created_at", { ascending: false });
+      } else {
+        serviceRequest = serviceRequest.order("close_time", { ascending: true });
+      }
+
+      const { data: serviceRows, error: serviceError } = await serviceRequest;
+      if (!serviceError) {
+        const seenIds = new Set(rows.map((row) => row.id));
+        for (const row of (serviceRows ?? []) as MarketDiscoveryRow[]) {
+          const accessRules = normalizeAccessRules(row.access_rules);
+          if (!hasInstitutionAccessRule(accessRules)) continue;
+          if (seenIds.has(row.id)) continue;
+          rows.push(row);
+          seenIds.add(row.id);
+        }
+      }
+    } catch {
+      // If service-role discovery merge fails, keep baseline RLS-filtered result.
+    }
+  }
+
   const nowMs = Date.now();
 
   const markets = rows
     .map((row) => {
       const accessRules = normalizeAccessRules(row.access_rules);
       const visibility = row.visibility;
+      const institutionMarket = hasInstitutionAccessRule(accessRules);
       const accessRequiresLogin = requiresAuthenticatedViewer({
         visibility,
         accessRules,
       });
 
-      const access = canViewerSeeMarket(
+      const access = canViewerDiscoverMarket(
         {
           status: row.status,
           visibility,
@@ -568,11 +642,11 @@ export async function listDiscoveryMarketCards(options: {
         return null;
       }
 
-      if (query.access === "public" && accessRequiresLogin) {
+      if (query.access === "public" && institutionMarket) {
         return null;
       }
 
-      if (query.access === "institution" && !accessRequiresLogin) {
+      if (query.access === "institution" && !institutionMarket) {
         return null;
       }
 
@@ -666,25 +740,116 @@ export async function getMarketDetail(options: {
   }
 
   if (!data) {
+    if ((!viewer.isAuthenticated || !viewer.hasActiveInstitution) && isSupabaseServiceEnvConfigured()) {
+      try {
+        const service = createServiceClient();
+        const { data: serviceData, error: serviceError } = await service
+          .from("markets")
+          .select("id, status, visibility, access_rules, creator_id")
+          .eq("id", marketId)
+          .maybeSingle();
+
+        if (!serviceError && serviceData) {
+          const fallbackRow = serviceData as {
+            id: string;
+            status: string;
+            visibility: string;
+            access_rules: Record<string, unknown> | null;
+            creator_id: string;
+          };
+
+          const accessRules = normalizeAccessRules(fallbackRow.access_rules);
+          // Keep non-institution private markets hidden from anonymous fallback probes.
+          if (!hasInstitutionAccessRule(accessRules)) {
+            return { kind: "not_found" };
+          }
+
+          const access = canViewerAccessMarketDetail(
+            {
+              status: fallbackRow.status,
+              visibility: fallbackRow.visibility,
+              creatorId: fallbackRow.creator_id,
+              accessRules,
+            },
+            viewer,
+            {
+              hasLegacyPosition: false,
+            }
+          );
+
+          if (access.reason === "login_required") {
+            return { kind: "login_required" };
+          }
+
+          if (access.reason === "institution_verification_required") {
+            return { kind: "institution_verification_required" };
+          }
+        }
+      } catch {
+        // Fall through to not_found when service fallback is unavailable.
+      }
+    }
+
     return { kind: "not_found" };
   }
 
   const row = data as MarketDetailRow;
   const accessRules = normalizeAccessRules(row.access_rules);
+  let viewerPosition: MarketViewerPositionDTO | null = null;
+  let hasLegacyPosition = false;
 
-  const access = canViewerSeeMarket(
+  if (viewer.isAuthenticated && viewer.userId) {
+    try {
+      const { data: positionData, error: positionError } = await supabase
+        .from("positions")
+        .select("yes_shares, no_shares, average_entry_price_yes, average_entry_price_no, realized_pnl")
+        .eq("market_id", marketId)
+        .eq("user_id", viewer.userId)
+        .maybeSingle();
+
+      if (!positionError && positionData) {
+        const position = positionData as PositionRow;
+        const positionYesShares = Math.max(0, toNumber(position.yes_shares, 0));
+        const positionNoShares = Math.max(0, toNumber(position.no_shares, 0));
+        const positionTotalShares = positionYesShares + positionNoShares;
+        hasLegacyPosition = positionTotalShares > 0;
+
+        viewerPosition = {
+          yesShares: positionYesShares,
+          noShares: positionNoShares,
+          totalShares: positionTotalShares,
+          averageEntryPriceYes: toOptionalNumber(position.average_entry_price_yes),
+          averageEntryPriceNo: toOptionalNumber(position.average_entry_price_no),
+          realizedPnl: toNumber(position.realized_pnl, 0),
+          markValue: 0,
+        };
+      }
+    } catch {
+      viewerPosition = null;
+      hasLegacyPosition = false;
+    }
+  }
+
+  const access = canViewerAccessMarketDetail(
     {
       status: row.status,
       visibility: row.visibility,
       creatorId: row.creator_id,
       accessRules,
     },
-    viewer
+    viewer,
+    {
+      hasLegacyPosition,
+    }
   );
 
   if (!access.allowed) {
     if (access.reason === "login_required") {
       return { kind: "login_required" };
+    }
+
+    if (access.reason === "institution_verification_required") {
+      return { kind: "institution_verification_required" };
     }
 
     return { kind: "not_found" };
@@ -706,37 +871,14 @@ export async function getMarketDetail(options: {
     priceYes,
   });
 
-  let viewerPosition: MarketViewerPositionDTO | null = null;
-
-  if (viewer.isAuthenticated && viewer.userId) {
-    try {
-      const { data: positionData, error: positionError } = await supabase
-        .from("positions")
-        .select("yes_shares, no_shares, average_entry_price_yes, average_entry_price_no, realized_pnl")
-        .eq("market_id", marketId)
-        .eq("user_id", viewer.userId)
-        .maybeSingle();
-
-      if (!positionError && positionData) {
-        const position = positionData as PositionRow;
-        const positionYesShares = Math.max(0, toNumber(position.yes_shares, 0));
-        const positionNoShares = Math.max(0, toNumber(position.no_shares, 0));
-        const positionTotalShares = positionYesShares + positionNoShares;
-
-        viewerPosition = {
-          yesShares: positionYesShares,
-          noShares: positionNoShares,
-          totalShares: positionTotalShares,
-          averageEntryPriceYes: toOptionalNumber(position.average_entry_price_yes),
-          averageEntryPriceNo: toOptionalNumber(position.average_entry_price_no),
-          realizedPnl: toNumber(position.realized_pnl, 0),
-          markValue: positionYesShares * priceYes + positionNoShares * priceNo,
-        };
-      }
-    } catch {
-      viewerPosition = null;
-    }
+  if (viewerPosition) {
+    viewerPosition = {
+      ...viewerPosition,
+      markValue: viewerPosition.yesShares * priceYes + viewerPosition.noShares * priceNo,
+    };
   }
+
+  const viewerCanTrade = viewer.isAuthenticated && !access.readOnlyLegacy;
 
   return {
     kind: "ok",
@@ -784,6 +926,8 @@ export async function getMarketDetail(options: {
       })),
       cardShadowTone: resolveCardShadowTone(accessRules, row.id),
       actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
+      viewerCanTrade,
+      viewerReadOnlyReason: access.readOnlyLegacy ? "legacy_institution_access" : null,
     },
   };
 }

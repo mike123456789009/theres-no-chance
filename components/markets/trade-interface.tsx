@@ -52,6 +52,8 @@ type TradeInterfaceProps = {
   currentPriceNo: number;
   viewerUserId?: string;
   isAuthenticated: boolean;
+  canTrade?: boolean;
+  tradeDisabledReason?: string;
 };
 
 function formatCurrency(value: number): string {
@@ -87,6 +89,8 @@ export function TradeInterface({
   currentPriceNo,
   viewerUserId,
   isAuthenticated,
+  canTrade,
+  tradeDisabledReason,
 }: TradeInterfaceProps) {
   const [selectedSide, setSelectedSide] = useState<TradeSide>("yes");
   const [selectedAction, setSelectedAction] = useState<TradeAction>("buy");
@@ -167,7 +171,15 @@ export function TradeInterface({
     [marketId]
   );
 
+  const isMarketOpen = marketStatus === "open";
+  const isTradeEligible = isAuthenticated && isMarketOpen && (canTrade ?? true);
+
   useEffect(() => {
+    if (!isTradeEligible) {
+      setQuoteState({ status: "idle", data: null, error: null });
+      return;
+    }
+
     const shares = parseFloat(orderSize);
     const slippageBps = Math.round(parseFloat(maxSlippage) * 100);
 
@@ -194,9 +206,18 @@ export function TradeInterface({
         clearTimeout(quoteTimeoutRef.current);
       }
     };
-  }, [orderSize, maxSlippage, selectedSide, selectedAction, fetchQuote]);
+  }, [orderSize, maxSlippage, selectedSide, selectedAction, fetchQuote, isTradeEligible]);
 
   const handleExecuteTrade = async () => {
+    if (!isTradeEligible) {
+      setExecuteState({
+        status: "error",
+        data: null,
+        error: tradeDisabledReason || "Your account cannot trade this market.",
+      });
+      return;
+    }
+
     const shares = parseFloat(orderSize);
     const slippageBps = Math.round(parseFloat(maxSlippage) * 100);
 
@@ -271,9 +292,6 @@ export function TradeInterface({
     setExecuteState((prev) => ({ ...prev, status: "idle", error: null }));
   };
 
-  const isMarketOpen = marketStatus === "open";
-  const canTrade = isAuthenticated && isMarketOpen;
-
   const currentPrice = selectedSide === "yes" ? currentPriceYes : currentPriceNo;
   const estimatedShares = parseFloat(orderSize) || 0;
   const estimatedCost = estimatedShares * currentPrice;
@@ -333,7 +351,7 @@ export function TradeInterface({
           className={`trade-order-tab trade-order-tab-buy ${
             selectedSide === "yes" && selectedAction === "buy" ? "active" : ""
           }`}
-          disabled={!canTrade || executeState.status === "loading"}
+          disabled={!isTradeEligible || executeState.status === "loading"}
         >
           Buy YES
         </button>
@@ -346,7 +364,7 @@ export function TradeInterface({
           className={`trade-order-tab trade-order-tab-buy ${
             selectedSide === "no" && selectedAction === "buy" ? "active" : ""
           }`}
-          disabled={!canTrade || executeState.status === "loading"}
+          disabled={!isTradeEligible || executeState.status === "loading"}
         >
           Buy NO
         </button>
@@ -359,7 +377,7 @@ export function TradeInterface({
           className={`trade-order-tab trade-order-tab-sell ${
             selectedSide === "yes" && selectedAction === "sell" ? "active" : ""
           }`}
-          disabled={!canTrade || executeState.status === "loading"}
+          disabled={!isTradeEligible || executeState.status === "loading"}
         >
           Sell YES
         </button>
@@ -372,7 +390,7 @@ export function TradeInterface({
           className={`trade-order-tab trade-order-tab-sell ${
             selectedSide === "no" && selectedAction === "sell" ? "active" : ""
           }`}
-          disabled={!canTrade || executeState.status === "loading"}
+          disabled={!isTradeEligible || executeState.status === "loading"}
         >
           Sell NO
         </button>
@@ -389,7 +407,7 @@ export function TradeInterface({
             min="0.01"
             max="1000000"
             step="0.01"
-            disabled={!canTrade || executeState.status === "loading"}
+            disabled={!isTradeEligible || executeState.status === "loading"}
             placeholder="Enter shares"
           />
         </label>
@@ -404,7 +422,7 @@ export function TradeInterface({
             min="0"
             max="100"
             step="0.1"
-            disabled={!canTrade || executeState.status === "loading"}
+            disabled={!isTradeEligible || executeState.status === "loading"}
             placeholder="5.0"
           />
         </label>
@@ -476,7 +494,13 @@ export function TradeInterface({
         </div>
       )}
 
-      {canTrade && (
+      {isAuthenticated && isMarketOpen && !isTradeEligible && (
+        <div className="trade-market-closed">
+          <p>{tradeDisabledReason || "Your account does not currently have trade access for this market."}</p>
+        </div>
+      )}
+
+      {isTradeEligible && (
         <button
           type="button"
           onClick={handleExecuteTrade}

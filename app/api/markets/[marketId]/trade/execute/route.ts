@@ -75,6 +75,16 @@ export async function POST(request: Request, context: { params: Promise<{ market
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    if (detail.kind === "institution_verification_required") {
+      return NextResponse.json(
+        {
+          error: "Institution verification required.",
+          detail: "Verify an institution email to trade this market.",
+        },
+        { status: 403 }
+      );
+    }
+
     if (detail.kind === "not_found") {
       return NextResponse.json({ error: "Market not found." }, { status: 404 });
     }
@@ -106,6 +116,19 @@ export async function POST(request: Request, context: { params: Promise<{ market
           detail: "Market must be open for trading.",
         },
         { status: 409 }
+      );
+    }
+
+    if (detail.market.viewerCanTrade === false) {
+      return NextResponse.json(
+        {
+          error: "Trade execution unavailable.",
+          detail:
+            detail.market.viewerReadOnlyReason === "legacy_institution_access"
+              ? "Your account can view this market due to an existing position, but new trades are restricted to active institution members."
+              : "Your account is not eligible to trade this market.",
+        },
+        { status: 403 }
       );
     }
 
