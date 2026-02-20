@@ -80,7 +80,7 @@ export async function runInstitutionScan(input: InstitutionScanInput): Promise<I
     }
 
     try {
-      const maxCandidates = Math.max(input.maxPerOrganization * 2, 8);
+      const maxCandidates = Math.max(Math.min(input.maxPerOrganization * 3, 100), 12);
       const generated = await generateProposalBatch({
         scope: "institution",
         modelName: input.modelName,

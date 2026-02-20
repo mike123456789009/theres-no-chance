@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { DEFAULT_INSTITUTION_MAX_PER_ORG } from "@/lib/automation/market-research/constants";
 import { runInstitutionResearch } from "@/lib/automation/market-research/runner";
 import { getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
@@ -37,7 +38,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const maxPerOrganization = parsePositiveInt(process.env.MARKET_RESEARCH_INSTITUTION_MAX_PER_CRON, 3);
+  const maxPerOrganization = parsePositiveInt(
+    process.env.MARKET_RESEARCH_INSTITUTION_MAX_PER_CRON,
+    DEFAULT_INSTITUTION_MAX_PER_ORG
+  );
   const modelName = process.env.MARKET_RESEARCH_MODEL?.trim() || "gpt-5";
   const scoutModelName = process.env.MARKET_RESEARCH_SCOUT_MODEL?.trim() || "gpt-5-mini";
 

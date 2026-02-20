@@ -45,7 +45,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
   requireMarketResearchEnabled();
   const modelName = input.modelName?.trim() || DEFAULT_RESEARCH_MODEL;
   const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
-  const maxToSubmit = Math.max(1, Math.min(50, input.maxToSubmit ?? DEFAULT_PUBLIC_MAX));
+  const maxToSubmit = Math.max(1, Math.min(250, input.maxToSubmit ?? DEFAULT_PUBLIC_MAX));
   const startedAt = nowIso();
 
   const runStart = await startResearchRun({
@@ -149,7 +149,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
   requireMarketResearchEnabled();
   const modelName = input.modelName?.trim() || DEFAULT_RESEARCH_MODEL;
   const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
-  const maxPerOrganization = Math.max(1, Math.min(20, input.maxPerOrganization ?? DEFAULT_INSTITUTION_MAX_PER_ORG));
+  const maxPerOrganization = Math.max(1, Math.min(150, input.maxPerOrganization ?? DEFAULT_INSTITUTION_MAX_PER_ORG));
   const startedAt = nowIso();
 
   const runStart = await startResearchRun({

@@ -46,7 +46,7 @@ export async function runPublicScan(input: PublicScanInput): Promise<PublicScanR
   const deadline = input.deadline ?? createRunDeadline(RUN_TIMEOUT_MS);
   deadline.throwIfExpired("starting public scan");
 
-  const maxCandidates = Math.max(input.maxToSubmit * 2, 4);
+  const maxCandidates = Math.max(Math.min(input.maxToSubmit * 3, 120), 12);
   const generated = await generateProposalBatch({
     scope: "public",
     modelName: input.modelName,

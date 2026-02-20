@@ -1,4 +1,5 @@
 import { DEFAULT_SCOUT_MODEL, OPENAI_CALL_TIMEOUT_MS } from "@/lib/automation/market-research/constants";
+import { listExistingMarketsForResearch, type ExistingMarketContext } from "@/lib/automation/market-research/db";
 import type { GeneratedMarketProposal, ResearchOrganization, ResearchRunScope } from "@/lib/automation/market-research/types";
 import { sleep } from "@/lib/automation/market-research/utils";
 import { requiredEnv } from "@/lib/env";
@@ -344,6 +345,18 @@ function toScoutLeads(raw: unknown): ScoutLead[] {
   return Array.from(deduped.values());
 }
 
+function compactExistingMarkets(existingMarkets: ExistingMarketContext[], scope: ResearchRunScope): Array<Record<string, unknown>> {
+  const cap = scope === "public" ? 180 : 120;
+  return existingMarkets.slice(0, cap).map((market) => ({
+    question: normalizeString(market.question, 180),
+    closeTime: market.closeTime,
+    status: market.status,
+    visibility: market.visibility,
+    eventFingerprint: market.eventFingerprint,
+    tags: market.tags.slice(0, 6),
+  }));
+}
+
 function rebalanceScoutLeads(leads: ScoutLead[], scope: ResearchRunScope, targetLeadCount: number): ScoutLead[] {
   const clampedTarget = Math.max(1, Math.min(64, targetLeadCount));
   if (scope !== "public") {
@@ -388,6 +401,12 @@ Every lead MUST include:
 - category from this list:
 ${categoryDefinitions}
 - resolutionSourceHints naming official entities likely to publish definitive outcomes
+
+Novelty and clutter control:
+- You will receive existing market context.
+- Do NOT suggest near-duplicates of existing markets.
+- Reject leads if the event, resolution condition, or timing window is too similar to an existing market.
+- Keep leads only if they add clear user value as a new edition or a materially different angle.
 `.trim();
 
   if (scope === "public") {
@@ -408,8 +427,15 @@ Institution scan requirements:
 `.trim();
 }
 
-function buildScoutUserPrompt(input: GenerateProposalBatchInput, leadTarget: number): string {
+function buildScoutUserPrompt(
+  input: GenerateProposalBatchInput,
+  leadTarget: number,
+  existingMarkets: ExistingMarketContext[]
+): string {
   const nowIso = new Date().toISOString();
+  const existingContextJson = jsonString({
+    markets: compactExistingMarkets(existingMarkets, input.scope),
+  });
 
   if (input.scope === "public") {
     return `
@@ -419,6 +445,9 @@ Generate up to ${leadTarget} PUBLIC event leads.
 Only include opportunities with candidate close windows between 24 hours and 45 days from now.
 Do not include events that are already in the past.
 Keep leads concise and high-signal.
+
+Existing market context for duplicate/clutter filtering:
+${existingContextJson}
 `.trim();
   }
 
@@ -435,6 +464,9 @@ Generate up to ${leadTarget} INSTITUTION event leads for:
 
 Do not include events already in the past.
 Focus on institution-relevant outcomes that can be objectively resolved from official sources.
+
+Existing market context for duplicate/clutter filtering:
+${existingContextJson}
 `.trim();
 }
 
@@ -525,9 +557,13 @@ ${serializedLeads}
 `.trim();
 }
 
-async function runScoutStage(input: GenerateProposalBatchInput, scoutModelName: string): Promise<ScoutLead[]> {
+async function runScoutStage(
+  input: GenerateProposalBatchInput,
+  scoutModelName: string,
+  existingMarkets: ExistingMarketContext[]
+): Promise<ScoutLead[]> {
   const leadTarget = Math.max(Math.min(input.maxCandidates * 4, 64), 8);
-  const scoutTimeoutMs = Math.max(90_000, Math.min(OPENAI_CALL_TIMEOUT_MS, 180_000));
+  const scoutTimeoutMs = Math.max(90_000, OPENAI_CALL_TIMEOUT_MS);
 
   const payload = {
     model: scoutModelName,
@@ -546,7 +582,7 @@ async function runScoutStage(input: GenerateProposalBatchInput, scoutModelName: 
       },
       {
         role: "user",
-        content: [{ type: "input_text", text: buildScoutUserPrompt(input, leadTarget) }],
+        content: [{ type: "input_text", text: buildScoutUserPrompt(input, leadTarget, existingMarkets) }],
       },
     ],
   } as const satisfies Record<string, unknown>;
@@ -625,7 +661,11 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
 
 export async function generateProposalBatch(input: GenerateProposalBatchInput): Promise<GeneratedMarketProposal[]> {
   const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
-  const leads = await runScoutStage(input, scoutModelName);
+  const existingMarkets = await listExistingMarketsForResearch({
+    scope: input.scope,
+    organizationId: input.organization?.id,
+  });
+  const leads = await runScoutStage(input, scoutModelName, existingMarkets);
 
   const leadBudget = Math.max(Math.min(input.maxCandidates * 3, leads.length), 4);
   const shortlistedLeads = rebalanceScoutLeads(leads, input.scope, leadBudget);

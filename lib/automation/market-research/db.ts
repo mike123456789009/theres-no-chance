@@ -273,6 +273,78 @@ export async function listOrganizationsForResearch(): Promise<ResearchOrganizati
   }));
 }
 
+type ExistingMarketRow = {
+  id: string;
+  question: string;
+  close_time: string;
+  status: string;
+  visibility: string;
+  access_rules: Record<string, unknown> | null;
+  tags: string[] | null;
+  created_at: string;
+};
+
+export type ExistingMarketContext = {
+  id: string;
+  question: string;
+  closeTime: string;
+  status: string;
+  visibility: string;
+  eventFingerprint: string | null;
+  tags: string[];
+};
+
+type ExistingMarketContextInput = {
+  scope: ResearchRunScope;
+  organizationId?: string;
+  limit?: number;
+};
+
+export async function listExistingMarketsForResearch(input: ExistingMarketContextInput): Promise<ExistingMarketContext[]> {
+  const service = createServiceClient();
+  const limit = Math.max(20, Math.min(400, input.limit ?? 180));
+  const activeStatuses = ["review", "open", "pending_resolution", "resolved", "finalized", "halted"];
+
+  let query = service
+    .from("markets")
+    .select("id, question, close_time, status, visibility, access_rules, tags, created_at")
+    .in("status", activeStatuses)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (input.scope === "public") {
+    query = query.in("visibility", ["public", "unlisted"]);
+  } else {
+    query = query.eq("visibility", "private");
+    if (input.organizationId) {
+      query = query.contains("access_rules", { organizationId: input.organizationId });
+    }
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Unable to load existing markets for research context: ${error.message}`);
+  }
+
+  const rows = (data ?? []) as ExistingMarketRow[];
+  return rows.map((row) => {
+    const accessRules = row.access_rules ?? {};
+    const fingerprintRaw = accessRules["eventFingerprint"];
+    const eventFingerprint =
+      typeof fingerprintRaw === "string" && fingerprintRaw.trim().length > 0 ? fingerprintRaw.trim().toLowerCase() : null;
+
+    return {
+      id: row.id,
+      question: row.question,
+      closeTime: row.close_time,
+      status: row.status,
+      visibility: row.visibility,
+      eventFingerprint,
+      tags: Array.isArray(row.tags) ? row.tags.filter((tag): tag is string => typeof tag === "string").slice(0, 8) : [],
+    };
+  });
+}
+
 type AdminRunRow = {
   id: string;
   scope: string;

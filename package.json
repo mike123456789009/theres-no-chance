@@ -12,10 +12,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit --max=8",
-    "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit --max=3",
-    "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run --max=8",
-    "market:scan:institution:dry": "tsx scripts/market-research-runner.ts --scope=institution --dry-run --max=3"
+    "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit --max=20",
+    "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit --max=10",
+    "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run --max=20",
+    "market:scan:institution:dry": "tsx scripts/market-research-runner.ts --scope=institution --dry-run --max=10"
   },
   "repository": {
     "type": "git",
