@@ -1,18 +1,22 @@
 "use client";
 
 import { useUiStyle } from "@/components/theme/ui-style-sync";
-import { UI_PALETTE_LABELS } from "@/lib/theme/constants";
-import type { UiStyle } from "@/lib/theme/types";
+import { UI_PALETTE_LABELS, UI_PALETTE_VALUES } from "@/lib/theme/constants";
+import type { UiPalette, UiStyle } from "@/lib/theme/types";
 
 function joinClassNames(...values: Array<string | undefined>): string {
   return values.filter((value): value is string => Boolean(value && value.trim())).join(" ");
 }
 
 export function StyleToggle({ className }: Readonly<{ className?: string }>) {
-  const { uiStyle, uiPalette, setUiStyle, cycleUiPalette } = useUiStyle();
+  const { uiStyle, uiPalette, setUiStyle, setUiPalette, cycleUiPalette } = useUiStyle();
 
   function onStyleSelect(style: UiStyle): void {
     setUiStyle(style);
+  }
+
+  function onPaletteSelect(palette: UiPalette): void {
+    setUiPalette(palette);
   }
 
   return (
@@ -37,14 +41,31 @@ export function StyleToggle({ className }: Readonly<{ className?: string }>) {
       </div>
 
       {uiStyle === "modern" ? (
-        <button
-          type="button"
-          className="palette-cycle-button"
-          onClick={cycleUiPalette}
-          aria-label={`Switch modern palette. Current palette is ${UI_PALETTE_LABELS[uiPalette]}`}
-        >
-          Colorway: {UI_PALETTE_LABELS[uiPalette]}
-        </button>
+        <div className="palette-controls">
+          <label htmlFor="palette-select" className="sr-only">
+            Modern colorway
+          </label>
+          <select
+            id="palette-select"
+            className="palette-select"
+            value={uiPalette}
+            onChange={(event) => onPaletteSelect(event.target.value as UiPalette)}
+          >
+            {UI_PALETTE_VALUES.map((palette) => (
+              <option key={palette} value={palette}>
+                {UI_PALETTE_LABELS[palette]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="palette-cycle-button"
+            onClick={cycleUiPalette}
+            aria-label={`Switch modern palette. Current palette is ${UI_PALETTE_LABELS[uiPalette]}`}
+          >
+            Next
+          </button>
+        </div>
       ) : null}
     </div>
   );

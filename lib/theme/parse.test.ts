@@ -43,11 +43,18 @@ describe("parseUiPalette", () => {
     expect(parseUiPalette("hearth")).toBe("hearth");
     expect(parseUiPalette("sand")).toBe("sand");
     expect(parseUiPalette("onyx")).toBe("onyx");
+    expect(parseUiPalette("glacier")).toBe("glacier");
+    expect(parseUiPalette("tide")).toBe("tide");
+    expect(parseUiPalette("cosmos")).toBe("cosmos");
+    expect(parseUiPalette("volt")).toBe("volt");
+    expect(parseUiPalette("ember")).toBe("ember");
+    expect(parseUiPalette("aurora")).toBe("aurora");
   });
 
   it("normalizes spacing and casing", () => {
     expect(parseUiPalette("  SAND ")).toBe("sand");
     expect(parseUiPalette(" Onyx ")).toBe("onyx");
+    expect(parseUiPalette("  GLACIER ")).toBe("glacier");
   });
 
   it("returns null for unsupported values", () => {

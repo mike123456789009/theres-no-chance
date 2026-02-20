@@ -63,6 +63,34 @@
   justify-items: end;
 }
 
+.palette-controls {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.palette-select {
+  border: 1px solid var(--toggle-border);
+  border-radius: 999px;
+  background: var(--toggle-bg);
+  color: var(--toggle-text);
+  box-shadow: var(--toggle-shadow);
+  padding: 0.25rem 0.56rem;
+  min-width: 7.2rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.palette-select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .style-toggle-button {
   border: 0;
   background: transparent;

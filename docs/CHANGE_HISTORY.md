@@ -1,5 +1,22 @@
 # Change History
 
+## 2026-02-20 - Expanded Modern Palette Library
+Status: completed
+
+Short description:
+- Expanded the modern demo palette system from 3 options to 9 options for faster visual exploration during demos.
+- Added diverse cool and radical colorways (`glacier`, `tide`, `cosmos`, `volt`, `ember`, `aurora`) in addition to existing sets.
+- Upgraded the toggle UI from single-cycle-only behavior to include direct colorway selection plus a `Next` button for back-to-back walkthroughs.
+
+Files/areas touched:
+- Theme runtime + hydration: `app/layout.tsx`, `components/theme/ui-style-sync.tsx`, `components/theme/style-toggle.tsx`
+- Theme model/parsing: `lib/theme/types.ts`, `lib/theme/constants.ts`, `lib/theme/parse.ts`
+- Theme styling: `app/styles/theme-modern.css`, `app/styles/tokens.css`
+- Tests: `lib/theme/parse.test.ts`
+
+User-visible change:
+- In modern mode, demos can now switch among a larger, more diverse set of colorways instantly without code edits or git workflow steps.
+
 ## 2026-02-20 - Modern Palette Demo Switcher
 Status: completed
 

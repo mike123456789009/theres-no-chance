@@ -1,4 +1,4 @@
-import { UI_PALETTE_DEFAULT, UI_STYLE_DEFAULT } from "@/lib/theme/constants";
+import { UI_PALETTE_DEFAULT, UI_PALETTE_VALUES, UI_STYLE_DEFAULT } from "@/lib/theme/constants";
 import type { UiPalette, UiStyle } from "@/lib/theme/types";
 
 export function isUiStyle(value: unknown): value is UiStyle {
@@ -12,7 +12,7 @@ export function parseUiStyle(value: unknown): UiStyle | null {
 }
 
 export function isUiPalette(value: unknown): value is UiPalette {
-  return value === "hearth" || value === "sand" || value === "onyx";
+  return typeof value === "string" && UI_PALETTE_VALUES.includes(value as UiPalette);
 }
 
 export function parseUiPalette(value: unknown): UiPalette | null {

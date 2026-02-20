@@ -5,6 +5,7 @@ import "./trade-interface.css";
 import { UiStyleSync } from "@/components/theme/ui-style-sync";
 import {
   UI_PALETTE_COOKIE_KEY,
+  UI_PALETTE_VALUES,
   UI_PALETTE_STORAGE_KEY,
   UI_STYLE_COOKIE_KEY,
   UI_STYLE_STORAGE_KEY,
@@ -40,8 +41,9 @@ export default async function RootLayout({
       const cookieKey = "${UI_STYLE_COOKIE_KEY}";
       const paletteStorageKey = "${UI_PALETTE_STORAGE_KEY}";
       const paletteCookieKey = "${UI_PALETTE_COOKIE_KEY}";
+      const validPalettes = ${JSON.stringify(UI_PALETTE_VALUES)};
       const isValidStyle = (value) => value === "retro" || value === "modern";
-      const isValidPalette = (value) => value === "hearth" || value === "sand" || value === "onyx";
+      const isValidPalette = (value) => typeof value === "string" && validPalettes.includes(value);
       const cookiePairs = document.cookie ? document.cookie.split(";") : [];
       let cookieValue = null;
       let paletteCookieValue = null;
