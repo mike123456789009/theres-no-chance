@@ -2294,7 +2294,7 @@ html[data-ui-style="modern"] .market-tile-probability a {
 .market-detail-market-pane {
   min-width: 0;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr auto;
   gap: 0.82rem;
 }
 

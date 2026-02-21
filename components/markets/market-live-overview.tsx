@@ -234,32 +234,6 @@ export function MarketLiveOverview({ marketId, initialMarket }: MarketLiveOvervi
 
   return (
     <div className="market-detail-market-pane">
-      <article className="market-detail-strip-panel">
-        <h2>Market strip</h2>
-        <p className="market-detail-strip-label">Live implied odds</p>
-        <p className="market-detail-stat market-detail-stat-yes">YES {formatPercent(market.priceYes, 1)}</p>
-        <p className="market-detail-stat market-detail-stat-no">NO {formatPercent(market.priceNo, 1)}</p>
-
-        <div className="market-detail-strip-grid">
-          <p>
-            <span>Pool shares</span>
-            <strong>{formatShares(market.poolShares)}</strong>
-          </p>
-          <p>
-            <span>YES shares</span>
-            <strong>{formatShares(market.yesShares)}</strong>
-          </p>
-          <p>
-            <span>NO shares</span>
-            <strong>{formatShares(market.noShares)}</strong>
-          </p>
-          <p>
-            <span>Liquidity parameter</span>
-            <strong>{formatShares(market.liquidityParameter)}</strong>
-          </p>
-        </div>
-      </article>
-
       <article className="market-detail-chart-panel">
         <div className="market-detail-chart-header">
           <h2>Price + timeline</h2>
@@ -296,6 +270,32 @@ export function MarketLiveOverview({ marketId, initialMarket }: MarketLiveOvervi
           <span>{chartEndLabel}</span>
         </div>
         <p className="market-detail-chart-note">Auto-refreshes every 4 seconds and after completed trades.</p>
+      </article>
+
+      <article className="market-detail-strip-panel">
+        <h2>Market strip</h2>
+        <p className="market-detail-strip-label">Live implied odds</p>
+        <p className="market-detail-stat market-detail-stat-yes">YES {formatPercent(market.priceYes, 1)}</p>
+        <p className="market-detail-stat market-detail-stat-no">NO {formatPercent(market.priceNo, 1)}</p>
+
+        <div className="market-detail-strip-grid">
+          <p>
+            <span>Pool shares</span>
+            <strong>{formatShares(market.poolShares)}</strong>
+          </p>
+          <p>
+            <span>YES shares</span>
+            <strong>{formatShares(market.yesShares)}</strong>
+          </p>
+          <p>
+            <span>NO shares</span>
+            <strong>{formatShares(market.noShares)}</strong>
+          </p>
+          <p>
+            <span>Liquidity parameter</span>
+            <strong>{formatShares(market.liquidityParameter)}</strong>
+          </p>
+        </div>
       </article>
     </div>
   );
