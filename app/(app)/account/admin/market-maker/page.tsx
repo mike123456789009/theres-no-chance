@@ -3,12 +3,9 @@ import type { CSSProperties } from "react";
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
 import { AdminResearchRunControls } from "@/components/admin/admin-research-run-controls";
 import { AdminReviewQueue } from "@/components/admin/admin-review-queue";
-import {
-  guardAdminPageAccess,
-  loadAdminQueueMarkets,
-  loadProposedMarketPreviews,
-  loadResearchRuns,
-} from "@/lib/admin/account-dashboard";
+import { guardAdminPageAccess } from "@/lib/admin/access";
+import { loadResearchRuns } from "@/lib/admin/research";
+import { loadAdminQueueMarkets, loadProposedMarketPreviews } from "@/lib/admin/review-queue";
 
 export const dynamic = "force-dynamic";
 

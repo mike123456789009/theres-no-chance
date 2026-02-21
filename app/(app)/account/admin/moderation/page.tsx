@@ -1,10 +1,7 @@
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
 import { AdminResolutionQueue } from "@/components/admin/admin-resolution-queue";
-import {
-  getResolutionWindowHours,
-  guardAdminPageAccess,
-  loadResolutionMarkets,
-} from "@/lib/admin/account-dashboard";
+import { guardAdminPageAccess } from "@/lib/admin/access";
+import { getResolutionWindowHours, loadResolutionMarkets } from "@/lib/admin/resolution";
 
 export const dynamic = "force-dynamic";
 

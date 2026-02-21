@@ -10,13 +10,13 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
-vi.mock("@/lib/institutions/service", () => ({
+vi.mock("@/lib/institutions/memberships", () => ({
   getInstitutionAccessSnapshot: vi.fn(),
 }));
 
 import { getServerEnvReadiness } from "@/lib/api/env-guards";
 import { createClient } from "@/lib/supabase/server";
-import { getInstitutionAccessSnapshot } from "@/lib/institutions/service";
+import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
 
 describe("GET /api/account/institution-access", () => {
   beforeEach(() => {

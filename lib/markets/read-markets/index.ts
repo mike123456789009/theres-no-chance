@@ -17,9 +17,9 @@ export {
   type MarketViewerPositionDTO,
   type ViewerChallengeDTO,
   type ViewerResolverBondDTO,
-} from "./read-markets/types";
+} from "./types";
 
-export { parseMarketDiscoveryQuery, toUrlSearchParams } from "./read-markets/query";
-export { getMarketViewerContext } from "./read-markets/viewer";
-export { listDiscoveryMarketCards } from "./read-markets/discovery";
-export { getMarketDetail } from "./read-markets/detail";
+export { parseMarketDiscoveryQuery, toUrlSearchParams } from "./query";
+export { getMarketViewerContext } from "./viewer";
+export { listDiscoveryMarketCards } from "./discovery";
+export { getMarketDetail } from "./detail";

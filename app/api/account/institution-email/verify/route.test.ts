@@ -8,13 +8,17 @@ vi.mock("@/lib/supabase/server", () => ({
   getMissingSupabaseServerEnv: vi.fn(() => []),
 }));
 
-vi.mock("@/lib/institutions/service", () => ({
-  getInstitutionAccessSnapshot: vi.fn(),
+vi.mock("@/lib/institutions/challenges", () => ({
   verifyInstitutionChallenge: vi.fn(),
 }));
 
+vi.mock("@/lib/institutions/memberships", () => ({
+  getInstitutionAccessSnapshot: vi.fn(),
+}));
+
 import { createClient } from "@/lib/supabase/server";
-import { getInstitutionAccessSnapshot, verifyInstitutionChallenge } from "@/lib/institutions/service";
+import { verifyInstitutionChallenge } from "@/lib/institutions/challenges";
+import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
 
 describe("POST /api/account/institution-email/verify", () => {
   beforeEach(() => {

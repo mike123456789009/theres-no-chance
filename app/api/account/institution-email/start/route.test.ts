@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({
   getMissingSupabaseServerEnv: vi.fn(() => []),
 }));
 
-vi.mock("@/lib/institutions/service", () => ({
+vi.mock("@/lib/institutions/challenges", () => ({
   startInstitutionEmailVerification: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ vi.mock("@/lib/institutions/email", () => ({
 
 import { createClient } from "@/lib/supabase/server";
 import { sendInstitutionVerificationEmail } from "@/lib/institutions/email";
-import { startInstitutionEmailVerification } from "@/lib/institutions/service";
+import { startInstitutionEmailVerification } from "@/lib/institutions/challenges";
 
 describe("POST /api/account/institution-email/start", () => {
   beforeEach(() => {

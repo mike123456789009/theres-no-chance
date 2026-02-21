@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { AdminPageAccessResult } from "@/lib/admin/account-dashboard";
+import type { AdminPageAccessResult } from "@/lib/admin/access";
 
 type AdminAccessPanelProps = {
   access: Extract<AdminPageAccessResult, { ok: false }>;

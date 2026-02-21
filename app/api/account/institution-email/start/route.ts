@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { normalizeInstitutionEmail, isEduDomain } from "@/lib/institutions/access";
+import { startInstitutionEmailVerification } from "@/lib/institutions/challenges";
 import { sendInstitutionVerificationEmail } from "@/lib/institutions/email";
-import { startInstitutionEmailVerification } from "@/lib/institutions/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 function clean(value: unknown): string {

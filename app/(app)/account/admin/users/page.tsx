@@ -1,5 +1,5 @@
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
-import { guardAdminPageAccess } from "@/lib/admin/account-dashboard";
+import { guardAdminPageAccess } from "@/lib/admin/access";
 
 import { AdminUsersPageContent } from "./page-content";
 import { loadAdminUsersPageData } from "./page-data";

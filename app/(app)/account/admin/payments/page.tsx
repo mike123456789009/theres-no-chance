@@ -1,6 +1,7 @@
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
 import { AdminVenmoReconcileQueue } from "@/components/admin/admin-venmo-reconcile-queue";
-import { guardAdminPageAccess, loadAdminVenmoReviewQueue } from "@/lib/admin/account-dashboard";
+import { guardAdminPageAccess } from "@/lib/admin/access";
+import { loadAdminVenmoReviewQueue } from "@/lib/admin/venmo";
 
 export const dynamic = "force-dynamic";
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getServerEnvReadiness } from "@/lib/api/env-guards";
 import { jsonEnvUnavailable, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
-import { getInstitutionAccessSnapshot } from "@/lib/institutions/service";
+import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {

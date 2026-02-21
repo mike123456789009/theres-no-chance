@@ -1,6 +1,6 @@
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
 import { AdminInstitutionManager } from "@/components/admin/admin-institution-manager";
-import { guardAdminPageAccess } from "@/lib/admin/account-dashboard";
+import { guardAdminPageAccess } from "@/lib/admin/access";
 
 export const dynamic = "force-dynamic";
 

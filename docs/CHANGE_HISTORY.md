@@ -1,5 +1,62 @@
 # Change History
 
+## 2026-02-21 - Refactor Program Release 15 (Framework Cleanup + Final Hardening)
+Status: completed
+
+Short description:
+- Migrated Next.js request interception from deprecated `middleware` convention to the Next 16 `proxy` convention.
+- Removed temporary compatibility barrel files created during earlier decomposition releases (`lib/markets/read-markets.ts`, `lib/admin/account-dashboard.ts`, `lib/institutions/service.ts`).
+- Retained the split market read module boundary with a canonical module entry at `lib/markets/read-markets/index.ts`.
+- Updated direct module imports across admin and institution API/page consumers after barrel removal.
+
+Files/areas touched:
+- Runtime routing: `proxy.ts`, removed `middleware.ts`
+- Removed temporary barrels:
+  - `lib/markets/read-markets.ts`
+  - `lib/admin/account-dashboard.ts`
+  - `lib/institutions/service.ts`
+- Canonical split-module entry:
+  - `lib/markets/read-markets/index.ts`
+- Consumer import migrations:
+  - `app/(app)/account/admin/moderation/page.tsx`
+  - `app/(app)/account/admin/market-maker/page.tsx`
+  - `app/(app)/account/admin/users/page.tsx`
+  - `app/(app)/account/admin/institutions/page.tsx`
+  - `app/(app)/account/admin/payments/page.tsx`
+  - `components/admin/admin-access-panel.tsx`
+  - `app/api/account/institution-access/route.ts`
+  - `app/api/account/institution-email/start/route.ts`
+  - `app/api/account/institution-email/verify/route.ts`
+  - `app/api/account/institution-access/route.test.ts`
+  - `app/api/account/institution-email/start/route.test.ts`
+  - `app/api/account/institution-email/verify/route.test.ts`
+
+User-visible change:
+- No intended UX/contract changes; this release removes framework deprecation risk and finalizes refactor cleanup boundaries.
+
+## 2026-02-21 - Refactor Program Release 14 (Coverage Expansion + Fixture Hygiene)
+Status: completed
+
+Short description:
+- Added direct tests for previously uncovered high-risk routes in markets and webhook handling.
+- Replaced oversized inline trade/market fixtures with typed fixture builders in shared test helpers.
+- Enabled baseline coverage thresholds in Vitest so route/module regression net remains enforceable.
+
+Files/areas touched:
+- New route tests:
+  - `app/api/markets/[marketId]/dispute/route.test.ts`
+  - `app/api/markets/[marketId]/resolve/bond/route.test.ts`
+  - `app/api/webhooks/coinbase/route.test.ts`
+- Fixture hygiene:
+  - `lib/test-helpers/api-mocks.ts`
+  - `app/api/markets/[marketId]/trade/quote/route.test.ts`
+  - `app/api/markets/[marketId]/trade/execute/route.test.ts`
+- Coverage enforcement:
+  - `vitest.config.ts`
+
+User-visible change:
+- No API/UI behavior change; stronger automated regression detection around high-risk routes.
+
 ## 2026-02-20 - Venmo Fee-Aware Deposits + Reconciliation Queue
 Status: completed
 
@@ -327,7 +384,7 @@ Short description:
 - Updated the landing 3D script to consume/reset that marker, restore scroll to top, and re-sync hero render state on browser `pageshow`.
 
 Files/areas touched:
-- Canonical host routing: `middleware.ts`
+- Canonical host routing: `middleware.ts` (migrated to `proxy.ts` in 2026-02-21 release 15)
 - Auth back-nav marker: `components/auth/auth-back-nav-flag.tsx`, `app/(auth)/layout.tsx`
 - Landing runtime behavior: `public/script.js`
 - Deployment log: `docs/CHANGE_HISTORY.md`

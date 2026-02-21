@@ -3,6 +3,12 @@
 ## Summary
 We will evolve the current static landing page into a full prediction market application in **small, isolated production deployments** (one feature per deploy), keeping the current landing visual style intact.
 
+## Refactor Program Completion (2026-02-21)
+- The 15-release refactor hardening program has been completed through Release 15.
+- Temporary compatibility barrels used during decomposition have been removed.
+- Next.js request interception now uses the `proxy` convention (replacing deprecated `middleware`).
+- Route-level coverage and shared fixture hygiene are in place as baseline safeguards for future releases.
+
 Locked decisions:
 - Keep current landing as canonical marketing page (`/`).
 - Build app on **Next.js (App Router + TypeScript)** for routing, auth guards, admin tools, and payment webhooks.

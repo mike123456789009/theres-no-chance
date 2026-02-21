@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getInstitutionAccessSnapshot, verifyInstitutionChallenge } from "@/lib/institutions/service";
+import { verifyInstitutionChallenge } from "@/lib/institutions/challenges";
+import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 function clean(value: unknown): string {
