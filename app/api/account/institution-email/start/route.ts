@@ -162,6 +162,17 @@ export async function POST(request: Request) {
     const detail = error instanceof Error ? error.message : "Unknown institution verification start error.";
     const lowered = detail.toLowerCase();
 
+    if (lowered.includes("user_institution_emails_domain_edu")) {
+      return NextResponse.json(
+        {
+          error: "Institution email domain must end with .edu.",
+          code: "INVALID_EDU_DOMAIN",
+          detail,
+        },
+        { status: 400 }
+      );
+    }
+
     if (lowered.includes("already linked to another account")) {
       return NextResponse.json(
         {

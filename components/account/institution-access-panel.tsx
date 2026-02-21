@@ -46,6 +46,15 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function buildApiErrorMessage(payload: { error?: string; detail?: string } | null, fallback: string): string {
+  const detail = clean(payload?.detail);
+  const error = clean(payload?.error);
+
+  if (detail) return detail;
+  if (error) return error;
+  return fallback;
+}
+
 function formatDateTime(value: string | null | undefined): string {
   const normalized = clean(value);
   if (!normalized) return "N/A";
@@ -94,7 +103,7 @@ export function InstitutionAccessPanel() {
         | null;
 
       if (!response.ok || !result) {
-        throw new Error(result?.error || result?.detail || "Unable to load institution access state.");
+        throw new Error(buildApiErrorMessage(result, "Unable to load institution access state."));
       }
 
       setSnapshot({
@@ -163,7 +172,7 @@ export function InstitutionAccessPanel() {
       }
 
       if (!response.ok || !result) {
-        throw new Error(result?.error || result?.detail || "Unable to start institution verification.");
+        throw new Error(buildApiErrorMessage(result, "Unable to start institution verification."));
       }
 
       setCandidateOptions([]);
@@ -218,7 +227,7 @@ export function InstitutionAccessPanel() {
         | null;
 
       if (!response.ok || !result) {
-        throw new Error(result?.error || result?.detail || "Unable to verify institution code.");
+        throw new Error(buildApiErrorMessage(result, "Unable to verify institution code."));
       }
 
       setCode("");
