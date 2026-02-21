@@ -1,0 +1,13 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#F2F4FB"/>
+  <rect x="90" y="100" width="1020" height="560" rx="24" fill="#FFFFFF" stroke="#101010" stroke-width="10"/>
+  <rect x="160" y="220" width="360" height="300" rx="16" fill="#DDF5E7" stroke="#101010" stroke-width="6"/>
+  <rect x="680" y="220" width="360" height="300" rx="16" fill="#FDE0DC" stroke="#101010" stroke-width="6"/>
+  <rect x="550" y="180" width="120" height="380" rx="14" fill="#FFF7E2" stroke="#101010" stroke-width="6"/>
+  <text x="230" y="300" font-size="40" font-family="Space Mono, monospace" fill="#101010">YES</text>
+  <text x="770" y="300" font-size="40" font-family="Space Mono, monospace" fill="#101010">NO</text>
+  <text x="220" y="380" font-size="56" font-family="Space Mono, monospace" fill="#101010">$412</text>
+  <text x="760" y="380" font-size="56" font-family="Space Mono, monospace" fill="#101010">$281</text>
+  <text x="140" y="165" font-size="44" font-family="Space Mono, monospace" fill="#101010">Provisional Outcome Computed</text>
+  <text x="500" y="430" font-size="36" font-family="Space Mono, monospace" fill="#101010">YES</text>
+</svg>

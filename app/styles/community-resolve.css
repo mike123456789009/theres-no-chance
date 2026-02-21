@@ -107,6 +107,15 @@
   padding: 0.58rem;
 }
 
+.community-resolve-active-image {
+  margin-top: 0.5rem;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: #fff;
+}
+
 .community-resolve-active-media p {
   margin: 0.4rem 0 0;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -143,7 +152,7 @@
   background: linear-gradient(135deg, #fcefd3 0%, #f8d9bf 45%, #f5f2e7 100%);
   min-height: 180px;
   display: grid;
-  align-content: center;
+  align-content: start;
   justify-items: center;
   gap: 0.5rem;
   text-align: center;
@@ -162,6 +171,14 @@
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.community-resolve-stage-image {
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: #fff;
 }
 
 .community-resolve-stage-media p,
@@ -207,6 +224,14 @@ html[data-ui-style="modern"] .community-resolve-stage-media {
   border-radius: 12px;
   box-shadow: var(--shadow-soft);
   background: linear-gradient(160deg, color-mix(in srgb, var(--accent-primary) 20%, white) 0%, var(--surface-page) 100%);
+}
+
+html[data-ui-style="modern"] .community-resolve-active-image,
+html[data-ui-style="modern"] .community-resolve-stage-image {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
 }
 
 html[data-ui-style="modern"] .community-resolve-hero-links a {

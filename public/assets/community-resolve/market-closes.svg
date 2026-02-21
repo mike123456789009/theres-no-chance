@@ -1,0 +1,12 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#ECECF6"/>
+  <rect x="110" y="110" width="980" height="540" rx="24" fill="#FFFFFF" stroke="#101010" stroke-width="10"/>
+  <circle cx="360" cy="380" r="170" fill="#F6F0E2" stroke="#101010" stroke-width="8"/>
+  <line x1="360" y1="380" x2="360" y2="260" stroke="#101010" stroke-width="10" stroke-linecap="round"/>
+  <line x1="360" y1="380" x2="450" y2="430" stroke="#101010" stroke-width="10" stroke-linecap="round"/>
+  <rect x="600" y="220" width="410" height="160" rx="16" fill="#FFE6B8" stroke="#101010" stroke-width="6"/>
+  <rect x="600" y="420" width="410" height="150" rx="16" fill="#DDF0FF" stroke="#101010" stroke-width="6"/>
+  <text x="290" y="170" font-size="44" font-family="Space Mono, monospace" fill="#101010">Market Closes</text>
+  <text x="655" y="310" font-size="34" font-family="Space Mono, monospace" fill="#101010">Trading Locked</text>
+  <text x="645" y="500" font-size="34" font-family="Space Mono, monospace" fill="#101010">24h Vote Window Open</text>
+</svg>

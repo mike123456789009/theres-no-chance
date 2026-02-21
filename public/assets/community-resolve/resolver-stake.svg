@@ -1,0 +1,15 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#EEF6F1"/>
+  <rect x="85" y="95" width="1030" height="570" rx="24" fill="#FFFFFF" stroke="#101010" stroke-width="10"/>
+  <rect x="140" y="190" width="430" height="410" rx="16" fill="#DFF5E6" stroke="#101010" stroke-width="6"/>
+  <rect x="630" y="190" width="430" height="410" rx="16" fill="#FDE4E0" stroke="#101010" stroke-width="6"/>
+  <text x="280" y="245" font-size="42" font-family="Space Mono, monospace" fill="#101010">YES</text>
+  <text x="785" y="245" font-size="42" font-family="Space Mono, monospace" fill="#101010">NO</text>
+  <circle cx="250" cy="350" r="34" fill="#7BD3A5" stroke="#101010" stroke-width="5"/>
+  <circle cx="340" cy="430" r="34" fill="#7BD3A5" stroke="#101010" stroke-width="5"/>
+  <circle cx="430" cy="510" r="34" fill="#7BD3A5" stroke="#101010" stroke-width="5"/>
+  <circle cx="740" cy="360" r="34" fill="#F6A49A" stroke="#101010" stroke-width="5"/>
+  <circle cx="830" cy="440" r="34" fill="#F6A49A" stroke="#101010" stroke-width="5"/>
+  <circle cx="920" cy="520" r="34" fill="#F6A49A" stroke="#101010" stroke-width="5"/>
+  <text x="150" y="155" font-size="42" font-family="Space Mono, monospace" fill="#101010">Resolvers Stake ($1 to 2x avg bet)</text>
+</svg>

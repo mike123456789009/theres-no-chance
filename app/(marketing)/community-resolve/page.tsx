@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -8,6 +9,8 @@ type Stage = {
   title: string;
   blurb: string;
   mediaLabel: string;
+  assetPath: string;
+  assetAlt: string;
 };
 
 const STAGES: Stage[] = [
@@ -16,36 +19,56 @@ const STAGES: Stage[] = [
     title: "Market Opens",
     blurb: "Trading runs until close time. Anyone can participate in price discovery before resolution starts.",
     mediaLabel: "Open market and live price movement",
+    assetPath: "/assets/community-resolve/market-opens.svg",
+    assetAlt: "Illustration of an open market with live YES and NO pricing.",
   },
   {
     id: "close",
     title: "Market Closes",
     blurb: "Trading stops. Community resolution window opens for 24 hours.",
     mediaLabel: "Clock lock and community voting start",
+    assetPath: "/assets/community-resolve/market-closes.svg",
+    assetAlt: "Illustration showing trading lock and vote window start.",
   },
   {
     id: "stake",
     title: "Resolvers Stake",
     blurb: "Resolvers can stake from $1 up to 2x the average bet size to support YES or NO.",
     mediaLabel: "Stake chips entering YES/NO columns",
+    assetPath: "/assets/community-resolve/resolver-stake.svg",
+    assetAlt: "Illustration of resolver stakes entering YES and NO pools.",
   },
   {
     id: "provisional",
     title: "Provisional Outcome",
     blurb: "If one side has more stake, provisional outcome is set. If tied, market goes directly to human adjudication.",
     mediaLabel: "Vote totals and provisional result",
+    assetPath: "/assets/community-resolve/provisional-vote.svg",
+    assetAlt: "Illustration of vote totals and provisional YES or NO result.",
+  },
+  {
+    id: "auto-finalize",
+    title: "No-Challenge Auto Finalization",
+    blurb: "If challenge window expires with no valid challenge, final outcome automatically locks to the provisional result.",
+    mediaLabel: "Unchallenged provisional outcome auto-finalizes",
+    assetPath: "/assets/community-resolve/no-challenge-finalize.svg",
+    assetAlt: "Illustration of automatic finalization when no challenge is submitted.",
   },
   {
     id: "challenge",
     title: "Challenge Window",
     blurb: "Out-voted resolvers can challenge within 24 hours by doubling down on their original stake.",
     mediaLabel: "Challenge action with exact double-down",
+    assetPath: "/assets/community-resolve/challenge-double-down.svg",
+    assetAlt: "Illustration of out-voted resolvers submitting exact double-down challenges.",
   },
   {
     id: "adjudication",
     title: "Human Adjudication",
     blurb: "If challenged or tied, a human adjudicator sets the final YES/NO outcome.",
     mediaLabel: "Adjudicator decision stage",
+    assetPath: "/assets/community-resolve/human-adjudication.svg",
+    assetAlt: "Illustration of human adjudicator choosing final YES or NO outcome.",
   },
   {
     id: "settlement",
@@ -53,6 +76,8 @@ const STAGES: Stage[] = [
     blurb:
       "Correct resolvers earn pooled rewards, challengers are settled by correctness, market maker earns dynamic rake, and treasury receives platform rake.",
     mediaLabel: "Final payouts and treasury split",
+    assetPath: "/assets/community-resolve/settlement-payouts.svg",
+    assetAlt: "Illustration of resolver, market maker, and treasury payout splits.",
   },
 ];
 
@@ -113,6 +138,13 @@ export default function CommunityResolvePage() {
 
           <div className="community-resolve-active-media" aria-live="polite">
             <p className="community-resolve-active-kicker">Active visual</p>
+            <Image
+              src={activeStage.assetPath}
+              alt={activeStage.assetAlt}
+              width={920}
+              height={560}
+              className="community-resolve-active-image"
+            />
             <p>{activeStage.mediaLabel}</p>
           </div>
         </aside>
@@ -120,8 +152,9 @@ export default function CommunityResolvePage() {
         <div className="community-resolve-stages">
           {STAGES.map((stage, index) => (
             <article key={stage.id} data-stage-id={stage.id} className={activeId === stage.id ? "is-active" : undefined}>
-              <div className="community-resolve-stage-media" aria-hidden="true">
+              <div className="community-resolve-stage-media">
                 <div className="community-resolve-stage-badge">{index + 1}</div>
+                <Image src={stage.assetPath} alt={stage.assetAlt} width={920} height={560} className="community-resolve-stage-image" />
                 <p>{stage.mediaLabel}</p>
               </div>
               <div className="community-resolve-stage-copy">

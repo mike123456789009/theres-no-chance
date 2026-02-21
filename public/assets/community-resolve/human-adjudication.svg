@@ -1,0 +1,13 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#F0EFEA"/>
+  <rect x="120" y="110" width="960" height="540" rx="24" fill="#FFFFFF" stroke="#101010" stroke-width="10"/>
+  <rect x="190" y="180" width="390" height="390" rx="20" fill="#E9EEFF" stroke="#101010" stroke-width="6"/>
+  <rect x="620" y="180" width="390" height="390" rx="20" fill="#FFF4D8" stroke="#101010" stroke-width="6"/>
+  <text x="235" y="260" font-size="34" font-family="Space Mono, monospace" fill="#101010">Evidence</text>
+  <text x="655" y="260" font-size="34" font-family="Space Mono, monospace" fill="#101010">Decision</text>
+  <rect x="670" y="320" width="290" height="90" rx="12" fill="#DDF5E7" stroke="#101010" stroke-width="5"/>
+  <rect x="670" y="430" width="290" height="90" rx="12" fill="#FDE0DC" stroke="#101010" stroke-width="5"/>
+  <text x="760" y="377" font-size="36" font-family="Space Mono, monospace" fill="#101010">YES</text>
+  <text x="772" y="487" font-size="36" font-family="Space Mono, monospace" fill="#101010">NO</text>
+  <text x="190" y="160" font-size="42" font-family="Space Mono, monospace" fill="#101010">Human Adjudication (Tie or Challenge)</text>
+</svg>
