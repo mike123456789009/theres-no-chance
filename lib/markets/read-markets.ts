@@ -73,6 +73,41 @@ export type MarketViewerPositionDTO = {
   markValue: number;
 };
 
+export type MarketEvidenceDTO = {
+  id: string;
+  submittedBy: string;
+  evidenceUrl: string | null;
+  evidenceText: string | null;
+  notes: string | null;
+  submittedOutcome: string | null;
+  createdAt: string;
+};
+
+export type MarketResolverPrizeContributionDTO = {
+  id: string;
+  contributorId: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+};
+
+export type ViewerResolverBondDTO = {
+  id: string;
+  outcome: string;
+  bondAmount: number;
+  createdAt: string;
+};
+
+export type ViewerChallengeDTO = {
+  id: string;
+  status: string;
+  challengeBondAmount: number;
+  proposedOutcome: string | null;
+  reason: string;
+  createdAt: string;
+  expiresAt: string | null;
+};
+
 export type MarketDetailDTO = {
   id: string;
   question: string;
@@ -98,9 +133,15 @@ export type MarketDetailDTO = {
   provisionalResolvedAt: string | null;
   finalizedAt: string | null;
   resolutionWindowEndsAt: string | null;
+  challengeWindowEndsAt: string | null;
+  adjudicationRequired: boolean;
+  adjudicationReason: string | null;
+  voidReason: string | null;
   challengeBonusRate: number;
   challengeBondAmount: number;
   listingFeeAmount: number;
+  creatorRakePaidAmount: number;
+  creatorRakePaidAt: string | null;
   finalOutcomeChangedByChallenge: boolean;
   priceYes: number;
   priceNo: number;
@@ -115,6 +156,19 @@ export type MarketDetailDTO = {
   actionRequired: "create_account" | "account_ready";
   viewerCanTrade: boolean;
   viewerReadOnlyReason: "legacy_institution_access" | null;
+  resolverStakeCap: number;
+  yesBondTotal: number;
+  noBondTotal: number;
+  challengeCount: number;
+  openChallengeCount: number;
+  viewerResolverBond: ViewerResolverBondDTO | null;
+  viewerChallenge: ViewerChallengeDTO | null;
+  viewerCanResolve: boolean;
+  viewerCanChallenge: boolean;
+  evidence: MarketEvidenceDTO[];
+  resolverPrizeLockedTotal: number;
+  resolverPrizeContributionCount: number;
+  resolverPrizeRecentContributions: MarketResolverPrizeContributionDTO[];
 };
 
 export type MarketDetailFetchResult =
@@ -178,12 +232,55 @@ type MarketDetailRow = {
   provisional_resolved_at: string | null;
   finalized_at: string | null;
   resolution_window_ends_at: string | null;
+  challenge_window_ends_at: string | null;
+  adjudication_required: boolean | null;
+  adjudication_reason: string | null;
+  void_reason: string | null;
   challenge_bonus_rate: number | string | null;
   challenge_bond_amount: number | string | null;
   listing_fee_amount: number | string | null;
+  creator_rake_paid_amount: number | string | null;
+  creator_rake_paid_at: string | null;
   final_outcome_changed_by_challenge: boolean | null;
   market_amm_state: MarketAmmStateRow | MarketAmmStateRow[] | null;
   market_sources: MarketSourceRow[] | null;
+};
+
+type ResolverBondRow = {
+  id: string;
+  user_id: string;
+  outcome: string;
+  bond_amount: number | string | null;
+  created_at: string;
+};
+
+type ChallengeRow = {
+  id: string;
+  created_by: string;
+  status: string;
+  challenge_bond_amount: number | string | null;
+  proposed_outcome: string | null;
+  reason: string;
+  created_at: string;
+  expires_at: string | null;
+};
+
+type EvidenceRow = {
+  id: string;
+  submitted_by: string;
+  evidence_url: string | null;
+  evidence_text: string | null;
+  notes: string | null;
+  submitted_outcome: string | null;
+  created_at: string;
+};
+
+type ResolverPrizeContributionRow = {
+  id: string;
+  contributor_id: string;
+  amount: number | string | null;
+  status: string;
+  created_at: string;
 };
 
 type PositionRow = {
@@ -707,7 +804,7 @@ export async function getMarketDetail(options: {
     const result = await supabase
       .from("markets")
       .select(
-        "id, question, description, resolves_yes_if, resolves_no_if, status, resolution_mode, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, resolution_outcome, provisional_outcome, resolved_at, provisional_resolved_at, finalized_at, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
+        "id, question, description, resolves_yes_if, resolves_no_if, status, resolution_mode, visibility, access_rules, creator_id, close_time, expected_resolution_time, created_at, fee_bps, tags, risk_flags, evidence_rules, dispute_rules, resolution_outcome, provisional_outcome, resolved_at, provisional_resolved_at, finalized_at, resolution_window_ends_at, challenge_window_ends_at, adjudication_required, adjudication_reason, void_reason, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, creator_rake_paid_amount, creator_rake_paid_at, final_outcome_changed_by_challenge, market_amm_state(liquidity_parameter, yes_shares, no_shares, last_price_yes, last_price_no), market_sources(source_label, source_url, source_type)"
       )
       .eq("id", marketId)
       .maybeSingle();
@@ -864,6 +961,155 @@ export async function getMarketDetail(options: {
   const poolShares = yesShares + noShares;
 
   const sourceRows = Array.isArray(row.market_sources) ? row.market_sources : [];
+  let evidenceRows: EvidenceRow[] = [];
+  let contributionRows: ResolverPrizeContributionRow[] = [];
+  let viewerResolverBond: ViewerResolverBondDTO | null = null;
+  let viewerChallenge: ViewerChallengeDTO | null = null;
+  let yesBondTotal = 0;
+  let noBondTotal = 0;
+  let challengeCount = 0;
+  let openChallengeCount = 0;
+  let resolverStakeCap = 1;
+
+  try {
+    const [evidenceResult, contributionResult] = await Promise.all([
+      supabase
+        .from("market_evidence")
+        .select("id, submitted_by, evidence_url, evidence_text, notes, submitted_outcome, created_at")
+        .eq("market_id", marketId)
+        .order("created_at", { ascending: false })
+        .limit(60),
+      supabase
+        .from("market_resolver_prize_contributions")
+        .select("id, contributor_id, amount, status, created_at")
+        .eq("market_id", marketId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    if (!evidenceResult.error && Array.isArray(evidenceResult.data)) {
+      evidenceRows = evidenceResult.data as EvidenceRow[];
+    }
+
+    if (!contributionResult.error && Array.isArray(contributionResult.data)) {
+      contributionRows = contributionResult.data as ResolverPrizeContributionRow[];
+    }
+  } catch {
+    evidenceRows = [];
+    contributionRows = [];
+  }
+
+  if (viewer.isAuthenticated && viewer.userId) {
+    try {
+      const [viewerBondResult, viewerChallengeResult] = await Promise.all([
+        supabase
+          .from("market_resolver_bonds")
+          .select("id, outcome, bond_amount, created_at")
+          .eq("market_id", marketId)
+          .eq("user_id", viewer.userId)
+          .maybeSingle(),
+        supabase
+          .from("market_disputes")
+          .select("id, status, challenge_bond_amount, proposed_outcome, reason, created_at, expires_at")
+          .eq("market_id", marketId)
+          .eq("created_by", viewer.userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (!viewerBondResult.error && viewerBondResult.data) {
+        const bond = viewerBondResult.data as {
+          id: string;
+          outcome: string;
+          bond_amount: number | string | null;
+          created_at: string;
+        };
+
+        viewerResolverBond = {
+          id: bond.id,
+          outcome: bond.outcome,
+          bondAmount: Math.max(0, toNumber(bond.bond_amount, 0)),
+          createdAt: bond.created_at,
+        };
+      }
+
+      if (!viewerChallengeResult.error && viewerChallengeResult.data) {
+        const challenge = viewerChallengeResult.data as {
+          id: string;
+          status: string;
+          challenge_bond_amount: number | string | null;
+          proposed_outcome: string | null;
+          reason: string;
+          created_at: string;
+          expires_at: string | null;
+        };
+
+        viewerChallenge = {
+          id: challenge.id,
+          status: challenge.status,
+          challengeBondAmount: Math.max(0, toNumber(challenge.challenge_bond_amount, 0)),
+          proposedOutcome: challenge.proposed_outcome,
+          reason: challenge.reason,
+          createdAt: challenge.created_at,
+          expiresAt: challenge.expires_at,
+        };
+      }
+    } catch {
+      viewerResolverBond = null;
+      viewerChallenge = null;
+    }
+  }
+
+  if (isSupabaseServiceEnvConfigured()) {
+    try {
+      const service = createServiceClient();
+      const [allBondsResult, allChallengesResult, capResult] = await Promise.all([
+        service
+          .from("market_resolver_bonds")
+          .select("id, user_id, outcome, bond_amount, created_at")
+          .eq("market_id", marketId),
+        service
+          .from("market_disputes")
+          .select("id, created_by, status, challenge_bond_amount, proposed_outcome, reason, created_at, expires_at")
+          .eq("market_id", marketId),
+        service.rpc("resolve_market_avg_bet_cap", { p_market_id: marketId }),
+      ]);
+
+      if (!allBondsResult.error && Array.isArray(allBondsResult.data)) {
+        const bonds = allBondsResult.data as ResolverBondRow[];
+        yesBondTotal = bonds
+          .filter((bond) => bond.outcome === "yes")
+          .reduce((sum, bond) => sum + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+        noBondTotal = bonds
+          .filter((bond) => bond.outcome === "no")
+          .reduce((sum, bond) => sum + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+      }
+
+      if (!allChallengesResult.error && Array.isArray(allChallengesResult.data)) {
+        const challenges = allChallengesResult.data as ChallengeRow[];
+        challengeCount = challenges.length;
+        openChallengeCount = challenges.filter((challenge) =>
+          challenge.status === "open" || challenge.status === "under_review"
+        ).length;
+      }
+
+      if (!capResult.error) {
+        resolverStakeCap = Math.max(1, toNumber(capResult.data as number | string | null, 1));
+      }
+    } catch {
+      resolverStakeCap = Math.max(1, resolverStakeCap);
+    }
+  }
+
+  if (yesBondTotal === 0 && noBondTotal === 0 && viewerResolverBond) {
+    if (viewerResolverBond.outcome === "yes") {
+      yesBondTotal = viewerResolverBond.bondAmount;
+    } else if (viewerResolverBond.outcome === "no") {
+      noBondTotal = viewerResolverBond.bondAmount;
+    }
+  }
+
   const chartPoints = buildMarketDetailChartPoints({
     createdAt: row.created_at,
     closeTime: row.close_time,
@@ -879,6 +1125,51 @@ export async function getMarketDetail(options: {
   }
 
   const viewerCanTrade = viewer.isAuthenticated && !access.readOnlyLegacy;
+  const nowMs = Date.now();
+  const resolutionWindowEndsMs = row.resolution_window_ends_at ? Date.parse(row.resolution_window_ends_at) : Number.NaN;
+  const challengeWindowEndsMs = row.challenge_window_ends_at ? Date.parse(row.challenge_window_ends_at) : Number.NaN;
+  const resolutionWindowOpen = !Number.isFinite(resolutionWindowEndsMs) || nowMs < resolutionWindowEndsMs;
+  const challengeWindowOpen = Number.isFinite(challengeWindowEndsMs) && nowMs < challengeWindowEndsMs;
+  const viewerCanResolve =
+    viewer.isAuthenticated &&
+    row.resolution_mode === "community" &&
+    (row.status === "closed" || row.status === "pending_resolution") &&
+    !row.finalized_at &&
+    resolutionWindowOpen &&
+    !viewerResolverBond;
+  const viewerCanChallenge =
+    viewer.isAuthenticated &&
+    row.resolution_mode === "community" &&
+    row.status === "resolved" &&
+    !row.finalized_at &&
+    row.provisional_outcome !== null &&
+    (row.provisional_outcome === "yes" || row.provisional_outcome === "no") &&
+    challengeWindowOpen &&
+    !!viewerResolverBond &&
+    viewerResolverBond.outcome !== row.provisional_outcome &&
+    !viewerChallenge;
+
+  const evidence = evidenceRows.map((entry) => ({
+    id: entry.id,
+    submittedBy: entry.submitted_by,
+    evidenceUrl: cleanText(entry.evidence_url) || null,
+    evidenceText: cleanText(entry.evidence_text) || null,
+    notes: cleanText(entry.notes) || null,
+    submittedOutcome: entry.submitted_outcome,
+    createdAt: entry.created_at,
+  }));
+
+  const resolverPrizeRecentContributions = contributionRows.map((contribution) => ({
+    id: contribution.id,
+    contributorId: contribution.contributor_id,
+    amount: Math.max(0, toNumber(contribution.amount, 0)),
+    status: contribution.status,
+    createdAt: contribution.created_at,
+  }));
+  const resolverPrizeLockedTotal = resolverPrizeRecentContributions
+    .filter((contribution) => contribution.status === "locked")
+    .reduce((sum, contribution) => sum + contribution.amount, 0);
+  const resolverPrizeContributionCount = resolverPrizeRecentContributions.length;
 
   return {
     kind: "ok",
@@ -907,9 +1198,15 @@ export async function getMarketDetail(options: {
       provisionalResolvedAt: row.provisional_resolved_at,
       finalizedAt: row.finalized_at,
       resolutionWindowEndsAt: row.resolution_window_ends_at,
+      challengeWindowEndsAt: row.challenge_window_ends_at,
+      adjudicationRequired: row.adjudication_required === true,
+      adjudicationReason: row.adjudication_reason,
+      voidReason: row.void_reason,
       challengeBonusRate: Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1))),
       challengeBondAmount: Math.max(0, toNumber(row.challenge_bond_amount, 1)),
       listingFeeAmount: Math.max(0, toNumber(row.listing_fee_amount, 0.5)),
+      creatorRakePaidAmount: Math.max(0, toNumber(row.creator_rake_paid_amount, 0)),
+      creatorRakePaidAt: row.creator_rake_paid_at,
       finalOutcomeChangedByChallenge: row.final_outcome_changed_by_challenge === true,
       priceYes,
       priceNo,
@@ -928,6 +1225,19 @@ export async function getMarketDetail(options: {
       actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
       viewerCanTrade,
       viewerReadOnlyReason: access.readOnlyLegacy ? "legacy_institution_access" : null,
+      resolverStakeCap: Math.max(1, resolverStakeCap),
+      yesBondTotal: Number(yesBondTotal.toFixed(6)),
+      noBondTotal: Number(noBondTotal.toFixed(6)),
+      challengeCount,
+      openChallengeCount,
+      viewerResolverBond,
+      viewerChallenge,
+      viewerCanResolve,
+      viewerCanChallenge,
+      evidence,
+      resolverPrizeLockedTotal: Number(resolverPrizeLockedTotal.toFixed(6)),
+      resolverPrizeContributionCount,
+      resolverPrizeRecentContributions,
     },
   };
 }

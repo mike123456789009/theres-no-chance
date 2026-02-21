@@ -25,6 +25,7 @@ export async function GET(_request: Request, context: { params: Promise<{ market
         p_market_id: marketId,
         p_resolution_window_hours: 24,
       });
+      await service.rpc("sync_due_community_finalizations", { p_actor_user_id: null });
     }
 
     const supabase = await createClient();

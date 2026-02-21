@@ -255,19 +255,6 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
     };
   }
 
-  if (sources.length === 0 || !sources.some((source) => source.type === "official")) {
-    return {
-      ok: false,
-      kind: "quality",
-      reason: "At least one official https source is required.",
-      question,
-      category,
-      confidence,
-      eventFingerprint,
-      sourcesSnapshot: sources,
-    };
-  }
-
   let visibility: "public" | "unlisted" | "private" = "public";
   let accessRules = coerceAccessRules(raw.accessRules);
 

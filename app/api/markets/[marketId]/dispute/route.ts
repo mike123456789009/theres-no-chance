@@ -8,9 +8,9 @@ type DisputeBody = {
   proposedOutcome?: unknown;
 };
 
-const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
+const FIXED_DISPUTE_WINDOW_HOURS = 24;
 
-type ChallengeOutcome = "yes" | "no" | "void";
+type ChallengeOutcome = "yes" | "no";
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -18,16 +18,8 @@ function clean(value: unknown): string {
 
 function parseOutcome(value: unknown): ChallengeOutcome | null {
   const normalized = clean(value).toLowerCase();
-  if (normalized === "yes" || normalized === "no" || normalized === "void") return normalized;
+  if (normalized === "yes" || normalized === "no") return normalized;
   return null;
-}
-
-function getDisputeWindowHours(): number {
-  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.max(1, Math.floor(parsed));
-  }
-  return DEFAULT_DISPUTE_WINDOW_HOURS;
 }
 
 function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
@@ -125,7 +117,7 @@ export async function POST(request: Request, context: { params: Promise<{ market
       p_user_id: user.id,
       p_reason: reason,
       p_proposed_outcome: proposedOutcome,
-      p_dispute_window_hours: getDisputeWindowHours(),
+      p_dispute_window_hours: FIXED_DISPUTE_WINDOW_HOURS,
     });
 
     if (error) {

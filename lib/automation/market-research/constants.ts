@@ -14,10 +14,10 @@ export const OPENAI_CALL_TIMEOUT_MS =
 export const RUN_TIMEOUT_MS =
   Number.parseInt(process.env.MARKET_RESEARCH_RUN_TIMEOUT_MS || "3600000", 10) || 3_600_000;
 
-export const DEFAULT_FEE_BPS = 200;
+export const DEFAULT_FEE_BPS = 50;
 
 export const DEFAULT_EVIDENCE_RULES =
-  "Primary resolution should rely on official sources listed on this market. Supporting sources may add context but cannot override official source outcomes.";
+  "Evidence must rely on authentic source material. AI-generated media, edited/manipulated media, spoofed websites, and fabricated records are not allowed.";
 
 export const DEFAULT_DISPUTE_RULES =
-  "Disputes may be filed within 48 hours of resolution. Platform admin reviews dispute evidence and issues a final determination.";
+  "Community vote window is fixed at 24 hours after close. Challenge window is fixed at 24 hours after provisional outcome.";

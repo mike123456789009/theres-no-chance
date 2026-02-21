@@ -1,7 +1,6 @@
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
 import { AdminResolutionQueue } from "@/components/admin/admin-resolution-queue";
 import {
-  getDisputeWindowHours,
   getResolutionWindowHours,
   guardAdminPageAccess,
   loadResolutionMarkets,
@@ -16,7 +15,6 @@ export default async function AdminModerationPage() {
   }
 
   const [resolution] = await Promise.all([loadResolutionMarkets()]);
-  const disputeWindowHours = getDisputeWindowHours();
   const resolutionWindowHours = getResolutionWindowHours();
 
   return (
@@ -27,8 +25,8 @@ export default async function AdminModerationPage() {
         Resolve closed markets, enforce dispute windows, and finalize settlement once the moderation window expires.
       </p>
       <p className="create-note">
-        Resolution window configured: <strong>{resolutionWindowHours}h</strong> · Dispute window configured:{" "}
-        <strong>{disputeWindowHours}h</strong>
+        Resolution window configured: <strong>{resolutionWindowHours}h</strong> · Challenge window configured:{" "}
+        <strong>24h</strong>
       </p>
 
       {resolution.errorMessage ? (
@@ -37,9 +35,9 @@ export default async function AdminModerationPage() {
         </p>
       ) : (
         <AdminResolutionQueue
-          readyToResolve={resolution.readyToResolve}
-          resolvedMarkets={resolution.resolvedMarkets}
-          disputeWindowHours={disputeWindowHours}
+          autoFinalizable={resolution.autoFinalizable}
+          adjudicationRequired={resolution.adjudicationRequired}
+          finalizedMarkets={resolution.finalizedMarkets}
         />
       )}
     </section>

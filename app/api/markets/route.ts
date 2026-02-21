@@ -204,24 +204,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const sourceRows = validation.data.sources.map((source) => ({
-      market_id: market.id,
-      source_label: source.label,
-      source_url: source.url,
-      source_type: source.type,
-    }));
+    if (validation.data.sources.length > 0) {
+      const sourceRows = validation.data.sources.map((source) => ({
+        market_id: market.id,
+        source_label: source.label,
+        source_url: source.url,
+        source_type: source.type,
+      }));
 
-    const { error: sourceError } = await supabase.from("market_sources").insert(sourceRows);
-    if (sourceError) {
-      await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
+      const { error: sourceError } = await supabase.from("market_sources").insert(sourceRows);
+      if (sourceError) {
+        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
 
-      return NextResponse.json(
-        {
-          error: "Unable to save market sources.",
-          detail: sourceError.message,
-        },
-        { status: 500 }
-      );
+        return NextResponse.json(
+          {
+            error: "Unable to save market sources.",
+            detail: sourceError.message,
+          },
+          { status: 500 }
+        );
+      }
     }
 
     if (validation.data.submissionMode === "review") {

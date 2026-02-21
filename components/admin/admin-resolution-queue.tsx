@@ -1,31 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-type ResolutionChallenge = {
-  id: string;
-  createdBy: string;
-  status: string;
-  proposedOutcome: string | null;
-  challengeBondAmount: number;
-  reason: string;
-  createdAt: string;
-  expiresAt: string;
-  adjudicatedAt: string | null;
-  isSuccessful: boolean;
-  payoutBonusAmount: number;
-};
-
-type ResolutionPoolPreview = {
-  P: number;
-  R: number;
-  B: number;
-  RPrime: number;
-  SC: number;
-  SW: number;
-  CW: number;
-};
 
 type ResolutionMarket = {
   id: string;
@@ -34,28 +10,27 @@ type ResolutionMarket = {
   resolutionMode: string;
   closeTime: string;
   resolvedAt: string | null;
+  finalizedAt: string | null;
   resolutionOutcome: string | null;
   provisionalOutcome: string | null;
   resolutionWindowEndsAt: string | null;
-  challengeBonusRate: number;
-  challengeBondAmount: number;
-  listingFeeAmount: number;
-  finalOutcomeChangedByChallenge: boolean;
+  challengeWindowEndsAt: string | null;
+  adjudicationRequired: boolean;
+  adjudicationReason: string | null;
   yesBondTotal: number;
   noBondTotal: number;
-  challenges: ResolutionChallenge[];
-  poolPreview: ResolutionPoolPreview | null;
+  challengeCount: number;
+  openChallengeCount: number;
   creatorId: string;
   tags: string[];
 };
 
-type ResolveOutcome = "yes" | "no" | "void";
-type ChallengeDecision = "upheld" | "rejected" | "under_review";
+type ResolveOutcome = "yes" | "no";
 
 type AdminResolutionQueueProps = {
-  readyToResolve: ResolutionMarket[];
-  resolvedMarkets: ResolutionMarket[];
-  disputeWindowHours: number;
+  autoFinalizable: ResolutionMarket[];
+  adjudicationRequired: ResolutionMarket[];
+  finalizedMarkets: ResolutionMarket[];
 };
 
 function formatDate(value: string | null): string {
@@ -77,89 +52,19 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function formatStatus(value: string): string {
+function formatStatus(value: string | null): string {
+  if (!value) return "N/A";
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function computeWindowEnds(
-  resolvedAt: string | null,
-  disputeWindowHours: number,
-  explicitWindowEndsAt: string | null
-): string | null {
-  if (explicitWindowEndsAt) return explicitWindowEndsAt;
-  if (!resolvedAt) return null;
-  const resolvedMs = Date.parse(resolvedAt);
-  if (!Number.isFinite(resolvedMs)) return null;
-  return new Date(resolvedMs + disputeWindowHours * 60 * 60 * 1000).toISOString();
-}
-
-export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeWindowHours }: AdminResolutionQueueProps) {
+export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, finalizedMarkets }: AdminResolutionQueueProps) {
   const router = useRouter();
   const [isPendingAction, setIsPendingAction] = useState<string | null>(null);
-  const [noteByMarketId, setNoteByMarketId] = useState<Record<string, string>>({});
   const [statusMessage, setStatusMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
-  const resolvedWithWindows = useMemo(
-    () =>
-      resolvedMarkets.map((market) => ({
-        ...market,
-        disputeWindowEndsAt: computeWindowEnds(market.resolvedAt, disputeWindowHours, market.resolutionWindowEndsAt),
-      })),
-    [resolvedMarkets, disputeWindowHours]
-  );
-
-  async function resolveMarket(marketId: string, outcome: ResolveOutcome) {
+  async function finalizeMarket(marketId: string, outcome?: ResolveOutcome) {
     setStatusMessage(null);
-    const actionKey = `resolve:${marketId}:${outcome}`;
-    setIsPendingAction(actionKey);
-
-    try {
-      const note = (noteByMarketId[marketId] ?? "").trim();
-      const response = await fetch(`/api/admin/markets/${marketId}/resolve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          outcome,
-          notes: note || null,
-        }),
-      });
-
-      const result = (await response.json().catch(() => null)) as
-        | { error?: string; message?: string; detail?: string }
-        | null;
-
-      if (!response.ok) {
-        setStatusMessage({
-          kind: "error",
-          text: result?.error ?? "Market resolution failed.",
-        });
-        return;
-      }
-
-      setStatusMessage({
-        kind: "success",
-        text: result?.message ?? "Market resolved.",
-      });
-      setNoteByMarketId((current) => ({
-        ...current,
-        [marketId]: "",
-      }));
-      router.refresh();
-    } catch (error) {
-      setStatusMessage({
-        kind: "error",
-        text: error instanceof Error ? error.message : "Network error during market resolution.",
-      });
-    } finally {
-      setIsPendingAction(null);
-    }
-  }
-
-  async function finalizeMarket(marketId: string) {
-    setStatusMessage(null);
-    const actionKey = `finalize:${marketId}`;
+    const actionKey = `finalize:${marketId}:${outcome ?? "auto"}`;
     setIsPendingAction(actionKey);
 
     try {
@@ -168,6 +73,7 @@ export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeW
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ outcome: outcome ?? null }),
       });
 
       const result = (await response.json().catch(() => null)) as
@@ -177,7 +83,7 @@ export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeW
       if (!response.ok) {
         setStatusMessage({
           kind: "error",
-          text: result?.error ?? "Market finalization failed.",
+          text: result?.error ?? result?.detail ?? "Market finalization failed.",
         });
         return;
       }
@@ -197,49 +103,6 @@ export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeW
     }
   }
 
-  async function adjudicateChallenge(marketId: string, challengeId: string, decision: ChallengeDecision) {
-    setStatusMessage(null);
-    const actionKey = `challenge:${marketId}:${challengeId}:${decision}`;
-    setIsPendingAction(actionKey);
-
-    try {
-      const response = await fetch(`/api/admin/markets/${marketId}/challenges/${challengeId}/adjudicate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: decision,
-        }),
-      });
-
-      const result = (await response.json().catch(() => null)) as
-        | { error?: string; message?: string; detail?: string }
-        | null;
-
-      if (!response.ok) {
-        setStatusMessage({
-          kind: "error",
-          text: result?.error ?? "Challenge adjudication failed.",
-        });
-        return;
-      }
-
-      setStatusMessage({
-        kind: "success",
-        text: result?.message ?? "Challenge adjudicated.",
-      });
-      router.refresh();
-    } catch (error) {
-      setStatusMessage({
-        kind: "error",
-        text: error instanceof Error ? error.message : "Network error during challenge adjudication.",
-      });
-    } finally {
-      setIsPendingAction(null);
-    }
-  }
-
   return (
     <div className="admin-queue-wrap">
       {statusMessage ? (
@@ -248,64 +111,37 @@ export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeW
         </p>
       ) : null}
 
-      <section className="admin-queue-section" aria-label="Resolution queue">
+      <section className="admin-queue-section" aria-label="Auto-finalizable markets">
         <div className="admin-queue-header">
-          <h2>Ready to resolve</h2>
-          <p>{readyToResolve.length} markets</p>
+          <h2>Auto-finalizable</h2>
+          <p>{autoFinalizable.length} markets</p>
         </div>
 
-        {readyToResolve.length === 0 ? (
-          <p className="admin-queue-empty">No markets are currently ready for resolution.</p>
+        {autoFinalizable.length === 0 ? (
+          <p className="admin-queue-empty">No markets are waiting for automatic finalization right now.</p>
         ) : (
           <div className="admin-queue-list">
-            {readyToResolve.map((market) => {
+            {autoFinalizable.map((market) => {
+              const pendingFinalize = isPendingAction === `finalize:${market.id}:auto`;
               const pendingAny = Boolean(isPendingAction);
-              const pendingYes = isPendingAction === `resolve:${market.id}:yes`;
-              const pendingNo = isPendingAction === `resolve:${market.id}:no`;
-              const pendingVoid = isPendingAction === `resolve:${market.id}:void`;
 
               return (
                 <article key={market.id} className="admin-queue-card">
-                  <p className="admin-queue-badge admin-queue-badge-open">Resolve</p>
+                  <p className="admin-queue-badge">Auto</p>
                   <h3>{market.question}</h3>
                   <p>Status: {formatStatus(market.status)}</p>
-                  <p>Resolution mode: {formatStatus(market.resolutionMode)}</p>
-                  <p>Closes: {formatDate(market.closeTime)}</p>
-                  {market.resolutionMode === "community" ? (
-                    <>
-                      <p>Bond totals: YES {formatCurrency(market.yesBondTotal)} / NO {formatCurrency(market.noBondTotal)}</p>
-                      <p>Provisional outcome: {market.provisionalOutcome ? formatStatus(market.provisionalOutcome) : "Pending"}</p>
-                      <p>Resolution window ends: {formatDate(market.resolutionWindowEndsAt)}</p>
-                    </>
-                  ) : null}
+                  <p>Provisional outcome: {formatStatus(market.provisionalOutcome)}</p>
+                  <p>Challenge window ended: {formatDate(market.challengeWindowEndsAt)}</p>
+                  <p>YES / NO stake: {formatCurrency(market.yesBondTotal)} / {formatCurrency(market.noBondTotal)}</p>
+                  <p>Open challenges: {market.openChallengeCount}</p>
                   <p>
                     Creator id: <code>{market.creatorId}</code>
                   </p>
                   {market.tags.length ? <p>Tags: {market.tags.join(", ")}</p> : null}
 
-                  <label className="admin-queue-note">
-                    <span>Resolution notes (optional)</span>
-                    <textarea
-                      rows={2}
-                      value={noteByMarketId[market.id] ?? ""}
-                      onChange={(event) =>
-                        setNoteByMarketId((current) => ({
-                          ...current,
-                          [market.id]: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-
                   <div className="admin-queue-actions">
-                    <button type="button" onClick={() => resolveMarket(market.id, "yes")} disabled={pendingAny}>
-                      {pendingYes ? "Resolving..." : "Resolve YES"}
-                    </button>
-                    <button type="button" onClick={() => resolveMarket(market.id, "no")} disabled={pendingAny}>
-                      {pendingNo ? "Resolving..." : "Resolve NO"}
-                    </button>
-                    <button type="button" className="is-muted" onClick={() => resolveMarket(market.id, "void")} disabled={pendingAny}>
-                      {pendingVoid ? "Resolving..." : "Void"}
+                    <button type="button" onClick={() => finalizeMarket(market.id)} disabled={pendingAny}>
+                      {pendingFinalize ? "Finalizing..." : "Finalize now"}
                     </button>
                   </div>
                 </article>
@@ -315,120 +151,73 @@ export function AdminResolutionQueue({ readyToResolve, resolvedMarkets, disputeW
         )}
       </section>
 
-      <section className="admin-queue-section" aria-label="Finalization queue">
+      <section className="admin-queue-section" aria-label="Adjudication-required markets">
         <div className="admin-queue-header">
-          <h2>Resolved markets</h2>
-          <p>{resolvedWithWindows.length} markets</p>
+          <h2>Human adjudication required</h2>
+          <p>{adjudicationRequired.length} markets</p>
         </div>
 
-        {resolvedWithWindows.length === 0 ? (
-          <p className="admin-queue-empty">No resolved markets available for finalization right now.</p>
+        {adjudicationRequired.length === 0 ? (
+          <p className="admin-queue-empty">No markets currently require human adjudication.</p>
         ) : (
           <div className="admin-queue-list">
-            {resolvedWithWindows.map((market) => {
-              const pendingFinalize = isPendingAction === `finalize:${market.id}`;
+            {adjudicationRequired.map((market) => {
+              const pendingYes = isPendingAction === `finalize:${market.id}:yes`;
+              const pendingNo = isPendingAction === `finalize:${market.id}:no`;
               const pendingAny = Boolean(isPendingAction);
-              const windowEnds = market.disputeWindowEndsAt;
-              const isReady = windowEnds ? Date.now() >= Date.parse(windowEnds) : false;
-              const unresolvedChallenges = market.challenges.filter(
-                (challenge) => challenge.status === "open" || challenge.status === "under_review"
-              );
 
               return (
                 <article key={market.id} className="admin-queue-card">
-                  <p className="admin-queue-badge">Resolved</p>
+                  <p className="admin-queue-badge admin-queue-badge-open">Adjudicate</p>
                   <h3>{market.question}</h3>
                   <p>Status: {formatStatus(market.status)}</p>
-                  <p>Resolution mode: {formatStatus(market.resolutionMode)}</p>
-                  <p>Outcome: {market.resolutionOutcome ? formatStatus(market.resolutionOutcome) : "Unknown"}</p>
-                  <p>Provisional outcome: {market.provisionalOutcome ? formatStatus(market.provisionalOutcome) : "N/A"}</p>
+                  <p>Reason: {formatStatus(market.adjudicationReason)}</p>
+                  <p>Provisional outcome: {formatStatus(market.provisionalOutcome)}</p>
+                  <p>YES / NO stake: {formatCurrency(market.yesBondTotal)} / {formatCurrency(market.noBondTotal)}</p>
+                  <p>Challenges: {market.challengeCount} total ({market.openChallengeCount} open)</p>
                   <p>Resolved at: {formatDate(market.resolvedAt)}</p>
-                  <p>Dispute window ends: {formatDate(windowEnds)}</p>
-                  <p>Open challenges: {unresolvedChallenges.length}</p>
-                  <p>Finalize readiness: {isReady && unresolvedChallenges.length === 0 ? "Ready" : "Not yet"}</p>
-
-                  {market.poolPreview ? (
-                    <div className="create-note">
-                      <p>
-                        Pool preview: P {formatCurrency(market.poolPreview.P)} · R {formatCurrency(market.poolPreview.R)} · B{" "}
-                        {formatCurrency(market.poolPreview.B)} · R' {formatCurrency(market.poolPreview.RPrime)}
-                      </p>
-                      <p>
-                        SC {formatCurrency(market.poolPreview.SC)} · SW {formatCurrency(market.poolPreview.SW)} · CW{" "}
-                        {formatCurrency(market.poolPreview.CW)}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {market.challenges.length > 0 ? (
-                    <div className="create-note">
-                      <p>
-                        Challenges: {market.challenges.length} total · bonus rate {(market.challengeBonusRate * 100).toFixed(1)}% · bond{" "}
-                        {formatCurrency(market.challengeBondAmount)}
-                      </p>
-                      {market.challenges.map((challenge) => {
-                        const pendingUpheld =
-                          isPendingAction === `challenge:${market.id}:${challenge.id}:upheld`;
-                        const pendingRejected =
-                          isPendingAction === `challenge:${market.id}:${challenge.id}:rejected`;
-                        const pendingReview =
-                          isPendingAction === `challenge:${market.id}:${challenge.id}:under_review`;
-                        const isChallengePending =
-                          challenge.status === "open" || challenge.status === "under_review";
-
-                        return (
-                          <div key={challenge.id} className="admin-queue-note" style={{ marginTop: "0.5rem" }}>
-                            <p>
-                              <strong>{formatStatus(challenge.status)}</strong> · proposed {challenge.proposedOutcome ? formatStatus(challenge.proposedOutcome) : "N/A"} · bond {formatCurrency(challenge.challengeBondAmount)}
-                            </p>
-                            <p>{challenge.reason}</p>
-                            <p>
-                              Submitted {formatDate(challenge.createdAt)} · Expires {formatDate(challenge.expiresAt)}
-                            </p>
-                            {isChallengePending ? (
-                              <div className="admin-queue-actions">
-                                <button
-                                  type="button"
-                                  onClick={() => adjudicateChallenge(market.id, challenge.id, "upheld")}
-                                  disabled={pendingAny}
-                                >
-                                  {pendingUpheld ? "Updating..." : "Mark upheld"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => adjudicateChallenge(market.id, challenge.id, "rejected")}
-                                  disabled={pendingAny}
-                                >
-                                  {pendingRejected ? "Updating..." : "Mark rejected"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="is-muted"
-                                  onClick={() => adjudicateChallenge(market.id, challenge.id, "under_review")}
-                                  disabled={pendingAny}
-                                >
-                                  {pendingReview ? "Updating..." : "Needs review"}
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
+                  <p>
+                    Creator id: <code>{market.creatorId}</code>
+                  </p>
 
                   <div className="admin-queue-actions">
-                    <button
-                      type="button"
-                      onClick={() => finalizeMarket(market.id)}
-                      disabled={pendingAny || !isReady || unresolvedChallenges.length > 0}
-                    >
-                      {pendingFinalize ? "Finalizing..." : "Finalize + settle"}
+                    <button type="button" onClick={() => finalizeMarket(market.id, "yes")} disabled={pendingAny}>
+                      {pendingYes ? "Finalizing..." : "Finalize YES"}
+                    </button>
+                    <button type="button" onClick={() => finalizeMarket(market.id, "no")} disabled={pendingAny}>
+                      {pendingNo ? "Finalizing..." : "Finalize NO"}
                     </button>
                   </div>
                 </article>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      <section className="admin-queue-section" aria-label="Finalized markets">
+        <div className="admin-queue-header">
+          <h2>Finalized</h2>
+          <p>{finalizedMarkets.length} markets</p>
+        </div>
+
+        {finalizedMarkets.length === 0 ? (
+          <p className="admin-queue-empty">No finalized markets found in this queue window.</p>
+        ) : (
+          <div className="admin-queue-list">
+            {finalizedMarkets.map((market) => (
+              <article key={market.id} className="admin-queue-card">
+                <p className="admin-queue-badge">Finalized</p>
+                <h3>{market.question}</h3>
+                <p>Outcome: {formatStatus(market.resolutionOutcome)}</p>
+                <p>Finalized at: {formatDate(market.finalizedAt)}</p>
+                <p>Resolved at: {formatDate(market.resolvedAt)}</p>
+                <p>YES / NO stake: {formatCurrency(market.yesBondTotal)} / {formatCurrency(market.noBondTotal)}</p>
+                <p>
+                  Creator id: <code>{market.creatorId}</code>
+                </p>
+              </article>
+            ))}
           </div>
         )}
       </section>

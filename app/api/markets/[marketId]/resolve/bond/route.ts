@@ -10,7 +10,7 @@ type ResolverBondBody = {
 
 type ResolverOutcome = "yes" | "no";
 
-const DEFAULT_RESOLUTION_WINDOW_HOURS = 24;
+const FIXED_RESOLUTION_WINDOW_HOURS = 24;
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -26,14 +26,6 @@ function parseBondAmount(value: unknown): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
   if (!Number.isFinite(parsed)) return 1;
   return Math.round(parsed * 1_000_000) / 1_000_000;
-}
-
-function getResolutionWindowHours(): number {
-  const parsed = Number(process.env.MARKET_RESOLUTION_WINDOW_HOURS);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.max(1, Math.floor(parsed));
-  }
-  return DEFAULT_RESOLUTION_WINDOW_HOURS;
 }
 
 function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
@@ -130,7 +122,7 @@ export async function POST(request: Request, context: { params: Promise<{ market
       p_user_id: user.id,
       p_outcome: outcome,
       p_bond_amount: bondAmount,
-      p_resolution_window_hours: getResolutionWindowHours(),
+      p_resolution_window_hours: FIXED_RESOLUTION_WINDOW_HOURS,
     });
 
     if (error) {

@@ -3,11 +3,28 @@ import { NextResponse } from "next/server";
 import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
-const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
+const FIXED_DISPUTE_WINDOW_HOURS = 24;
+
+type FinalizeBody = {
+  outcome?: unknown;
+};
+
+type FinalOutcome = "yes" | "no" | "void";
 
 function normalizeRpcResult(raw: unknown): Record<string, unknown> | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   return raw as Record<string, unknown>;
+}
+
+function clean(value: unknown, maxLength: number): string {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, maxLength);
+}
+
+function parseOutcome(value: unknown): FinalOutcome | null {
+  const normalized = clean(value, 8).toLowerCase();
+  if (normalized === "yes" || normalized === "no" || normalized === "void") return normalized;
+  return null;
 }
 
 function mapFinalizeRpcError(message: string): { status: number; error: string; detail: string } {
@@ -29,15 +46,7 @@ function mapFinalizeRpcError(message: string): { status: number; error: string; 
   }
 }
 
-function getDisputeWindowHours(): number {
-  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.max(1, Math.floor(parsed));
-  }
-  return DEFAULT_DISPUTE_WINDOW_HOURS;
-}
-
-export async function POST(_request: Request, context: { params: Promise<{ marketId: string }> }) {
+export async function POST(request: Request, context: { params: Promise<{ marketId: string }> }) {
   const auth = await requireAllowlistedAdmin();
   if (!auth.ok) {
     return auth.response;
@@ -54,13 +63,32 @@ export async function POST(_request: Request, context: { params: Promise<{ marke
   }
 
   const { marketId } = await context.params;
+  let body: FinalizeBody = {};
+
+  try {
+    body = (await request.json()) as FinalizeBody;
+  } catch {
+    body = {};
+  }
+
+  const parsedOutcome = parseOutcome(body.outcome);
+  if (body.outcome !== undefined && !parsedOutcome) {
+    return NextResponse.json(
+      {
+        error: "Validation failed.",
+        details: ["outcome must be one of: yes, no, void."],
+      },
+      { status: 400 }
+    );
+  }
 
   try {
     const service = createServiceClient();
-    const { data, error } = await service.rpc("admin_finalize_market", {
+    const { data, error } = await service.rpc("admin_finalize_market_v2", {
       p_market_id: marketId,
       p_admin_user_id: auth.adminUser.id,
-      p_dispute_window_hours: getDisputeWindowHours(),
+      p_outcome: parsedOutcome,
+      p_dispute_window_hours: FIXED_DISPUTE_WINDOW_HOURS,
     });
 
     if (error) {

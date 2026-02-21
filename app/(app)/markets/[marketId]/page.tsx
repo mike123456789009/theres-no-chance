@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
 import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { CommunityResolvePanel } from "@/components/markets/community-resolve-panel";
+import { EvidenceSubmissionCard } from "@/components/markets/evidence-submission-card";
 import { MarketLiveOverview } from "@/components/markets/market-live-overview";
+import { ResolverPrizeBoostCard } from "@/components/markets/resolver-prize-boost-card";
 import { TradeInterface } from "@/components/markets/trade-interface";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +84,7 @@ export default async function MarketDetailPage({
       p_market_id: marketId,
       p_resolution_window_hours: 24,
     });
+    await service.rpc("sync_due_community_finalizations", { p_actor_user_id: null });
   }
 
   const supabase = await createClient();
@@ -170,6 +174,11 @@ export default async function MarketDetailPage({
   }
 
   const market = detail.market;
+  const canSubmitEvidence =
+    viewer.isAuthenticated &&
+    (market.status === "closed" || market.status === "pending_resolution" || market.status === "resolved") &&
+    !market.finalizedAt;
+  const canContributePrize = viewer.isAuthenticated && !market.finalizedAt;
 
   return (
     <main className="market-detail-page">
@@ -285,10 +294,49 @@ export default async function MarketDetailPage({
                 <p>No position in this market yet. Your first fill will appear here.</p>
               )}
             </article>
+
+            <ResolverPrizeBoostCard
+              marketId={marketId}
+              viewerIsAuthenticated={viewer.isAuthenticated}
+              canContribute={canContributePrize}
+              resolverPrizeLockedTotal={market.resolverPrizeLockedTotal}
+              resolverPrizeContributionCount={market.resolverPrizeContributionCount}
+              recentContributions={market.resolverPrizeRecentContributions}
+            />
           </aside>
         </section>
 
         <div className="market-detail-bottom-grid">
+          <CommunityResolvePanel
+            marketId={marketId}
+            status={market.status}
+            resolutionWindowEndsAt={market.resolutionWindowEndsAt}
+            challengeWindowEndsAt={market.challengeWindowEndsAt}
+            provisionalOutcome={market.provisionalOutcome}
+            resolutionOutcome={market.resolutionOutcome}
+            adjudicationRequired={market.adjudicationRequired}
+            adjudicationReason={market.adjudicationReason}
+            yesBondTotal={market.yesBondTotal}
+            noBondTotal={market.noBondTotal}
+            resolverStakeCap={market.resolverStakeCap}
+            challengeCount={market.challengeCount}
+            openChallengeCount={market.openChallengeCount}
+            viewerIsAuthenticated={viewer.isAuthenticated}
+            viewerCanResolve={market.viewerCanResolve}
+            viewerCanChallenge={market.viewerCanChallenge}
+            viewerResolverBond={market.viewerResolverBond}
+            viewerChallenge={market.viewerChallenge}
+          />
+
+          <EvidenceSubmissionCard
+            marketId={marketId}
+            marketStatus={market.status}
+            canSubmitEvidence={canSubmitEvidence}
+            viewerIsAuthenticated={viewer.isAuthenticated}
+            evidenceRules={market.evidenceRules}
+            evidence={market.evidence}
+          />
+
           <section className="market-detail-section market-detail-section-context" aria-label="Market context">
             <h2>Market context</h2>
             <p>{market.description}</p>
@@ -304,6 +352,12 @@ export default async function MarketDetailPage({
               </p>
               <p>
                 Fee: <strong>{(market.feeBps / 100).toFixed(2)}%</strong>
+              </p>
+              <p>
+                Resolver stake cap: <strong>{formatCurrency(market.resolverStakeCap)}</strong>
+              </p>
+              <p>
+                Maker rake paid: <strong>{formatCurrency(market.creatorRakePaidAmount)}</strong>
               </p>
             </div>
             {market.tags.length > 0 ? <p>Tags: {market.tags.join(", ")}</p> : null}
@@ -321,13 +375,18 @@ export default async function MarketDetailPage({
             <p>
               <strong>Resolver authority:</strong>{" "}
               {market.resolutionMode === "community"
-                ? "Community provisional outcome + platform admin challenge adjudication"
+                ? "Community provisional outcome + human adjudication only if tie/challenge"
                 : "Platform admin final (v1)"}
             </p>
             {market.resolutionMode === "community" ? (
               <p>
-                <strong>Successful challenge bonus:</strong> {(market.challengeBonusRate * 100).toFixed(1)}% of the
-                resolver reward pool is paid to successful challengers.
+                <strong>Vote/challenge windows:</strong> 24h vote + 24h challenge.{" "}
+                <Link href="/community-resolve">See full community resolve flow</Link>.
+              </p>
+            ) : null}
+            {market.adjudicationRequired ? (
+              <p>
+                <strong>Adjudication:</strong> Pending human decision ({formatStatus(market.adjudicationReason ?? "required")}).
               </p>
             ) : null}
             {market.evidenceRules ? (

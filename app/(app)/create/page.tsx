@@ -42,19 +42,19 @@ export default async function CreateMarketPage() {
     <main className="create-page">
       <section className="create-card" aria-label="Market creation wizard">
         <p className="create-kicker">Create market</p>
-        <h1 className="create-title">Draft or submit a market for review</h1>
+        <h1 className="create-title">Market maker wizard</h1>
         <p className="create-copy">
-          Step 7 introduces creator submission flow with source validation, tags, and draft/review routing before any
-          market opens for trading.
+          Build your market step-by-step with fixed community resolution rules, criteria drafting support, and guided
+          review before submission.
         </p>
         <p className="create-copy">
-          Need market context first? Browse <Link href="/markets">public markets</Link>.
+          Need the full lifecycle first? Read <Link href="/community-resolve">Community Resolve</Link>.
         </p>
 
         <CreateMarketForm />
 
         <p className="create-copy">
-          Need to check criteria first? Return to <a href="/">home</a>.
+          Need market context first? Browse <Link href="/markets">public markets</Link>.
         </p>
       </section>
     </main>

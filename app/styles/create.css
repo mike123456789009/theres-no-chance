@@ -68,6 +68,7 @@ html[data-ui-style="modern"] .admin-queue-status {
 
 html[data-ui-style="modern"] .create-section,
 html[data-ui-style="modern"] .create-source-item,
+html[data-ui-style="modern"] .create-wizard-progress,
 html[data-ui-style="modern"] .admin-queue-section,
 html[data-ui-style="modern"] .admin-queue-card,
 html[data-ui-style="modern"] .admin-ai-runs,
@@ -83,6 +84,7 @@ html[data-ui-style="modern"] .admin-run-summary-grid p {
 
 html[data-ui-style="modern"] .create-field,
 html[data-ui-style="modern"] .create-field span,
+html[data-ui-style="modern"] .create-wizard-progress p,
 html[data-ui-style="modern"] .admin-queue-note {
   font-family: var(--font-modern-ui);
   text-transform: none;
@@ -150,6 +152,17 @@ html[data-ui-style="modern"] .create-source-add:hover:not(:disabled),
 html[data-ui-style="modern"] .create-submit:hover:not(:disabled),
 html[data-ui-style="modern"] .admin-queue-actions button:hover:not(:disabled) {
   filter: brightness(0.96);
+}
+
+html[data-ui-style="modern"] .create-wizard-progress-track {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-page) 76%, white);
+}
+
+html[data-ui-style="modern"] .create-wizard-progress-fill {
+  background: var(--accent-primary);
 }
 
 html[data-ui-style="modern"] .create-submit:disabled,

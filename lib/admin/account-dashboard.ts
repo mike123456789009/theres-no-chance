@@ -38,17 +38,17 @@ export type ResolutionMarket = {
   resolutionMode: string;
   closeTime: string;
   resolvedAt: string | null;
+  finalizedAt: string | null;
   resolutionOutcome: string | null;
   provisionalOutcome: string | null;
   resolutionWindowEndsAt: string | null;
-  challengeBonusRate: number;
-  challengeBondAmount: number;
-  listingFeeAmount: number;
-  finalOutcomeChangedByChallenge: boolean;
+  challengeWindowEndsAt: string | null;
+  adjudicationRequired: boolean;
+  adjudicationReason: string | null;
   yesBondTotal: number;
   noBondTotal: number;
-  challenges: ResolutionChallenge[];
-  poolPreview: ResolutionPoolPreview | null;
+  challengeCount: number;
+  openChallengeCount: number;
   creatorId: string;
   tags: string[];
 };
@@ -120,13 +120,13 @@ type ResolutionMarketRow = {
   resolution_mode: string;
   close_time: string;
   resolved_at: string | null;
+  finalized_at: string | null;
   resolution_outcome: string | null;
   provisional_outcome: string | null;
   resolution_window_ends_at: string | null;
-  challenge_bonus_rate: number | string | null;
-  challenge_bond_amount: number | string | null;
-  listing_fee_amount: number | string | null;
-  final_outcome_changed_by_challenge: boolean | null;
+  challenge_window_ends_at: string | null;
+  adjudication_required: boolean | null;
+  adjudication_reason: string | null;
   creator_id: string;
   tags: string[] | null;
 };
@@ -231,7 +231,7 @@ export type AdminVenmoUnmatchedFundingIntentRow = {
   unmatchedPaymentCount: number;
 };
 
-export const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
+export const DEFAULT_DISPUTE_WINDOW_HOURS = 24;
 export const DEFAULT_RESOLUTION_WINDOW_HOURS = 24;
 
 function toNumber(value: number | string | null | undefined, fallback = 0): number {
@@ -352,10 +352,6 @@ export async function loadAdminQueueMarkets(): Promise<{
 }
 
 export function getDisputeWindowHours(): number {
-  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.max(1, Math.floor(parsed));
-  }
   return DEFAULT_DISPUTE_WINDOW_HOURS;
 }
 
@@ -368,8 +364,9 @@ export function getResolutionWindowHours(): number {
 }
 
 export async function loadResolutionMarkets(): Promise<{
-  readyToResolve: ResolutionMarket[];
-  resolvedMarkets: ResolutionMarket[];
+  autoFinalizable: ResolutionMarket[];
+  adjudicationRequired: ResolutionMarket[];
+  finalizedMarkets: ResolutionMarket[];
   errorMessage: string;
 }> {
   const service = createServiceClient();
@@ -381,45 +378,29 @@ export async function loadResolutionMarkets(): Promise<{
     p_resolution_window_hours: resolutionWindowHours,
   });
 
-  const { data: readyData, error: readyError } = await service
+  const { data: resolutionData, error: resolutionError } = await service
     .from("markets")
     .select(
-      "id, question, status, resolution_mode, close_time, resolved_at, resolution_outcome, provisional_outcome, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, creator_id, tags"
+      "id, question, status, resolution_mode, close_time, resolved_at, finalized_at, resolution_outcome, provisional_outcome, resolution_window_ends_at, challenge_window_ends_at, adjudication_required, adjudication_reason, creator_id, tags"
     )
-    .in("status", ["closed", "open", "trading_halted", "pending_resolution"])
-    .lte("close_time", nowIso)
-    .order("close_time", { ascending: true })
-    .limit(120);
-
-  if (readyError) {
-    return {
-      readyToResolve: [],
-      resolvedMarkets: [],
-      errorMessage: readyError.message,
-    };
-  }
-
-  const { data: resolvedData, error: resolvedError } = await service
-    .from("markets")
-    .select(
-      "id, question, status, resolution_mode, close_time, resolved_at, resolution_outcome, provisional_outcome, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, creator_id, tags"
-    )
-    .eq("status", "resolved")
+    .eq("resolution_mode", "community")
+    .in("status", ["resolved", "finalized"])
     .order("resolved_at", { ascending: false })
-    .limit(120);
+    .limit(180);
 
-  if (resolvedError) {
+  if (resolutionError) {
     return {
-      readyToResolve: [],
-      resolvedMarkets: [],
-      errorMessage: resolvedError.message,
+      autoFinalizable: [],
+      adjudicationRequired: [],
+      finalizedMarkets: [],
+      errorMessage: resolutionError.message,
     };
   }
 
-  const rows = [...((readyData ?? []) as ResolutionMarketRow[]), ...((resolvedData ?? []) as ResolutionMarketRow[])];
+  const rows = (resolutionData ?? []) as ResolutionMarketRow[];
   const marketIds = Array.from(new Set(rows.map((row) => row.id)));
 
-  const [bondResult, challengeResult, positionResult] = await Promise.all([
+  const [bondResult, challengeResult] = await Promise.all([
     marketIds.length
       ? service
           .from("market_resolver_bonds")
@@ -434,38 +415,28 @@ export async function loadResolutionMarkets(): Promise<{
           )
           .in("market_id", marketIds)
       : Promise.resolve({ data: [] as ChallengeRow[], error: null }),
-    marketIds.length
-      ? service.from("positions").select("market_id, yes_shares, no_shares").in("market_id", marketIds)
-      : Promise.resolve({ data: [] as PositionPreviewRow[], error: null }),
   ]);
 
   if (bondResult.error) {
     return {
-      readyToResolve: [],
-      resolvedMarkets: [],
+      autoFinalizable: [],
+      adjudicationRequired: [],
+      finalizedMarkets: [],
       errorMessage: bondResult.error.message,
     };
   }
 
   if (challengeResult.error) {
     return {
-      readyToResolve: [],
-      resolvedMarkets: [],
+      autoFinalizable: [],
+      adjudicationRequired: [],
+      finalizedMarkets: [],
       errorMessage: challengeResult.error.message,
-    };
-  }
-
-  if (positionResult.error) {
-    return {
-      readyToResolve: [],
-      resolvedMarkets: [],
-      errorMessage: positionResult.error.message,
     };
   }
 
   const bondsByMarket = new Map<string, ResolverBondRow[]>();
   const challengesByMarket = new Map<string, ChallengeRow[]>();
-  const positionsByMarket = new Map<string, PositionPreviewRow[]>();
 
   ((bondResult.data ?? []) as ResolverBondRow[]).forEach((row) => {
     const existing = bondsByMarket.get(row.market_id) ?? [];
@@ -478,53 +449,6 @@ export async function loadResolutionMarkets(): Promise<{
     existing.push(row);
     challengesByMarket.set(row.market_id, existing);
   });
-
-  ((positionResult.data ?? []) as PositionPreviewRow[]).forEach((row) => {
-    const existing = positionsByMarket.get(row.market_id) ?? [];
-    existing.push(row);
-    positionsByMarket.set(row.market_id, existing);
-  });
-
-  const buildPoolPreview = (row: ResolutionMarketRow): ResolutionPoolPreview | null => {
-    if (row.resolution_outcome !== "yes" && row.resolution_outcome !== "no") return null;
-
-    const positionRows = positionsByMarket.get(row.id) ?? [];
-    const bonds = bondsByMarket.get(row.id) ?? [];
-    const challenges = challengesByMarket.get(row.id) ?? [];
-
-    const P = positionRows.reduce((total, position) => {
-      const shares = row.resolution_outcome === "yes" ? position.yes_shares : position.no_shares;
-      return total + Math.max(0, toNumber(shares, 0));
-    }, 0);
-
-    const SC = bonds
-      .filter((bond) => bond.outcome === row.resolution_outcome)
-      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
-    const SW = bonds
-      .filter((bond) => bond.outcome !== row.resolution_outcome)
-      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
-    const CW = challenges
-      .filter((challenge) => challenge.status === "rejected")
-      .reduce((total, challenge) => total + Math.max(0, toNumber(challenge.challenge_bond_amount, 0)), 0);
-
-    const resolutionFee = Math.max(0, Number((P * 0.005).toFixed(6)));
-    const listingFee = Math.max(0, toNumber(row.listing_fee_amount, 0.5));
-    const R = Math.max(0, Number((resolutionFee + listingFee + SW + CW).toFixed(6)));
-    const hasUpheld = challenges.some((challenge) => challenge.status === "upheld");
-    const bonusRate = Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1)));
-    const B = hasUpheld ? Number((R * bonusRate).toFixed(6)) : 0;
-    const RPrime = Math.max(0, Number((R - B).toFixed(6)));
-
-    return {
-      P: Number(P.toFixed(6)),
-      R,
-      B,
-      RPrime,
-      SC: Number(SC.toFixed(6)),
-      SW: Number(SW.toFixed(6)),
-      CW: Number(CW.toFixed(6)),
-    };
-  };
 
   const mapRow = (row: ResolutionMarketRow): ResolutionMarket => {
     const marketBonds = bondsByMarket.get(row.id) ?? [];
@@ -543,37 +467,41 @@ export async function loadResolutionMarkets(): Promise<{
       resolutionMode: row.resolution_mode,
       closeTime: row.close_time,
       resolvedAt: row.resolved_at,
+      finalizedAt: row.finalized_at,
       resolutionOutcome: row.resolution_outcome,
       provisionalOutcome: row.provisional_outcome,
       resolutionWindowEndsAt: row.resolution_window_ends_at,
-      challengeBonusRate: Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1))),
-      challengeBondAmount: Math.max(0, toNumber(row.challenge_bond_amount, 1)),
-      listingFeeAmount: Math.max(0, toNumber(row.listing_fee_amount, 0.5)),
-      finalOutcomeChangedByChallenge: row.final_outcome_changed_by_challenge === true,
+      challengeWindowEndsAt: row.challenge_window_ends_at,
+      adjudicationRequired: row.adjudication_required === true,
+      adjudicationReason: row.adjudication_reason,
       yesBondTotal: Number(yesBondTotal.toFixed(6)),
       noBondTotal: Number(noBondTotal.toFixed(6)),
-      challenges: marketChallenges.map((challenge) => ({
-        id: challenge.id,
-        createdBy: challenge.created_by,
-        status: challenge.status,
-        proposedOutcome: challenge.proposed_outcome,
-        challengeBondAmount: Math.max(0, toNumber(challenge.challenge_bond_amount, 0)),
-        reason: challenge.reason,
-        createdAt: challenge.created_at,
-        expiresAt: challenge.expires_at,
-        adjudicatedAt: challenge.adjudicated_at,
-        isSuccessful: challenge.is_successful === true,
-        payoutBonusAmount: toNumber(challenge.payout_bonus_amount, 0),
-      })),
-      poolPreview: buildPoolPreview(row),
+      challengeCount: marketChallenges.length,
+      openChallengeCount: marketChallenges.filter((challenge) =>
+        challenge.status === "open" || challenge.status === "under_review"
+      ).length,
       creatorId: row.creator_id,
       tags: row.tags ?? [],
     };
   };
 
+  const mappedRows = rows.map(mapRow);
+  const autoFinalizable = mappedRows.filter(
+    (row) =>
+      row.status === "resolved" &&
+      !row.finalizedAt &&
+      !row.adjudicationRequired &&
+      (!!row.challengeWindowEndsAt ? row.challengeWindowEndsAt <= nowIso : true)
+  );
+  const adjudicationRequired = mappedRows.filter(
+    (row) => row.status === "resolved" && !row.finalizedAt && row.adjudicationRequired
+  );
+  const finalizedMarkets = mappedRows.filter((row) => row.status === "finalized" || !!row.finalizedAt);
+
   return {
-    readyToResolve: ((readyData ?? []) as ResolutionMarketRow[]).map(mapRow),
-    resolvedMarkets: ((resolvedData ?? []) as ResolutionMarketRow[]).map(mapRow),
+    autoFinalizable,
+    adjudicationRequired,
+    finalizedMarkets,
     errorMessage: "",
   };
 }

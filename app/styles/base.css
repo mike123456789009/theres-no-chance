@@ -951,6 +951,48 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 1rem;
 }
 
+.create-wizard {
+  margin-top: 1.1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.create-wizard-progress {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: #fff;
+  padding: 0.65rem 0.8rem;
+}
+
+.create-wizard-progress p {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(0.75rem, 0.95vw, 0.85rem);
+}
+
+.create-wizard-progress-track {
+  margin-top: 0.56rem;
+  width: 100%;
+  height: 10px;
+  border: 2px solid var(--ink);
+  background: #ececec;
+  overflow: hidden;
+}
+
+.create-wizard-progress-fill {
+  height: 100%;
+  background: var(--red-face);
+  transition: width 180ms ease;
+}
+
+.create-wizard-card {
+  min-height: 320px;
+}
+
+.create-wizard-nav {
+  justify-content: space-between;
+}
+
 .create-section {
   border: 4px solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
@@ -2623,6 +2665,110 @@ html[data-ui-style="modern"] .market-tile-probability a {
   color: var(--red-face);
 }
 
+.market-detail-community-panel {
+  grid-column: 1 / -1;
+}
+
+.market-detail-inline-form {
+  margin-top: 0.72rem;
+  border: 2px solid rgba(16, 16, 16, 0.2);
+  background: rgba(255, 255, 255, 0.58);
+  padding: 0.68rem;
+  display: grid;
+  gap: 0.56rem;
+}
+
+.market-detail-inline-form h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.market-detail-inline-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.56rem;
+}
+
+.market-detail-inline-form label {
+  display: grid;
+  gap: 0.24rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.market-detail-inline-form input,
+.market-detail-inline-form select,
+.market-detail-inline-form textarea {
+  width: 100%;
+  border: 2px solid var(--ink);
+  background: #fff;
+  padding: 0.4rem 0.48rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+}
+
+.market-detail-inline-form button {
+  width: fit-content;
+  border: 2px solid var(--ink);
+  background: var(--yellow-face);
+  padding: 0.38rem 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.market-detail-inline-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.market-detail-callout {
+  margin-top: 0.64rem;
+  border-left: 4px solid var(--ink);
+  padding: 0.46rem 0.58rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.42;
+}
+
+.market-detail-callout-info {
+  border-left-color: var(--blue-face);
+  background: rgba(91, 111, 247, 0.08);
+}
+
+.market-detail-callout-warning {
+  border-left-color: var(--orange-face);
+  background: rgba(242, 151, 76, 0.16);
+}
+
+.market-detail-callout-error {
+  border-left-color: var(--red-face);
+  background: rgba(255, 95, 91, 0.14);
+}
+
+.market-detail-callout-success {
+  border-left-color: #1f7a35;
+  background: rgba(49, 179, 84, 0.14);
+}
+
+.market-detail-evidence-feed {
+  margin: 0.64rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.52rem;
+}
+
+.market-detail-evidence-feed li {
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
 .admin-page {
   min-height: 100vh;
   padding: clamp(1rem, 3vw, 2.5rem) var(--stage-pad);
@@ -3396,6 +3542,10 @@ html[data-ui-style="modern"] .market-tile-probability a {
   }
 
   .market-detail-position-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .market-detail-inline-row {
     grid-template-columns: 1fr;
   }
 

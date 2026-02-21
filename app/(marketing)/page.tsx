@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { LandingAuthRow } from "@/components/landing/auth-row";
 import { TncLogo } from "@/components/branding/tnc-logo";
 import { StyleToggle } from "@/components/theme/style-toggle";
@@ -123,18 +125,20 @@ export default function MarketingPage() {
                   <article className="faq-item">
                     <h3>How do markets resolve?</h3>
                     <p>
-                      Every market includes explicit yes/no resolution criteria, an expected resolution window, and
-                      official source guidance. Markets can use admin resolution or community resolution with admin
-                      adjudication before finalization.
+                      Markets use community resolution by default with a fixed vote window, challenge window, and
+                      adjudication rules for ties/challenges. See the full flow on the Community Resolve page.
+                    </p>
+                    <p>
+                      <Link href="/community-resolve">Open community resolve explainer</Link>
                     </p>
                   </article>
 
                   <article className="faq-item">
                     <h3>What is the dispute process and timing?</h3>
                     <p>
-                      After resolution, disputes can be filed during a configurable review window (default 48 hours).
-                      If you successfully challenge an incorrect resolution, you share a Successful Challenge Bonus paid
-                      from the same resolver reward pool used for settlement work.
+                      After provisional outcome, eligible out-voted resolvers can challenge by doubling their original
+                      stake. No challenge means automatic finalization to vote outcome; challenged markets go to human
+                      adjudication.
                     </p>
                   </article>
 

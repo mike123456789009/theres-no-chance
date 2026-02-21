@@ -129,7 +129,7 @@ export async function submitAutomationMarketProposal(
     expectedResolutionTime: input.expectedResolutionTime ?? null,
     evidenceRules: input.evidenceRules ?? null,
     disputeRules: input.disputeRules ?? null,
-    feeBps: input.feeBps ?? 200,
+    feeBps: input.feeBps ?? 50,
     visibility: input.visibility,
     accessRules: mergedAccessRules(input),
     tags: input.tags ?? [],
@@ -180,22 +180,24 @@ export async function submitAutomationMarketProposal(
     };
   }
 
-  const sourceRows = validation.data.sources.map((source) => ({
-    market_id: market.id,
-    source_label: source.label,
-    source_url: source.url,
-    source_type: source.type,
-  }));
+  if (validation.data.sources.length > 0) {
+    const sourceRows = validation.data.sources.map((source) => ({
+      market_id: market.id,
+      source_label: source.label,
+      source_url: source.url,
+      source_type: source.type,
+    }));
 
-  const { error: sourceInsertError } = await service.from("market_sources").insert(sourceRows);
-  if (sourceInsertError) {
-    await service.from("markets").delete().eq("id", market.id).eq("creator_id", botUserId);
-    return {
-      ok: false,
-      status: 500,
-      error: "Unable to insert automation market sources.",
-      detail: sourceInsertError.message,
-    };
+    const { error: sourceInsertError } = await service.from("market_sources").insert(sourceRows);
+    if (sourceInsertError) {
+      await service.from("markets").delete().eq("id", market.id).eq("creator_id", botUserId);
+      return {
+        ok: false,
+        status: 500,
+        error: "Unable to insert automation market sources.",
+        detail: sourceInsertError.message,
+      };
+    }
   }
 
   const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {

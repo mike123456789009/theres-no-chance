@@ -3,7 +3,12 @@ import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/m
 export const MARKET_VISIBILITIES = ["public", "unlisted", "private"] as const;
 export const MARKET_SUBMISSION_MODES = ["draft", "review"] as const;
 export const MARKET_SOURCE_TYPES = ["official", "supporting", "rules"] as const;
-export const MARKET_RESOLUTION_MODES = ["admin", "community"] as const;
+export const MARKET_RESOLUTION_MODES = ["community"] as const;
+export const MARKET_CREATOR_FEE_BPS = 50;
+export const SYSTEM_EVIDENCE_RULES =
+  "Evidence must rely on authentic source material. AI-generated media, edited/manipulated media, spoofed websites, and fabricated records are not allowed.";
+export const SYSTEM_DISPUTE_RULES =
+  "Community vote window is fixed at 24 hours after close. Challenge window is fixed at 24 hours after provisional outcome.";
 
 export type MarketVisibility = (typeof MARKET_VISIBILITIES)[number];
 export type MarketSubmissionMode = (typeof MARKET_SUBMISSION_MODES)[number];
@@ -45,7 +50,7 @@ function defaultResolutionMode(options: {
 }): MarketResolutionMode {
   if (options.visibility === "private") return "community";
   if (hasInstitutionAccessRule(options.accessRules)) return "community";
-  return "admin";
+  return "community";
 }
 
 function cleanText(value: unknown, maxLength: number): string {
@@ -124,16 +129,16 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
   const visibilityRaw = cleanText(raw.visibility, 16).toLowerCase();
   const visibility: MarketVisibility = isOneOf(visibilityRaw, MARKET_VISIBILITIES) ? visibilityRaw : "public";
 
-  const feeBpsRaw = Number(raw.feeBps);
-  const feeBps = Number.isFinite(feeBpsRaw) ? Math.floor(feeBpsRaw) : 200;
+  const feeBps = MARKET_CREATOR_FEE_BPS;
 
   const accessRules = isRecord(raw.accessRules) ? raw.accessRules : {};
   const institutionScoped = hasInstitutionAccessRule(accessRules);
   const requiredOrganizationId = extractRequiredOrganizationId(accessRules);
   const resolutionModeRaw = cleanText(raw.resolutionMode, 16).toLowerCase();
-  const resolutionMode = isOneOf(resolutionModeRaw, MARKET_RESOLUTION_MODES)
+  const requestedResolutionMode = isOneOf(resolutionModeRaw, MARKET_RESOLUTION_MODES)
     ? resolutionModeRaw
     : defaultResolutionMode({ visibility, accessRules });
+  const resolutionMode: MarketResolutionMode = "community";
   const tags = normalizeList(raw.tags, 12);
   const riskFlags = normalizeList(raw.riskFlags, 10);
 
@@ -170,8 +175,8 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
     }
   }
 
-  if (feeBps < 0 || feeBps > 10_000) {
-    errors.push("Fee basis points must be between 0 and 10000.");
+  if (requestedResolutionMode !== "community") {
+    errors.push("All markets must use community resolution.");
   }
 
   if (institutionScoped) {
@@ -185,9 +190,6 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
   }
 
   const rawSources = Array.isArray(raw.sources) ? raw.sources : [];
-  if (rawSources.length === 0) {
-    errors.push("At least one source is required.");
-  }
   if (rawSources.length > 8) {
     errors.push("No more than 8 sources are allowed.");
   }
@@ -222,10 +224,6 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
     });
   });
 
-  if (!sources.some((source) => source.type === "official")) {
-    errors.push("At least one source must be marked as official.");
-  }
-
   if (errors.length > 0) {
     return { ok: false, errors };
   }
@@ -240,8 +238,8 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
       resolvesNoIf,
       closeTime: closeDate!.toISOString(),
       expectedResolutionTime: expectedResolutionDate ? expectedResolutionDate.toISOString() : null,
-      evidenceRules: evidenceRules || null,
-      disputeRules: disputeRules || null,
+      evidenceRules: SYSTEM_EVIDENCE_RULES,
+      disputeRules: SYSTEM_DISPUTE_RULES,
       feeBps,
       visibility,
       resolutionMode,
