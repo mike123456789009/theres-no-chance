@@ -60,6 +60,11 @@ const ADMIN_NAV_ITEMS: AccountNavItem[] = [
     href: "/account/admin/payments",
     description: "Venmo reconciliation queue",
   },
+  {
+    label: "Institutions",
+    href: "/account/admin/institutions",
+    description: "Merge + identity mapping",
+  },
 ];
 
 function isActive(pathname: string, href: string): boolean {
