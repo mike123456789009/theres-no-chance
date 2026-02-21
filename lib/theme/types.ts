@@ -6,6 +6,5 @@ export type UiPalette =
   | "glacier"
   | "tide"
   | "cosmos"
-  | "volt"
   | "ember"
   | "aurora";

@@ -46,7 +46,6 @@ describe("parseUiPalette", () => {
     expect(parseUiPalette("glacier")).toBe("glacier");
     expect(parseUiPalette("tide")).toBe("tide");
     expect(parseUiPalette("cosmos")).toBe("cosmos");
-    expect(parseUiPalette("volt")).toBe("volt");
     expect(parseUiPalette("ember")).toBe("ember");
     expect(parseUiPalette("aurora")).toBe("aurora");
   });
@@ -59,6 +58,7 @@ describe("parseUiPalette", () => {
 
   it("returns null for unsupported values", () => {
     expect(parseUiPalette("retro")).toBeNull();
+    expect(parseUiPalette("volt")).toBeNull();
     expect(parseUiPalette("")).toBeNull();
     expect(parseUiPalette(undefined)).toBeNull();
   });

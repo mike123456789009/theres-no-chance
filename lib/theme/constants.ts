@@ -16,7 +16,6 @@ export const UI_PALETTE_VALUES: readonly UiPalette[] = [
   "glacier",
   "tide",
   "cosmos",
-  "volt",
   "ember",
   "aurora",
 ] as const;
@@ -29,7 +28,6 @@ export const UI_PALETTE_LABELS: Readonly<Record<UiPalette, string>> = {
   glacier: "Glacier",
   tide: "Tide",
   cosmos: "Cosmos",
-  volt: "Volt",
   ember: "Ember",
   aurora: "Aurora",
 };
