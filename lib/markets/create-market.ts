@@ -1,4 +1,5 @@
-import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
+import type { MarketAccessRules } from "@/lib/markets/access-rules";
+import { extractRequiredOrganizationId, hasInstitutionAccessRule, normalizeAccessRules } from "@/lib/markets/view-access";
 
 export const MARKET_VISIBILITIES = ["public", "unlisted", "private"] as const;
 export const MARKET_SUBMISSION_MODES = ["draft", "review"] as const;
@@ -38,7 +39,7 @@ export interface ValidatedCreateMarketPayload {
   feeBps: number;
   visibility: MarketVisibility;
   resolutionMode: MarketResolutionMode;
-  accessRules: Record<string, unknown>;
+  accessRules: MarketAccessRules;
   tags: string[];
   riskFlags: string[];
   sources: ValidatedMarketSource[];
@@ -46,7 +47,7 @@ export interface ValidatedCreateMarketPayload {
 
 function defaultResolutionMode(options: {
   visibility: MarketVisibility;
-  accessRules: Record<string, unknown>;
+  accessRules: MarketAccessRules;
 }): MarketResolutionMode {
   if (options.visibility === "private") return "community";
   if (hasInstitutionAccessRule(options.accessRules)) return "community";
@@ -131,7 +132,7 @@ export function validateCreateMarketPayload(raw: unknown): CreateMarketValidatio
 
   const feeBps = MARKET_CREATOR_FEE_BPS;
 
-  const accessRules = isRecord(raw.accessRules) ? raw.accessRules : {};
+  const accessRules = normalizeAccessRules(raw.accessRules);
   const institutionScoped = hasInstitutionAccessRule(accessRules);
   const requiredOrganizationId = extractRequiredOrganizationId(accessRules);
   const resolutionModeRaw = cleanText(raw.resolutionMode, 16).toLowerCase();

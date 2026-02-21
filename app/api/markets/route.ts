@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getServerEnvReadiness, getServiceEnvReadiness } from "@/lib/api/env-guards";
 import { jsonEnvUnavailable, jsonError, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
+import { serializeMarketAccessRules, withEnforcedOrganizationId } from "@/lib/markets/access-rules";
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
 import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
 import {
@@ -117,11 +118,7 @@ export async function POST(request: Request) {
         return jsonError(403, "Institution-gated market must target your active institution membership.");
       }
 
-      enforcedAccessRules = {
-        ...validation.data.accessRules,
-        institutionOnly: true,
-        organizationId: activeOrganizationId,
-      };
+      enforcedAccessRules = withEnforcedOrganizationId(validation.data.accessRules, activeOrganizationId);
     }
 
     const marketStatus = validation.data.submissionMode === "review" ? "review" : "draft";
@@ -141,7 +138,7 @@ export async function POST(request: Request) {
         status: marketStatus,
         visibility: validation.data.visibility,
         resolution_mode: validation.data.resolutionMode,
-        access_rules: enforcedAccessRules,
+        access_rules: serializeMarketAccessRules(enforcedAccessRules),
         tags: validation.data.tags,
         risk_flags: validation.data.riskFlags,
         creator_id: user.id,

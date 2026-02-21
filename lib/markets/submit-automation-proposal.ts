@@ -1,4 +1,5 @@
 import { requiredEnv } from "@/lib/env";
+import { serializeMarketAccessRules } from "@/lib/markets/access-rules";
 import type { MarketCardShadowTone } from "@/lib/markets/presentation";
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
@@ -163,7 +164,7 @@ export async function submitAutomationMarketProposal(
       status: "review",
       visibility: validation.data.visibility,
       resolution_mode: validation.data.resolutionMode,
-      access_rules: validation.data.accessRules,
+      access_rules: serializeMarketAccessRules(validation.data.accessRules),
       tags: validation.data.tags,
       risk_flags: validation.data.riskFlags,
       creator_id: botUserId,

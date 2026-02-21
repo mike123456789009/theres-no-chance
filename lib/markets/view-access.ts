@@ -1,3 +1,10 @@
+import {
+  extractRequiredOrganizationIdFromAccessRules,
+  hasInstitutionAccessRuleInRules,
+  normalizeMarketAccessRules,
+  type MarketAccessRules,
+} from "@/lib/markets/access-rules";
+
 export const DISCOVERABLE_MARKET_STATUSES = [
   "open",
   "trading_halted",
@@ -13,7 +20,7 @@ type MarketAccessInput = {
   status: string;
   visibility: string;
   creatorId: string;
-  accessRules: Record<string, unknown> | null;
+  accessRules: MarketAccessRules;
 };
 
 type ViewerAccessInput = {
@@ -37,72 +44,20 @@ export type ViewerAccessResult = {
   requiredOrganizationId: string | null;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function isLikelyUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export function extractRequiredOrganizationId(accessRules: Record<string, unknown> | null): string | null {
-  if (!accessRules) return null;
-
-  const direct = clean(accessRules.organizationId).toLowerCase();
-  if (direct && isLikelyUuid(direct)) {
-    return direct;
-  }
-
-  const list = Array.isArray(accessRules.organizationIds) ? accessRules.organizationIds : [];
-  for (const raw of list) {
-    const candidate = clean(raw).toLowerCase();
-    if (candidate && isLikelyUuid(candidate)) {
-      return candidate;
-    }
-  }
-
-  return null;
+export function normalizeAccessRules(value: unknown): MarketAccessRules {
+  return normalizeMarketAccessRules(value);
 }
 
-export function hasInstitutionAccessRule(accessRules: Record<string, unknown> | null): boolean {
-  if (!accessRules) return false;
-
-  const valueByKey = [
-    accessRules.organizationId,
-    accessRules.organizationIds,
-    accessRules.institutionDomain,
-    accessRules.institutionDomains,
-    accessRules.requiredDomain,
-    accessRules.requiredDomains,
-  ];
-
-  if (
-    valueByKey.some((value) => {
-      if (typeof value === "string") return value.trim().length > 0;
-      if (Array.isArray(value)) return value.length > 0;
-      return Boolean(value);
-    })
-  ) {
-    return true;
-  }
-
-  if (accessRules.institutionOnly === true) return true;
-
-  const scopeValue = accessRules.scope;
-  const visibilityValue = accessRules.visibility;
-  const scope = typeof scopeValue === "string" ? scopeValue.toLowerCase() : "";
-  const visibility = typeof visibilityValue === "string" ? visibilityValue.toLowerCase() : "";
-
-  return scope === "institution" || visibility === "institution";
+export function extractRequiredOrganizationId(accessRules: MarketAccessRules): string | null {
+  return extractRequiredOrganizationIdFromAccessRules(accessRules);
 }
 
-export function normalizeAccessRules(value: unknown): Record<string, unknown> | null {
-  if (!isRecord(value)) return null;
-  return value;
+export function hasInstitutionAccessRule(accessRules: MarketAccessRules): boolean {
+  return hasInstitutionAccessRuleInRules(accessRules);
 }
 
 export function isDiscoverableMarketStatus(status: string): status is DiscoverableMarketStatus {
@@ -290,7 +245,7 @@ export function canViewerSeeMarket(market: MarketAccessInput, viewer: ViewerAcce
   return canViewerAccessMarketDetail(market, viewer);
 }
 
-export function marketAccessBadge(visibility: string, accessRules: Record<string, unknown> | null): string {
+export function marketAccessBadge(visibility: string, accessRules: MarketAccessRules): string {
   if (visibility === "public" && !hasInstitutionAccessRule(accessRules)) {
     return "Public";
   }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { MarketAccessRules } from "@/lib/markets/access-rules";
 import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_SEARCH_QUERY, type MarketCategoryKey } from "@/lib/markets/taxonomy";
 import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
@@ -199,7 +200,7 @@ type MarketDiscoveryRow = {
   status: string;
   resolution_mode: string;
   visibility: string;
-  access_rules: Record<string, unknown> | null;
+  access_rules: unknown;
   creator_id: string;
   close_time: string;
   created_at: string;
@@ -216,7 +217,7 @@ type MarketDetailRow = {
   status: string;
   resolution_mode: string;
   visibility: string;
-  access_rules: Record<string, unknown> | null;
+  access_rules: unknown;
   creator_id: string;
   close_time: string;
   expected_resolution_time: string | null;
@@ -424,12 +425,10 @@ function toCardShadowTone(value: unknown): MarketCardShadowTone | null {
   return null;
 }
 
-function resolveCardShadowTone(accessRules: Record<string, unknown> | null, marketId: string): MarketCardShadowTone {
+function resolveCardShadowTone(accessRules: MarketAccessRules, marketId: string): MarketCardShadowTone {
   const explicitTone =
-    toCardShadowTone(accessRules?.cardShadowTone) ??
-    toCardShadowTone(accessRules?.card_shadow_tone) ??
-    toCardShadowTone(accessRules?.cardShadowColor) ??
-    toCardShadowTone(accessRules?.card_shadow_color);
+    toCardShadowTone(accessRules.cardShadowTone) ??
+    toCardShadowTone(accessRules.cardShadowColor);
 
   return explicitTone ?? fallbackCardShadowToneFromId(marketId);
 }
@@ -851,7 +850,7 @@ export async function getMarketDetail(options: {
             id: string;
             status: string;
             visibility: string;
-            access_rules: Record<string, unknown> | null;
+            access_rules: unknown;
             creator_id: string;
           };
 
