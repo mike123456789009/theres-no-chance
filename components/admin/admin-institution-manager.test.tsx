@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -279,8 +279,11 @@ describe("AdminInstitutionManager interactions", () => {
     });
 
     const renameInput = screen.getByLabelText("Institution name");
-    await user.clear(renameInput);
-    await user.type(renameInput, "  Alpha   College Updated  ");
+    fireEvent.change(renameInput, {
+      target: {
+        value: "  Alpha   College Updated  ",
+      },
+    });
     await user.click(screen.getByRole("button", { name: "Save institution name" }));
 
     await waitFor(() => {

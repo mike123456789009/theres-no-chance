@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type {
@@ -77,6 +77,7 @@ export function useAdminInstitutionManagerData(): UseAdminInstitutionManagerData
   const [mergeTargetOrganizationId, setMergeTargetOrganizationId] = useState("");
   const [mergeConfirmPhrase, setMergeConfirmPhrase] = useState("");
   const [mergeDeleteSource, setMergeDeleteSource] = useState(true);
+  const renameHydratedInstitutionIdRef = useRef("");
 
   const selectedInstitution = useMemo(
     () => institutions.find((institution) => institution.id === selectedInstitutionId) ?? null,
@@ -238,11 +239,15 @@ export function useAdminInstitutionManagerData(): UseAdminInstitutionManagerData
       setRenameName("");
       setEmailIdentities([]);
       setEmailDrafts({});
+      renameHydratedInstitutionIdRef.current = "";
       return;
     }
 
     const institution = institutions.find((item) => item.id === selectedInstitutionId);
-    setRenameName(institution?.name ?? "");
+    if (institution && renameHydratedInstitutionIdRef.current !== selectedInstitutionId) {
+      setRenameName(institution.name);
+      renameHydratedInstitutionIdRef.current = selectedInstitutionId;
+    }
     void loadEmailIdentities(selectedInstitutionId);
   }, [selectedInstitutionId, institutions]);
 
