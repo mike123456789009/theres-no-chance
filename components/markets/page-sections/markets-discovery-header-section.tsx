@@ -97,58 +97,64 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
           </div>
         </div>
 
-        <MarketsCategoryNav items={MARKET_PRIMARY_NAV_ITEMS} />
+        <details className="markets-mobile-collapsible">
+          <summary className="markets-mobile-collapsible-summary">Browse + filter controls</summary>
 
-        <div className="markets-toolbar-row">
-          <MarketsFilterEnhancer />
-          <form className="markets-toolbar" action="/markets" method="get">
-            <input type="hidden" name="q" value={query.search} />
-            <input type="hidden" name="category" value={query.category} />
+          <div className="markets-mobile-collapsible-body">
+            <MarketsCategoryNav items={MARKET_PRIMARY_NAV_ITEMS} />
 
-            <label className="markets-select-field">
-              <span>Status</span>
-              <select name="status" defaultValue={query.status}>
-                {STATUS_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="markets-toolbar-row">
+              <MarketsFilterEnhancer />
+              <form className="markets-toolbar" action="/markets" method="get">
+                <input type="hidden" name="q" value={query.search} />
+                <input type="hidden" name="category" value={query.category} />
 
-            <label className="markets-select-field">
-              <span>Access</span>
-              <select name="access" defaultValue={query.access}>
-                {ACCESS_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="markets-select-field">
+                  <span>Status</span>
+                  <select name="status" defaultValue={query.status}>
+                    {STATUS_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="markets-select-field">
-              <span>Sort</span>
-              <select name="sort" defaultValue={query.sort}>
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="markets-select-field">
+                  <span>Access</span>
+                  <select name="access" defaultValue={query.access}>
+                    {ACCESS_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <button className="markets-toolbar-apply" type="submit">
-              Apply
-            </button>
-          </form>
+                <label className="markets-select-field">
+                  <span>Sort</span>
+                  <select name="sort" defaultValue={query.sort}>
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-          <div className="markets-inline-links">
-            <Link href="/create">Create</Link>
-            {!viewer.isAuthenticated ? <Link href="/login">Log in</Link> : null}
-            {!viewer.isAuthenticated ? <Link href="/signup">Sign up</Link> : null}
+                <button className="markets-toolbar-apply" type="submit">
+                  Apply
+                </button>
+              </form>
+
+              <div className="markets-inline-links">
+                <Link href="/create">Create</Link>
+                {!viewer.isAuthenticated ? <Link href="/login">Log in</Link> : null}
+                {!viewer.isAuthenticated ? <Link href="/signup">Sign up</Link> : null}
+              </div>
+            </div>
           </div>
-        </div>
+        </details>
       </div>
     </header>
   );

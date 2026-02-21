@@ -1716,6 +1716,15 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 0.5rem;
 }
 
+.markets-mobile-collapsible > summary {
+  display: none;
+}
+
+.markets-mobile-collapsible-body {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .markets-brand-row {
   display: grid;
   grid-template-columns: auto clamp(24rem, 46vw, 48rem) minmax(0, 1fr);
@@ -3520,6 +3529,52 @@ html[data-ui-style="modern"] .market-tile-probability a {
 
   .markets-primary-nav {
     gap: 0.72rem;
+  }
+
+  .markets-mobile-collapsible {
+    margin-top: 0.04rem;
+  }
+
+  .markets-mobile-collapsible > summary {
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    background: #fff;
+    color: #111;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem;
+    padding: 0.38rem 0.62rem;
+    font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    line-height: 1.22;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .markets-mobile-collapsible > summary::after {
+    content: "Show";
+    font-size: 0.63rem;
+    color: #5d5d5d;
+  }
+
+  .markets-mobile-collapsible[open] > summary::after {
+    content: "Hide";
+  }
+
+  .markets-mobile-collapsible > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .markets-mobile-collapsible-body {
+    display: none;
+    gap: 0.45rem;
+  }
+
+  .markets-mobile-collapsible[open] .markets-mobile-collapsible-body {
+    display: grid;
   }
 
   .markets-toolbar-row {
