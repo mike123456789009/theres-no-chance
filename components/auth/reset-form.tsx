@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 export function ResetForm() {
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -176,6 +177,12 @@ export function ResetForm() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+
+    if (newPassword !== confirmNewPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -210,6 +217,7 @@ export function ResetForm() {
       await storePasswordCredential({ email: sessionEmail, password: newPassword });
       setSuccessMessage("Password updated. You can now log in with the new password.");
       setNewPassword("");
+      setConfirmNewPassword("");
       setHasRecoverySession(true);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to update password right now.");
@@ -272,6 +280,19 @@ export function ResetForm() {
               {showNewPassword ? "HIDE" : "SHOW"}
             </button>
           </div>
+        </label>
+        <label className="auth-field">
+          <span>Confirm new password</span>
+          <input
+            id="reset-confirm-new-password"
+            name="confirm-new-password"
+            type={showNewPassword ? "text" : "password"}
+            autoComplete="new-password"
+            minLength={8}
+            value={confirmNewPassword}
+            onChange={(event) => setConfirmNewPassword(event.target.value)}
+            required
+          />
         </label>
         <button className="auth-submit" type="submit" disabled={isUpdating || isPreparingRecovery || !hasRecoverySession}>
           {isUpdating ? "UPDATING..." : isPreparingRecovery ? "VERIFYING LINK..." : "UPDATE PASSWORD"}

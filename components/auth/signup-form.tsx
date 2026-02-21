@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -24,6 +25,12 @@ export function SignupForm() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -46,6 +53,7 @@ export function SignupForm() {
       setSuccessMessage("Account created. Redirecting to markets...");
       setEmail("");
       setPassword("");
+      setConfirmPassword("");
       window.location.assign("/markets");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create account right now.");
@@ -92,6 +100,20 @@ export function SignupForm() {
             {showPassword ? "HIDE" : "SHOW"}
           </button>
         </div>
+      </label>
+
+      <label className="auth-field">
+        <span>Confirm password</span>
+        <input
+          id="signup-confirm-password"
+          name="confirm-password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          minLength={8}
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          required
+        />
       </label>
 
       <button className="auth-submit" type="submit" disabled={isSubmitting}>
