@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { getServerEnvReadiness } from "@/lib/api/env-guards";
+import { jsonEnvUnavailable, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
 import { getPortfolioSnapshot, portfolioFillsToCsv } from "@/lib/markets/portfolio";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Portfolio is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const serverEnv = getServerEnvReadiness();
+  if (!serverEnv.isConfigured) {
+    return jsonEnvUnavailable("Portfolio is unavailable: missing Supabase environment variables.", serverEnv.missingEnv);
   }
 
   try {
@@ -22,7 +19,7 @@ export async function GET(request: Request) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return jsonUnauthorized();
     }
 
     const snapshot = await getPortfolioSnapshot({
@@ -50,12 +47,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Portfolio load failed.",
-        detail: error instanceof Error ? error.message : "Unknown server error.",
-      },
-      { status: 500 }
-    );
+    return jsonInternalError("Portfolio load failed.", error);
   }
 }

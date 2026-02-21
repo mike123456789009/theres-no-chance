@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 
+import { getServerEnvReadiness, getServiceEnvReadiness } from "@/lib/api/env-guards";
+import { jsonEnvUnavailable, jsonInternalError, jsonError } from "@/lib/api/http-errors";
 import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
-import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(_request: Request, context: { params: Promise<{ marketId: string }> }) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Market detail is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const serverEnv = getServerEnvReadiness();
+  if (!serverEnv.isConfigured) {
+    return jsonEnvUnavailable("Market detail is unavailable: missing Supabase environment variables.", serverEnv.missingEnv);
   }
 
   const { marketId } = await context.params;
 
   try {
-    if (isSupabaseServiceEnvConfigured()) {
+    const serviceEnv = getServiceEnvReadiness();
+    if (serviceEnv.isConfigured) {
       const service = createServiceClient();
       await service.rpc("sync_market_close_state", { p_market_id: marketId });
       await service.rpc("refresh_community_market_resolution_state", {
@@ -38,52 +36,25 @@ export async function GET(_request: Request, context: { params: Promise<{ market
     });
 
     if (detail.kind === "login_required") {
-      return NextResponse.json(
-        {
-          error: "Login required to view this market.",
-          code: "LOGIN_REQUIRED",
-        },
-        { status: 401 }
-      );
+      return jsonError(401, "Login required to view this market.", { code: "LOGIN_REQUIRED" });
     }
 
     if (detail.kind === "institution_verification_required") {
-      return NextResponse.json(
-        {
-          error: "Institution verification required to view this market.",
-          code: "INSTITUTION_VERIFICATION_REQUIRED",
-        },
-        { status: 403 }
-      );
+      return jsonError(403, "Institution verification required to view this market.", {
+        code: "INSTITUTION_VERIFICATION_REQUIRED",
+      });
     }
 
     if (detail.kind === "not_found") {
-      return NextResponse.json(
-        {
-          error: "Market not found.",
-        },
-        { status: 404 }
-      );
+      return jsonError(404, "Market not found.");
     }
 
     if (detail.kind === "schema_missing") {
-      return NextResponse.json(
-        {
-          error: "Market tables are not provisioned in this environment yet.",
-          detail: detail.message,
-        },
-        { status: 503 }
-      );
+      return jsonError(503, "Market tables are not provisioned in this environment yet.", { detail: detail.message });
     }
 
     if (detail.kind === "error") {
-      return NextResponse.json(
-        {
-          error: "Unable to load market detail.",
-          detail: detail.message,
-        },
-        { status: 500 }
-      );
+      return jsonError(500, "Unable to load market detail.", { detail: detail.message });
     }
 
     return NextResponse.json({
@@ -91,12 +62,6 @@ export async function GET(_request: Request, context: { params: Promise<{ market
       viewer,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Market detail failed.",
-        detail: error instanceof Error ? error.message : "Unknown server error.",
-      },
-      { status: 500 }
-    );
+    return jsonInternalError("Market detail failed.", error);
   }
 }

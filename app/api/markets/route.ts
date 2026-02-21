@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getServerEnvReadiness, getServiceEnvReadiness } from "@/lib/api/env-guards";
+import { jsonEnvUnavailable, jsonError, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
 import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
 import {
@@ -7,18 +9,13 @@ import {
   listDiscoveryMarketCards,
   parseMarketDiscoveryQuery,
 } from "@/lib/markets/read-markets";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Market discovery is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const serverEnv = getServerEnvReadiness();
+  if (!serverEnv.isConfigured) {
+    return jsonEnvUnavailable("Market discovery is unavailable: missing Supabase environment variables.", serverEnv.missingEnv);
   }
 
   try {
@@ -43,13 +40,7 @@ export async function GET(request: Request) {
     }
 
     if (markets.error) {
-      return NextResponse.json(
-        {
-          error: "Unable to load markets.",
-          detail: markets.error,
-        },
-        { status: 500 }
-      );
+      return jsonError(500, "Unable to load markets.", { detail: markets.error });
     }
 
     return NextResponse.json({
@@ -58,43 +49,26 @@ export async function GET(request: Request) {
       viewer,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Market discovery failed.",
-        detail: error instanceof Error ? error.message : "Unknown server error.",
-      },
-      { status: 500 }
-    );
+    return jsonInternalError("Market discovery failed.", error);
   }
 }
 
 export async function POST(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Market creation is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const serverEnv = getServerEnvReadiness();
+  if (!serverEnv.isConfigured) {
+    return jsonEnvUnavailable("Market creation is unavailable: missing Supabase environment variables.", serverEnv.missingEnv);
   }
 
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    return jsonError(400, "Request body must be valid JSON.");
   }
 
   const validation = validateCreateMarketPayload(payload);
   if (!validation.ok) {
-    return NextResponse.json(
-      {
-        error: "Validation failed.",
-        details: validation.errors,
-      },
-      { status: 400 }
-    );
+    return jsonError(400, "Validation failed.", { details: validation.errors });
   }
 
   try {
@@ -105,19 +79,14 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return jsonUnauthorized();
     }
 
     let enforcedAccessRules = validation.data.accessRules;
 
     if (hasInstitutionAccessRule(validation.data.accessRules)) {
       if (validation.data.visibility !== "private") {
-        return NextResponse.json(
-          {
-            error: "Institution-gated markets must use private visibility.",
-          },
-          { status: 400 }
-        );
+        return jsonError(400, "Institution-gated markets must use private visibility.");
       }
 
       const requiredOrganizationId = extractRequiredOrganizationId(validation.data.accessRules);
@@ -132,34 +101,20 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (membershipError) {
-        return NextResponse.json(
-          {
-            error: "Unable to validate institution membership for market creation.",
-            detail: membershipError.message,
-          },
-          { status: 500 }
-        );
+        return jsonError(500, "Unable to validate institution membership for market creation.", {
+          detail: membershipError.message,
+        });
       }
 
       const activeOrganizationId =
         typeof membershipData?.organization_id === "string" ? membershipData.organization_id.toLowerCase() : "";
 
       if (!activeOrganizationId) {
-        return NextResponse.json(
-          {
-            error: "Institution verification required before creating institution-gated markets.",
-          },
-          { status: 403 }
-        );
+        return jsonError(403, "Institution verification required before creating institution-gated markets.");
       }
 
       if (!requiredOrganizationId || requiredOrganizationId !== activeOrganizationId) {
-        return NextResponse.json(
-          {
-            error: "Institution-gated market must target your active institution membership.",
-          },
-          { status: 403 }
-        );
+        return jsonError(403, "Institution-gated market must target your active institution membership.");
       }
 
       enforcedAccessRules = {
@@ -195,13 +150,9 @@ export async function POST(request: Request) {
       .single();
 
     if (marketError || !market) {
-      return NextResponse.json(
-        {
-          error: "Unable to create market.",
-          detail: marketError?.message ?? "Unknown insert failure.",
-        },
-        { status: 500 }
-      );
+      return jsonError(500, "Unable to create market.", {
+        detail: marketError?.message ?? "Unknown insert failure.",
+      });
     }
 
     if (validation.data.sources.length > 0) {
@@ -216,25 +167,17 @@ export async function POST(request: Request) {
       if (sourceError) {
         await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
 
-        return NextResponse.json(
-          {
-            error: "Unable to save market sources.",
-            detail: sourceError.message,
-          },
-          { status: 500 }
-        );
+        return jsonError(500, "Unable to save market sources.", { detail: sourceError.message });
       }
     }
 
     if (validation.data.submissionMode === "review") {
-      if (!isSupabaseServiceEnvConfigured()) {
+      const serviceEnv = getServiceEnvReadiness();
+      if (!serviceEnv.isConfigured) {
         await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
-        return NextResponse.json(
-          {
-            error: "Market submission is unavailable: missing service role configuration for listing fees.",
-            missingEnv: getMissingSupabaseServiceEnv(),
-          },
-          { status: 503 }
+        return jsonEnvUnavailable(
+          "Market submission is unavailable: missing service role configuration for listing fees.",
+          serviceEnv.missingEnv
         );
       }
 
@@ -251,22 +194,12 @@ export async function POST(request: Request) {
 
         const normalizedMessage = listingFeeError.message.toLowerCase();
         if (normalizedMessage.includes("[listing_funds]")) {
-          return NextResponse.json(
-            {
-              error: "Insufficient wallet balance for listing fee.",
-              detail: listingFeeError.message,
-            },
-            { status: 409 }
-          );
+          return jsonError(409, "Insufficient wallet balance for listing fee.", {
+            detail: listingFeeError.message,
+          });
         }
 
-        return NextResponse.json(
-          {
-            error: "Unable to charge market listing fee.",
-            detail: listingFeeError.message,
-          },
-          { status: 500 }
-        );
+        return jsonError(500, "Unable to charge market listing fee.", { detail: listingFeeError.message });
       }
     }
 
@@ -284,12 +217,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Market creation failed.",
-        detail: error instanceof Error ? error.message : "Unknown server error.",
-      },
-      { status: 500 }
-    );
+    return jsonInternalError("Market creation failed.", error);
   }
 }
