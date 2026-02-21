@@ -20,6 +20,31 @@ type MarketsDiscoveryHeaderSectionProps = {
   accountSummary: ViewerAccountSummary;
 };
 
+type MarketsSearchFormProps = {
+  className: string;
+  query: MarketDiscoveryQuery;
+};
+
+function MarketsSearchForm(props: Readonly<MarketsSearchFormProps>) {
+  const { className, query } = props;
+
+  return (
+    <form className={className} action="/markets" method="get">
+      <label className="markets-search-field">
+        <span className="sr-only">Search markets</span>
+        <input type="search" name="q" defaultValue={query.search} placeholder="Search markets..." />
+      </label>
+      <input type="hidden" name="category" value={query.category} />
+      <input type="hidden" name="status" value={query.status} />
+      <input type="hidden" name="access" value={query.access} />
+      <input type="hidden" name="sort" value={query.sort} />
+      <button className="markets-search-submit" type="submit">
+        Search
+      </button>
+    </form>
+  );
+}
+
 export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHeaderSectionProps>) {
   const { query, viewer, accountSummary } = props;
 
@@ -31,19 +56,7 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
             <TncLogo size="compact" decorative />
           </a>
 
-          <form className="markets-search-row" action="/markets" method="get">
-            <label className="markets-search-field">
-              <span className="sr-only">Search markets</span>
-              <input type="search" name="q" defaultValue={query.search} placeholder="Search markets..." />
-            </label>
-            <input type="hidden" name="category" value={query.category} />
-            <input type="hidden" name="status" value={query.status} />
-            <input type="hidden" name="access" value={query.access} />
-            <input type="hidden" name="sort" value={query.sort} />
-            <button className="markets-search-submit" type="submit">
-              Search
-            </button>
-          </form>
+          <MarketsSearchForm className="markets-search-row markets-search-row-desktop" query={query} />
 
           <div className="markets-account-strip">
             <StyleToggle className="markets-style-toggle" />
@@ -105,10 +118,12 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
             aria-label="Toggle market browse and filter controls"
           />
           <label className="markets-mobile-collapsible-summary" htmlFor="markets-mobile-collapsible-toggle">
-            Browse + filter controls
+            Search + browse + filter controls
           </label>
 
           <div className="markets-mobile-collapsible-body">
+            <MarketsSearchForm className="markets-search-row markets-search-row-mobile" query={query} />
+
             <MarketsCategoryNav items={MARKET_PRIMARY_NAV_ITEMS} />
 
             <div className="markets-toolbar-row">
