@@ -174,9 +174,15 @@ export default async function MarketDetailPage({
   }
 
   const market = detail.market;
+  const showEvidenceCard =
+    market.status === "closed" ||
+    market.status === "pending_resolution" ||
+    market.status === "resolved" ||
+    market.status === "finalized";
   const canSubmitEvidence =
     viewer.isAuthenticated &&
-    (market.status === "closed" || market.status === "pending_resolution" || market.status === "resolved") &&
+    showEvidenceCard &&
+    market.status !== "finalized" &&
     !market.finalizedAt;
   const canContributePrize = viewer.isAuthenticated && !market.finalizedAt;
 
@@ -328,14 +334,16 @@ export default async function MarketDetailPage({
             viewerChallenge={market.viewerChallenge}
           />
 
-          <EvidenceSubmissionCard
-            marketId={marketId}
-            marketStatus={market.status}
-            canSubmitEvidence={canSubmitEvidence}
-            viewerIsAuthenticated={viewer.isAuthenticated}
-            evidenceRules={market.evidenceRules}
-            evidence={market.evidence}
-          />
+          {showEvidenceCard ? (
+            <EvidenceSubmissionCard
+              marketId={marketId}
+              marketStatus={market.status}
+              canSubmitEvidence={canSubmitEvidence}
+              viewerIsAuthenticated={viewer.isAuthenticated}
+              evidenceRules={market.evidenceRules}
+              evidence={market.evidence}
+            />
+          ) : null}
 
           <section className="market-detail-section market-detail-section-context" aria-label="Market context">
             <h2>Market context</h2>
