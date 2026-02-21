@@ -1,12 +1,23 @@
 .markets-style-toggle {
   flex-shrink: 0;
-  --markets-vibe-reserve-width: 8rem;
+  --markets-vibe-reserve-width: 8.35rem;
 }
 
 .markets-style-toggle .palette-controls {
   width: var(--markets-vibe-reserve-width);
   flex: 0 0 var(--markets-vibe-reserve-width);
   justify-content: flex-start;
+  min-width: 0;
+}
+
+.markets-style-toggle .palette-combo-pill {
+  width: 100%;
+  max-width: 100%;
+  justify-content: space-between;
+}
+
+.markets-style-toggle .palette-select-trigger {
+  margin-left: auto;
 }
 
 html[data-ui-style="modern"] .markets-product-page {
