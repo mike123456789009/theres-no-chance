@@ -1,4 +1,5 @@
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { parseBracketedRpcError } from "@/lib/payments/rpc-errors";
 
 export const WITHDRAWAL_NETWORKS = ["base", "ethereum", "solana"] as const;
 
@@ -94,47 +95,36 @@ function isOneOf<T extends readonly string[]>(value: string, allowed: T): value 
 }
 
 function parseRpcError(message: string): ServiceCallError {
-  const trimmed = message.trim();
-  const match = trimmed.match(/^\[(WITHDRAW_[A-Z_]+)\]\s*(.*)$/);
-  if (!match) {
-    return {
+  const parsed = parseBracketedRpcError({
+    message,
+    mapping: {
+      WITHDRAW_VALIDATION: {
+        status: 400,
+        error: "Withdrawal validation failed.",
+      },
+      WITHDRAW_NOT_FOUND: {
+        status: 404,
+        error: "Withdrawal request not found.",
+      },
+      WITHDRAW_FUNDS: {
+        status: 409,
+        error: "Withdrawal cannot be processed.",
+      },
+      WITHDRAW_CONFLICT: {
+        status: 409,
+        error: "Withdrawal cannot be processed.",
+      },
+    },
+    fallback: {
       status: 500,
       error: "Withdrawal operation failed.",
-      detail: trimmed,
-    };
-  }
-
-  const code = match[1];
-  const detail = match[2] || "Withdrawal operation failed.";
-
-  if (code === "WITHDRAW_VALIDATION") {
-    return {
-      status: 400,
-      error: "Withdrawal validation failed.",
-      detail,
-    };
-  }
-
-  if (code === "WITHDRAW_NOT_FOUND") {
-    return {
-      status: 404,
-      error: "Withdrawal request not found.",
-      detail,
-    };
-  }
-
-  if (code === "WITHDRAW_FUNDS" || code === "WITHDRAW_CONFLICT") {
-    return {
-      status: 409,
-      error: "Withdrawal cannot be processed.",
-      detail,
-    };
-  }
+    },
+  });
 
   return {
-    status: 500,
-    error: "Withdrawal operation failed.",
-    detail,
+    status: parsed.status,
+    error: parsed.error,
+    detail: parsed.detail,
   };
 }
 

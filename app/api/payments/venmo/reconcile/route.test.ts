@@ -101,14 +101,30 @@ class MockQuery {
   }
 }
 
-function createMockService(options: { existingCredited: boolean }) {
-  const rpc = vi.fn().mockResolvedValue({
-    data: {
-      ledgerEntryId: "ledger-1",
-      reused: false,
-    },
-    error: null,
-  });
+function createMockService(options: {
+  existingCredited: boolean;
+  rpcErrorMessage?: string;
+  fundingIntentRows?: Array<{
+    id: string;
+    user_id: string;
+    requested_amount_usd: number;
+    status: string;
+  }>;
+}) {
+  const rpc = vi.fn().mockResolvedValue(
+    options.rpcErrorMessage
+      ? {
+          data: null,
+          error: { message: options.rpcErrorMessage },
+        }
+      : {
+          data: {
+            ledgerEntryId: "ledger-1",
+            reused: false,
+          },
+          error: null,
+        }
+  );
 
   const resolver: QueryResolver = async ({ table, operation, filters, terminal }) => {
     if (table === "venmo_incoming_payments" && operation === "select" && terminal === "maybeSingle") {
@@ -133,14 +149,16 @@ function createMockService(options: { existingCredited: boolean }) {
 
     if (table === "funding_intents" && operation === "select" && terminal === "await") {
       return {
-        data: [
-          {
-            id: "fi-1",
-            user_id: "user-1",
-            requested_amount_usd: 10,
-            status: "awaiting_payment",
-          },
-        ],
+        data:
+          options.fundingIntentRows ??
+          [
+            {
+              id: "fi-1",
+              user_id: "user-1",
+              requested_amount_usd: 10,
+              status: "awaiting_payment",
+            },
+          ],
         error: null,
       };
     }
@@ -254,5 +272,97 @@ describe("POST /api/payments/venmo/reconcile", () => {
     expect(json.duplicates).toBe(1);
     expect(json.credited).toBe(0);
     expect(service.rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when authorization header is missing or invalid", async () => {
+    const service = createMockService({ existingCredited: false });
+    vi.mocked(createServiceClient).mockReturnValue(service as any);
+
+    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      body: JSON.stringify({
+        payments: [
+          {
+            gmailMessageId: "msg-1",
+            venmoTransactionId: "tx-1",
+            amountUsd: 10,
+            note: "Payment note VC-ABCD23",
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(json.error).toBe("Unauthorized reconcile request.");
+  });
+
+  it("returns 400 for malformed or empty payments payloads", async () => {
+    const service = createMockService({ existingCredited: false });
+    vi.mocked(createServiceClient).mockReturnValue(service as any);
+
+    const malformedRequest = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-secret",
+        "Content-Type": "application/json",
+      },
+      body: "{not valid json",
+    });
+
+    const malformedResponse = await POST(malformedRequest);
+    const malformedJson = await malformedResponse.json();
+
+    expect(malformedResponse.status).toBe(400);
+    expect(malformedJson.error).toBe("Request body must be valid JSON.");
+
+    const emptyPaymentsRequest = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-secret",
+      },
+      body: JSON.stringify({ payments: [] }),
+    });
+
+    const emptyPaymentsResponse = await POST(emptyPaymentsRequest);
+    const emptyPaymentsJson = await emptyPaymentsResponse.json();
+
+    expect(emptyPaymentsResponse.status).toBe(400);
+    expect(emptyPaymentsJson.error).toBe("payments must be a non-empty array.");
+  });
+
+  it("counts provider RPC failures without crashing the batch", async () => {
+    const service = createMockService({
+      existingCredited: false,
+      rpcErrorMessage: "rpc apply_wallet_credit unavailable",
+    });
+    vi.mocked(createServiceClient).mockReturnValue(service as any);
+
+    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer test-secret",
+      },
+      body: JSON.stringify({
+        payments: [
+          {
+            gmailMessageId: "msg-1",
+            venmoTransactionId: "tx-1",
+            amountUsd: 10,
+            note: "Payment note VC-ABCD23",
+          },
+        ],
+      }),
+    });
+
+    const response = await POST(request);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.processed).toBe(1);
+    expect(json.credited).toBe(0);
+    expect(json.errors).toBe(1);
   });
 });
