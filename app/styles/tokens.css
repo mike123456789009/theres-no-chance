@@ -43,6 +43,7 @@
   --toggle-active-text: #fff;
   --toggle-shadow: 3px 3px 0 #101010;
   --toggle-radius: 999px;
+  --toggle-vibe-pill-width: 10.6rem;
 }
 
 .style-toggle {
@@ -67,31 +68,10 @@
 .palette-controls {
   display: inline-flex;
   align-items: center;
-  gap: 0.26rem;
+  justify-content: flex-end;
+  width: var(--toggle-vibe-pill-width);
+  flex: 0 0 var(--toggle-vibe-pill-width);
   white-space: nowrap;
-}
-
-.palette-select,
-.palette-select-trigger {
-  border: 1px solid var(--toggle-border);
-  border-radius: 999px;
-  background: var(--toggle-bg);
-  color: var(--toggle-text);
-  box-shadow: var(--toggle-shadow);
-  padding: 0.25rem 0.62rem;
-  min-width: 5.8rem;
-  font-family: inherit;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.palette-select:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
 }
 
 .style-toggle-button {
@@ -119,13 +99,52 @@
   color: var(--toggle-active-text);
 }
 
-.palette-cycle-button {
+.palette-combo-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
   border: 1px solid var(--toggle-border);
   border-radius: 999px;
   background: var(--toggle-bg);
   color: var(--toggle-text);
   box-shadow: var(--toggle-shadow);
-  padding: 0.28rem 0.62rem;
+  padding: 0.2rem;
+  gap: 0.16rem;
+}
+
+.palette-vibe-inline-button {
+  border: 0;
+  background: transparent;
+  color: var(--toggle-text);
+  padding: 0.26rem 0.42rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.palette-vibe-inline-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.palette-select-trigger {
+  border: 1px solid var(--toggle-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--toggle-active-bg) 8%, var(--toggle-bg));
+  color: var(--toggle-text);
+  box-shadow: var(--toggle-shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0.26rem 0.58rem;
+  min-width: max-content;
   font-family: inherit;
   font-size: 0.68rem;
   font-weight: 700;
@@ -133,48 +152,6 @@
   text-transform: uppercase;
   line-height: 1;
   cursor: pointer;
-}
-
-.palette-vibe-button {
-  padding-inline: 0.56rem 0.5rem;
-}
-
-.palette-cycle-button:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
-.palette-dropdown {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.palette-select-trigger {
-  list-style: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.36rem;
-  padding-right: 0.52rem;
-}
-
-.palette-select-trigger::-webkit-details-marker {
-  display: none;
-}
-
-.palette-select-trigger::marker {
-  content: "";
-}
-
-.palette-select-trigger::after {
-  content: "▼";
-  font-size: 0.5rem;
-  line-height: 1;
-  transform: translateY(-0.03rem);
-}
-
-.palette-dropdown[open] .palette-select-trigger::after {
-  transform: translateY(-0.03rem) rotate(180deg);
 }
 
 .palette-select-trigger:focus-visible {
@@ -195,6 +172,19 @@
   background: var(--toggle-bg);
   box-shadow: var(--toggle-shadow);
   z-index: 20;
+  opacity: 0;
+  transform: translateY(-0.24rem) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+.palette-combo-pill.is-open .palette-dropdown-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .palette-option-button {

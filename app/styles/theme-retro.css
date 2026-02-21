@@ -46,7 +46,8 @@ html[data-ui-style="retro"] {
 
 html[data-ui-style="retro"] .style-toggle,
 html[data-ui-style="retro"] .style-toggle-button,
-html[data-ui-style="retro"] .palette-cycle-button,
+html[data-ui-style="retro"] .palette-combo-pill,
+html[data-ui-style="retro"] .palette-vibe-inline-button,
 html[data-ui-style="retro"] .palette-select,
 html[data-ui-style="retro"] .palette-select-trigger,
 html[data-ui-style="retro"] .palette-option-button {
