@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { resolveAppBaseUrl } from "@/lib/app/base-url";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,133 @@ export function ResetForm() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isPreparingRecovery, setIsPreparingRecovery] = useState(true);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function prepareRecoverySession() {
+      setIsPreparingRecovery(true);
+
+      try {
+        const supabase = createClient();
+        const url = new URL(window.location.href);
+        const queryParams = url.searchParams;
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+        const code = queryParams.get("code") ?? hashParams.get("code");
+        const tokenHash = queryParams.get("token_hash") ?? hashParams.get("token_hash");
+        const type = (queryParams.get("type") ?? hashParams.get("type")) as
+          | "signup"
+          | "invite"
+          | "magiclink"
+          | "recovery"
+          | "email_change"
+          | null;
+        const accessToken = queryParams.get("access_token") ?? hashParams.get("access_token");
+        const refreshToken = queryParams.get("refresh_token") ?? hashParams.get("refresh_token");
+        const authErrorDescription =
+          queryParams.get("error_description") ?? hashParams.get("error_description");
+
+        if (authErrorDescription) {
+          if (!cancelled) {
+            setErrorMessage(decodeURIComponent(authErrorDescription));
+            setHasRecoverySession(false);
+          }
+          return;
+        }
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            if (!cancelled) {
+              setErrorMessage(error.message);
+              setHasRecoverySession(false);
+            }
+            return;
+          }
+        } else if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) {
+            if (!cancelled) {
+              setErrorMessage(error.message);
+              setHasRecoverySession(false);
+            }
+            return;
+          }
+        } else if (tokenHash && type === "recovery") {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
+          if (error) {
+            if (!cancelled) {
+              setErrorMessage(error.message);
+              setHasRecoverySession(false);
+            }
+            return;
+          }
+        }
+
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (!cancelled) {
+          if (sessionError) {
+            setErrorMessage(sessionError.message);
+            setHasRecoverySession(false);
+          } else {
+            setHasRecoverySession(Boolean(session));
+            if (session) {
+              setSuccessMessage("Reset link verified. Enter your new password below.");
+            }
+          }
+        }
+
+        // Remove one-time auth tokens from URL after they are consumed.
+        queryParams.delete("code");
+        queryParams.delete("token_hash");
+        queryParams.delete("access_token");
+        queryParams.delete("refresh_token");
+        queryParams.delete("type");
+        queryParams.delete("error");
+        queryParams.delete("error_description");
+        hashParams.delete("code");
+        hashParams.delete("token_hash");
+        hashParams.delete("access_token");
+        hashParams.delete("refresh_token");
+        hashParams.delete("type");
+        hashParams.delete("error");
+        hashParams.delete("error_description");
+
+        const cleanedQuery = queryParams.toString();
+        const cleanedHash = hashParams.toString();
+        const cleanedUrl = `${url.pathname}${cleanedQuery ? `?${cleanedQuery}` : ""}${cleanedHash ? `#${cleanedHash}` : ""}`;
+        window.history.replaceState(window.history.state, "", cleanedUrl);
+      } catch (error) {
+        if (!cancelled) {
+          setErrorMessage(error instanceof Error ? error.message : "Unable to verify reset link right now.");
+          setHasRecoverySession(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPreparingRecovery(false);
+        }
+      }
+    }
+
+    void prepareRecoverySession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function onSendReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,6 +175,23 @@ export function ResetForm() {
 
     try {
       const supabase = createClient();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        setErrorMessage(sessionError.message);
+        setHasRecoverySession(false);
+        return;
+      }
+
+      if (!session) {
+        setHasRecoverySession(false);
+        setErrorMessage("Auth session missing. Open your password reset email link and try again.");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -59,6 +203,7 @@ export function ResetForm() {
 
       setSuccessMessage("Password updated. You can now log in with the new password.");
       setNewPassword("");
+      setHasRecoverySession(true);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to update password right now.");
     } finally {
@@ -109,11 +254,14 @@ export function ResetForm() {
             </button>
           </div>
         </label>
-        <button className="auth-submit" type="submit" disabled={isUpdating}>
-          {isUpdating ? "UPDATING..." : "UPDATE PASSWORD"}
+        <button className="auth-submit" type="submit" disabled={isUpdating || isPreparingRecovery || !hasRecoverySession}>
+          {isUpdating ? "UPDATING..." : isPreparingRecovery ? "VERIFYING LINK..." : "UPDATE PASSWORD"}
         </button>
       </form>
 
+      {!isPreparingRecovery && !hasRecoverySession && !errorMessage ? (
+        <p className="auth-status">Use your password-reset email link to enable the update form.</p>
+      ) : null}
       {errorMessage ? <p className="auth-status auth-error">{errorMessage}</p> : null}
       {successMessage ? <p className="auth-status auth-success">{successMessage}</p> : null}
     </div>
