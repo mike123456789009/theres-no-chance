@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 import { NextResponse } from "next/server";
 
+vi.mock("@/lib/api/env-guards", () => ({
+  getServerEnvReadiness: vi.fn(() => ({ isConfigured: true, missingEnv: [] })),
+  getServiceEnvReadiness: vi.fn(() => ({ isConfigured: false, missingEnv: [] })),
+}));
+
 // Mock dependencies
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
@@ -352,6 +357,85 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
       expect(response.status).toBe(409);
       expect(json.error).toBe("Trade quote unavailable.");
       expect(json.detail).toBe("Market must be open for trading.");
+    });
+
+    it("should preserve institution verification guard messaging", async () => {
+      const mockRequest = new Request("http://localhost/api/markets/test-market-123/trade/quote", {
+        method: "POST",
+        body: JSON.stringify({
+          side: "yes",
+          action: "buy",
+          shares: 100,
+        }),
+      });
+
+      vi.mocked(validateTradeQuotePayload).mockReturnValue({
+        ok: true,
+        data: {
+          side: "yes",
+          action: "buy",
+          shares: 100,
+          maxSlippageBps: 500,
+        },
+      });
+
+      vi.mocked(getMarketViewerContext).mockResolvedValue({
+        isAuthenticated: true,
+        userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
+      });
+
+      vi.mocked(getMarketDetail).mockResolvedValue({
+        kind: "institution_verification_required",
+      });
+
+      const response = await POST(mockRequest, mockContext);
+      const json = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(json.error).toBe("Institution verification required.");
+      expect(json.detail).toBe("Verify an institution email to quote this market.");
+    });
+
+    it("should preserve schema-missing detail passthrough", async () => {
+      const mockRequest = new Request("http://localhost/api/markets/test-market-123/trade/quote", {
+        method: "POST",
+        body: JSON.stringify({
+          side: "yes",
+          action: "buy",
+          shares: 100,
+        }),
+      });
+
+      vi.mocked(validateTradeQuotePayload).mockReturnValue({
+        ok: true,
+        data: {
+          side: "yes",
+          action: "buy",
+          shares: 100,
+          maxSlippageBps: 500,
+        },
+      });
+
+      vi.mocked(getMarketViewerContext).mockResolvedValue({
+        isAuthenticated: true,
+        userId: "user-123",
+        activeOrganizationId: null,
+        hasActiveInstitution: false,
+      });
+
+      vi.mocked(getMarketDetail).mockResolvedValue({
+        kind: "schema_missing",
+        message: "relation \"markets\" does not exist",
+      });
+
+      const response = await POST(mockRequest, mockContext);
+      const json = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(json.error).toBe("Market tables are not provisioned in this environment yet.");
+      expect(json.detail).toBe("relation \"markets\" does not exist");
     });
   });
 

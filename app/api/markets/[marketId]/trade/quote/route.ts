@@ -1,21 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getMarketDetail, getMarketViewerContext } from "@/lib/markets/read-markets";
+import { loadMarketRequestContext, requireMarketDetail } from "@/lib/markets/request-context";
 import { quoteMarketTrade, validateTradeQuotePayload } from "@/lib/markets/trade-engine";
-import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export async function POST(request: Request, context: { params: Promise<{ marketId: string }> }) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Trade quote is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
-  }
-
   let payload: unknown;
   try {
     payload = await request.json();
@@ -37,67 +25,51 @@ export async function POST(request: Request, context: { params: Promise<{ market
   const { marketId } = await context.params;
 
   try {
-    if (isSupabaseServiceEnvConfigured()) {
-      const service = createServiceClient();
-      await service.rpc("sync_market_close_state", { p_market_id: marketId });
-      await service.rpc("refresh_community_market_resolution_state", {
-        p_market_id: marketId,
-        p_resolution_window_hours: 24,
-      });
-    }
-
-    const supabase = await createClient();
-    const viewer = await getMarketViewerContext(supabase);
-
-    if (!viewer.isAuthenticated || !viewer.userId) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    }
-
-    const detail = await getMarketDetail({
-      supabase,
-      viewer,
+    const requestContext = await loadMarketRequestContext({
       marketId,
+      unavailableMessage: "Trade quote is unavailable: missing Supabase environment variables.",
+      requireAuthenticatedViewer: true,
     });
-
-    if (detail.kind === "login_required") {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    if (!requestContext.ok) {
+      return requestContext.response;
     }
 
-    if (detail.kind === "institution_verification_required") {
-      return NextResponse.json(
-        {
+    const detailResult = requireMarketDetail({
+      detail: requestContext.context.detail,
+      guards: {
+        loginRequired: {
+          status: 401,
+          error: "Unauthorized.",
+        },
+        institutionVerificationRequired: {
+          status: 403,
           error: "Institution verification required.",
           detail: "Verify an institution email to quote this market.",
         },
-        { status: 403 }
-      );
-    }
-
-    if (detail.kind === "not_found") {
-      return NextResponse.json({ error: "Market not found." }, { status: 404 });
-    }
-
-    if (detail.kind === "schema_missing") {
-      return NextResponse.json(
-        {
+        notFound: {
+          status: 404,
+          error: "Market not found.",
+        },
+        schemaMissing: {
+          status: 503,
           error: "Market tables are not provisioned in this environment yet.",
-          detail: detail.message,
+          includeSourceMessage: true,
         },
-        { status: 503 }
-      );
-    }
-
-    if (detail.kind === "error") {
-      return NextResponse.json(
-        {
+        detailError: {
+          status: 500,
           error: "Unable to load market for trade quote.",
-          detail: detail.message,
+          includeSourceMessage: true,
         },
-        { status: 500 }
-      );
+      },
+    });
+    if (!detailResult.ok) {
+      return detailResult.response;
     }
 
-    if (detail.market.status !== "open") {
+    const market = detailResult.market;
+    const viewer = requestContext.context.viewer;
+
+    if (market.status !== "open") {
       return NextResponse.json(
         {
           error: "Trade quote unavailable.",
@@ -107,12 +79,12 @@ export async function POST(request: Request, context: { params: Promise<{ market
       );
     }
 
-    if (detail.market.viewerCanTrade === false) {
+    if (market.viewerCanTrade === false) {
       return NextResponse.json(
         {
           error: "Trade quote unavailable.",
           detail:
-            detail.market.viewerReadOnlyReason === "legacy_institution_access"
+            market.viewerReadOnlyReason === "legacy_institution_access"
               ? "Your account can view this market due to an existing position, but new trades are restricted to active institution members."
               : "Your account is not eligible to trade this market.",
         },
@@ -142,11 +114,11 @@ export async function POST(request: Request, context: { params: Promise<{ market
     return NextResponse.json({
       quote: quote.data,
       market: {
-        id: detail.market.id,
-        status: detail.market.status,
-        feeBps: detail.market.feeBps,
-        priceYes: detail.market.priceYes,
-        priceNo: detail.market.priceNo,
+        id: market.id,
+        status: market.status,
+        feeBps: market.feeBps,
+        priceYes: market.priceYes,
+        priceNo: market.priceNo,
       },
       viewer: {
         userId: viewer.userId,
