@@ -431,7 +431,9 @@ html[data-ui-style="modern"] body {
 html[data-ui-style="modern"] .style-toggle,
 html[data-ui-style="modern"] .style-toggle-button,
 html[data-ui-style="modern"] .palette-cycle-button,
-html[data-ui-style="modern"] .palette-select {
+html[data-ui-style="modern"] .palette-select,
+html[data-ui-style="modern"] .palette-select-trigger,
+html[data-ui-style="modern"] .palette-option-button {
   font-family: var(--font-modern-ui);
 }
 
@@ -441,7 +443,9 @@ html[data-ui-style="modern"] .style-toggle-button {
 }
 
 html[data-ui-style="modern"] .palette-select,
-html[data-ui-style="modern"] .palette-cycle-button {
+html[data-ui-style="modern"] .palette-cycle-button,
+html[data-ui-style="modern"] .palette-select-trigger,
+html[data-ui-style="modern"] .palette-option-button {
   text-transform: none;
   letter-spacing: 0;
   border-width: 1px;

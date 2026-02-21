@@ -1676,9 +1676,15 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
 
 .markets-brand-row {
   display: grid;
-  grid-template-columns: auto clamp(30rem, 54vw, 56rem) minmax(0, 1fr);
+  grid-template-columns: auto clamp(24rem, 46vw, 48rem) minmax(0, 1fr);
   align-items: center;
   gap: 0.72rem;
+}
+
+@media (min-width: 1121px) {
+  .markets-brand-row:has(.markets-search-row:focus-within) {
+    grid-template-columns: auto clamp(28rem, 52vw, 56rem) minmax(0, 1fr);
+  }
 }
 
 .markets-brand-logo {

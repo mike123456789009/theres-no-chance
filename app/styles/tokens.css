@@ -58,25 +58,28 @@
 }
 
 .style-toggle-stack {
-  display: inline-grid;
-  gap: 0.34rem;
-  justify-items: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex-wrap: nowrap;
 }
 
 .palette-controls {
   display: inline-flex;
-  gap: 0.3rem;
   align-items: center;
+  gap: 0.26rem;
+  white-space: nowrap;
 }
 
-.palette-select {
+.palette-select,
+.palette-select-trigger {
   border: 1px solid var(--toggle-border);
   border-radius: 999px;
   background: var(--toggle-bg);
   color: var(--toggle-text);
   box-shadow: var(--toggle-shadow);
-  padding: 0.25rem 0.56rem;
-  min-width: 7.2rem;
+  padding: 0.25rem 0.62rem;
+  min-width: 5.8rem;
   font-family: inherit;
   font-size: 0.68rem;
   font-weight: 700;
@@ -132,7 +135,91 @@
   cursor: pointer;
 }
 
+.palette-vibe-button {
+  padding-inline: 0.56rem 0.5rem;
+}
+
 .palette-cycle-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.palette-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.palette-select-trigger {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  padding-right: 0.52rem;
+}
+
+.palette-select-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.palette-select-trigger::marker {
+  content: "";
+}
+
+.palette-select-trigger::after {
+  content: "▼";
+  font-size: 0.5rem;
+  line-height: 1;
+  transform: translateY(-0.03rem);
+}
+
+.palette-dropdown[open] .palette-select-trigger::after {
+  transform: translateY(-0.03rem) rotate(180deg);
+}
+
+.palette-select-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.palette-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.28rem);
+  right: 0;
+  display: grid;
+  gap: 0.2rem;
+  min-width: max-content;
+  padding: 0.34rem;
+  border: 1px solid var(--toggle-border);
+  border-radius: 12px;
+  background: var(--toggle-bg);
+  box-shadow: var(--toggle-shadow);
+  z-index: 20;
+}
+
+.palette-option-button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--toggle-text);
+  padding: 0.34rem 0.58rem;
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.palette-option-button:hover,
+.palette-option-button.is-selected {
+  border-color: var(--toggle-border);
+  background: color-mix(in srgb, var(--toggle-active-bg) 8%, var(--toggle-bg));
+}
+
+.palette-option-button:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
