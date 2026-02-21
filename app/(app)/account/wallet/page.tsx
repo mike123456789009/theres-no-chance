@@ -238,25 +238,21 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       };
     } else if (fundingIntent.status === "credited") {
       const gross = toNumber(fundingIntent.requested_amount_usd, 0);
-      const fee = toNumber(fundingIntent.estimated_fee_usd, 0);
-      const net = toNumber(fundingIntent.estimated_net_credit_usd, 0);
       banner = {
         kind: "credited",
         title: "Deposit credited",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} credited. Gross ${formatCurrency(gross)} · Fee ${formatCurrency(
-          fee
-        )} · Net ${formatCurrency(net)}. Funding intent id: ${fundingIntent.id}`,
+        detail: `${fundingIntent.provider} ${fundingIntent.intent} credited ${formatCurrency(
+          gross
+        )}. Venmo withdrawal fee applies when cashing out. Funding intent id: ${fundingIntent.id}`,
       };
     } else {
       const gross = toNumber(fundingIntent.requested_amount_usd, 0);
-      const fee = toNumber(fundingIntent.estimated_fee_usd, 0);
-      const net = toNumber(fundingIntent.estimated_net_credit_usd, 0);
       banner = {
         kind: "pending",
         title: "Deposit pending",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} is still pending credit. Gross ${formatCurrency(gross)} · Fee ${formatCurrency(
-          fee
-        )} · Net ${formatCurrency(net)}. Refresh in a moment.`,
+        detail: `${fundingIntent.provider} ${fundingIntent.intent} is still pending credit for ${formatCurrency(
+          gross
+        )}. Venmo withdrawal fee applies when cashing out. Refresh in a moment.`,
         showRefresh: true,
       };
     }
@@ -267,7 +263,9 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       <p className="create-kicker">Wallet</p>
       <h1 className="create-title">Balances + deposits</h1>
       <p className="create-copy">View wallet balances, deposit methods, and your most recent ledger entries.</p>
-      <p className="create-note">Venmo deposits are credited net of Venmo processing fee. Coinbase deposits are credited at gross amount.</p>
+      <p className="create-note">
+        Venmo and Coinbase deposits are credited at gross amount. Venmo processing fee is applied when you withdraw.
+      </p>
 
       <div className="create-actions account-actions-top">
         <Link className="create-submit create-submit-muted" href="/markets">

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { computeVenmoFeeBreakdown, isNetCreditAtLeastOneCent } from "@/lib/payments/venmo-fees";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 type MatchBody = {
@@ -143,10 +142,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const feeBreakdown = computeVenmoFeeBreakdown(grossAmountUsd);
-  if (!isNetCreditAtLeastOneCent(feeBreakdown)) {
-    return NextResponse.json({ error: "Computed net credit is below one cent." }, { status: 400 });
-  }
+  const creditedAmountUsd = grossAmountUsd;
+  const appliedFeeUsd = 0;
 
   const providerPaymentId = clean(incoming.provider_payment_id);
   const { data: receiptData, error: receiptError } = await service
@@ -157,9 +154,9 @@ export async function POST(request: Request) {
         funding_intent_id: clean(intent.id),
         provider: "venmo",
         provider_payment_id: providerPaymentId,
-        gross_amount_usd: feeBreakdown.grossAmountUsd,
-        fee_amount_usd: feeBreakdown.feeAmountUsd,
-        net_amount_usd: feeBreakdown.netAmountUsd,
+        gross_amount_usd: creditedAmountUsd,
+        fee_amount_usd: appliedFeeUsd,
+        net_amount_usd: creditedAmountUsd,
         currency: "USD",
         payer_display_name: clean(incoming.payer_display_name) || null,
         payer_handle: clean(incoming.payer_handle) || null,
@@ -188,7 +185,7 @@ export async function POST(request: Request) {
     const creditResult = await callWalletCreditRpc({
       service,
       userId: clean(intent.user_id),
-      netAmountUsd: feeBreakdown.netAmountUsd,
+      netAmountUsd: creditedAmountUsd,
       providerPaymentId,
       depositReceiptId,
       metadata: {
@@ -197,12 +194,11 @@ export async function POST(request: Request) {
         invoiceCode: clean(intent.invoice_code),
         gmailMessageId: clean(incoming.gmail_message_id),
         venmoTransactionId: clean(incoming.venmo_transaction_id) || null,
-        grossAmountUsd: feeBreakdown.grossAmountUsd,
-        feeAmountUsd: feeBreakdown.feeAmountUsd,
-        netAmountUsd: feeBreakdown.netAmountUsd,
-        feePercent: feeBreakdown.feePercent,
-        feeFixedUsd: feeBreakdown.feeFixedUsd,
+        grossAmountUsd: creditedAmountUsd,
+        feeAmountUsd: appliedFeeUsd,
+        netAmountUsd: creditedAmountUsd,
         matchedByAdminId: auth.adminUser.id,
+        withdrawalFeeApplied: true,
       },
     });
 
@@ -221,8 +217,8 @@ export async function POST(request: Request) {
     await service
       .from("venmo_incoming_payments")
       .update({
-        computed_fee_usd: feeBreakdown.feeAmountUsd,
-        computed_net_usd: feeBreakdown.netAmountUsd,
+        computed_fee_usd: appliedFeeUsd,
+        computed_net_usd: creditedAmountUsd,
         match_status: "credited",
         matched_funding_intent_id: clean(intent.id),
         deposit_receipt_id: depositReceiptId,
@@ -235,7 +231,7 @@ export async function POST(request: Request) {
       message: creditResult.reused ? "Manual match reused existing idempotent credit." : "Manual match credited successfully.",
       ledgerEntryId: creditResult.ledgerEntryId,
       depositReceiptId,
-      netAmountUsd: feeBreakdown.netAmountUsd,
+      netAmountUsd: creditedAmountUsd,
     });
   } catch (error) {
     return NextResponse.json(

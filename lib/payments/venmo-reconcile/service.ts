@@ -1,4 +1,3 @@
-import { computeVenmoFeeBreakdown, isNetCreditAtLeastOneCent } from "@/lib/payments/venmo-fees";
 import { extractInvoiceCodeFromNote } from "@/lib/payments/venmo";
 import { getRpcErrorDetail } from "@/lib/payments/rpc-errors";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
@@ -305,7 +304,12 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
 
       processed += 1;
       const providerPaymentId = venmoTransactionId || `gmail:${gmailMessageId}`;
-      const feeBreakdown = computeVenmoFeeBreakdown(grossAmountUsd);
+      const feeBreakdown = {
+        grossAmountUsd,
+        grossAmountCents: toCents(grossAmountUsd),
+        feeAmountUsd: 0,
+        netAmountUsd: grossAmountUsd,
+      };
       const invoiceCode = extractInvoiceCodeFromNote(note);
 
       const existing = await findExistingIncoming({
@@ -319,7 +323,7 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
         continue;
       }
 
-      if (!invoiceCode || !isNetCreditAtLeastOneCent(feeBreakdown)) {
+      if (!invoiceCode) {
         await upsertIncoming({
           service,
           existing,
@@ -338,7 +342,7 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
             extracted_invoice_code: invoiceCode,
             match_status: "review_required",
             raw_payload: rawPayload,
-            error_message: invoiceCode ? "Computed net credit below one cent." : "Missing required invoice code in payment note.",
+            error_message: "Missing required invoice code in payment note.",
           },
         });
         reviewRequired += 1;
@@ -399,23 +403,22 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
       const creditResult = await applyNetWalletCredit({
         service,
         userId: matchedIntent.user_id,
-        netAmountUsd: feeBreakdown.netAmountUsd,
-        providerPaymentId,
-        depositReceiptId,
+          netAmountUsd: feeBreakdown.netAmountUsd,
+          providerPaymentId,
+          depositReceiptId,
         metadata: {
           provider: "venmo",
           providerPaymentId,
           invoiceCode,
           gmailMessageId,
           venmoTransactionId: venmoTransactionId || null,
-          grossAmountUsd: feeBreakdown.grossAmountUsd,
-          feeAmountUsd: feeBreakdown.feeAmountUsd,
-          netAmountUsd: feeBreakdown.netAmountUsd,
-          feePercent: feeBreakdown.feePercent,
-          feeFixedUsd: feeBreakdown.feeFixedUsd,
-          payerDisplayName: payerDisplayName || null,
-          payerHandle: payerHandle || null,
-        },
+            grossAmountUsd: feeBreakdown.grossAmountUsd,
+            feeAmountUsd: feeBreakdown.feeAmountUsd,
+            netAmountUsd: feeBreakdown.netAmountUsd,
+            withdrawalFeeApplied: true,
+            payerDisplayName: payerDisplayName || null,
+            payerHandle: payerHandle || null,
+          },
       });
 
       const { error: receiptLedgerError } = await service

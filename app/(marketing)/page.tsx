@@ -80,8 +80,12 @@ export default function MarketingPage() {
                       <span>Use the invoice code exactly as shown in wallet.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Fee-aware credit</span>
-                      <span>Wallet credit is posted at gross minus Venmo fee.</span>
+                      <span className="plan-name">Deposit credit</span>
+                      <span>Wallet credit is posted at gross amount.</span>
+                    </li>
+                    <li>
+                      <span className="plan-name">Withdrawal fee</span>
+                      <span>Venmo processing fee is applied when cashing out.</span>
                     </li>
                   </ul>
                 </article>
@@ -103,8 +107,8 @@ export default function MarketingPage() {
               </div>
 
               <p className="redeem-note">
-                Wallet and admin reconciliation views display gross payment, fee, and net credit details for deposit
-                transparency.
+                Wallet and admin reconciliation views track gross deposit amounts while withdrawal flows apply Venmo fee
+                policy.
               </p>
             </section>
 

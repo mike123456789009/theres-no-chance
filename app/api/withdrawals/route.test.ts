@@ -183,7 +183,18 @@ describe("POST /api/withdrawals", () => {
     expect(response.status).toBe(201);
     expect(json.withdrawal.withdrawalRequestId).toBe("withdrawal-1");
     expect(json.withdrawal.autoPayout).toBe(false);
+    expect(json.withdrawal.requestedAmountUsd).toBe(125);
+    expect(json.withdrawal.estimatedWithdrawalFeeUsd).toBeGreaterThan(0);
+    expect(json.withdrawal.estimatedNetPayoutUsd).toBeLessThan(125);
     expect(vi.mocked(requestWithdrawal)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(requestWithdrawal).mock.calls[0][0]).toMatchObject({
+      amount: 125,
+      metadata: expect.objectContaining({
+        requestedAmountUsd: 125,
+        estimatedWithdrawalFeeUsd: expect.any(Number),
+        estimatedNetPayoutUsd: expect.any(Number),
+      }),
+    });
   });
 
   it("returns 200 for idempotent duplicate withdrawal requests", async () => {

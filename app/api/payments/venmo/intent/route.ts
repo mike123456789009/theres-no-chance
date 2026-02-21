@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { getDepositConfig } from "@/lib/payments/deposit-config";
-import { computeVenmoFeeBreakdown, isNetCreditAtLeastOneCent } from "@/lib/payments/venmo-fees";
+import { getVenmoFeeConfig } from "@/lib/payments/venmo-fees";
 import { buildRequiredVenmoNote, generateInvoiceCode, getVenmoPayUrl, getVenmoQrImageUrl, getVenmoUsername } from "@/lib/payments/venmo";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
@@ -126,16 +126,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const estimate = computeVenmoFeeBreakdown(amountUsd);
-  if (!isNetCreditAtLeastOneCent(estimate)) {
-    return NextResponse.json(
-      {
-        error: "Validation failed.",
-        details: ["Net Venmo credit must be at least $0.01 after fees."],
-      },
-      { status: 400 }
-    );
-  }
+  const feeConfig = getVenmoFeeConfig();
+  const estimate = {
+    grossAmountUsd: amountUsd,
+    feeAmountUsd: 0,
+    netAmountUsd: amountUsd,
+    feePercent: feeConfig.feePercent,
+    feeFixedUsd: feeConfig.fixedFeeUsd,
+  };
 
   try {
     const supabase = await createClient();

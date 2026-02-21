@@ -18,7 +18,8 @@ export default async function AdminPaymentsPage() {
       <p className="create-kicker">Admin / Payments</p>
       <h1 className="create-title">Venmo reconciliation + fee audit</h1>
       <p className="create-copy">
-        Review unmatched Venmo rows and manually match them to funding intents. Credits are always posted at net amount after fee.
+        Review unmatched Venmo rows and manually match them to funding intents. Deposits post at gross amount; Venmo fee
+        is applied at withdrawal time.
       </p>
       <p className="create-note">
         Admin: <code>{access.adminUser.email ?? "unknown"}</code> · <code>{access.adminUser.id}</code>

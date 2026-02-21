@@ -221,8 +221,7 @@ export function DepositPanel({
     <section className="create-section" aria-label="Deposit options">
       <h2>Deposit</h2>
       <p className="create-note">
-        Venmo credits are posted net of Venmo processing fees. We store gross, fee, and net values in your ledger and admin
-        reconciliation tools.
+        Deposits are credited at full gross amount. Venmo processing fee is taken when you withdraw.
       </p>
 
       {errorMessage ? <p className="create-note tnc-error-text">{errorMessage}</p> : null}
@@ -252,8 +251,10 @@ export function DepositPanel({
 
       <div className="deposit-panel-grid">
         <article className="deposit-provider-card">
-          <h3>Venmo (manual, fee-aware)</h3>
-          <p className="create-note">Pay to @{displayUsername}. Your deposit is credited only after note-based invoice matching.</p>
+          <h3>Venmo (manual reconciliation)</h3>
+          <p className="create-note">
+            Pay to @{displayUsername}. Deposit credit is posted at gross amount after note-based invoice matching.
+          </p>
 
           <div className="venmo-mandatory-banner" role="alert" aria-live="polite">
             <p className="venmo-mandatory-title">Required: paste your generated invoice code in the Venmo note.</p>
@@ -267,14 +268,18 @@ export function DepositPanel({
                 You pay: <strong>{formatCurrency(venmoPreview.grossAmountUsd)}</strong>
               </p>
               <p className="create-note">
-                Venmo fee: <strong>{formatCurrency(venmoPreview.feeAmountUsd)}</strong>
+                Deposit fee: <strong>{formatCurrency(0)}</strong>
               </p>
               <p className="create-note">
-                You are credited: <strong>{formatCurrency(venmoPreview.netAmountUsd)}</strong>
+                You are credited: <strong>{formatCurrency(venmoPreview.grossAmountUsd)}</strong>
+              </p>
+              <p className="create-note">
+                If withdrawn via Venmo later: <strong>{formatCurrency(venmoPreview.netAmountUsd)}</strong> after{" "}
+                {formatCurrency(venmoPreview.feeAmountUsd)} fee
               </p>
             </div>
           ) : (
-            <p className="create-note">Enter a valid amount to preview gross, fee, and net credit.</p>
+            <p className="create-note">Enter a valid amount to preview deposit credit and estimated Venmo withdrawal fee.</p>
           )}
 
           <button type="button" className="create-submit" disabled={Boolean(pendingKey)} onClick={createVenmoIntent}>
@@ -313,8 +318,8 @@ export function DepositPanel({
                 Funding intent: <code>{venmoIntent.fundingIntentId}</code>
               </p>
               <p className="create-note">
-                Breakdown: {formatCurrency(venmoIntent.grossAmountUsd)} gross / {formatCurrency(venmoIntent.estimatedFeeUsd)} fee /{" "}
-                {formatCurrency(venmoIntent.estimatedNetCreditUsd)} net credit
+                Deposit credit: {formatCurrency(venmoIntent.grossAmountUsd)} gross / {formatCurrency(venmoIntent.estimatedFeeUsd)}{" "}
+                deposit fee
               </p>
             </div>
           ) : (

@@ -213,7 +213,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("credits net amount (not gross) when payment auto-matches", async () => {
+  it("credits gross amount when payment auto-matches", async () => {
     const service = createMockService({ existingCredited: false });
     vi.mocked(createServiceClient).mockReturnValue(service as any);
 
@@ -239,9 +239,9 @@ describe("POST /api/payments/venmo/reconcile", () => {
 
     expect(response.status).toBe(200);
     expect(json.credited).toBe(1);
-    expect(json.creditedNetTotalUsd).toBe(9.71);
+    expect(json.creditedNetTotalUsd).toBe(10);
     expect(service.rpc).toHaveBeenCalledTimes(1);
-    expect(service.rpc.mock.calls[0][1].p_amount).toBe(9.71);
+    expect(service.rpc.mock.calls[0][1].p_amount).toBe(10);
   });
 
   it("treats already-credited incoming rows as duplicates", async () => {

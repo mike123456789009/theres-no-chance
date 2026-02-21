@@ -1,4 +1,5 @@
 import { getWithdrawalConfig, processWithdrawalRequest, requestWithdrawal, validateWithdrawalPayload } from "@/lib/payments/withdrawals";
+import { computeVenmoFeeBreakdown, isNetCreditAtLeastOneCent } from "@/lib/payments/venmo-fees";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
@@ -113,6 +114,17 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
     };
   }
 
+  const withdrawalFeeBreakdown = computeVenmoFeeBreakdown(validation.data.amount);
+  if (!isNetCreditAtLeastOneCent(withdrawalFeeBreakdown)) {
+    return {
+      status: 400,
+      body: {
+        error: "Withdrawal amount too small after fee.",
+        detail: "Requested amount must leave at least $0.01 after Venmo withdrawal fee.",
+      },
+    };
+  }
+
   try {
     const supabase = await createClient();
     const {
@@ -222,6 +234,11 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
         destinationNetwork: validation.data.destination.network,
         destinationAddressMasked: maskAddress(validation.data.destination.address),
         note: validation.data.note,
+        requestedAmountUsd: validation.data.amount,
+        estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+        estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
+        withdrawalFeePercent: withdrawalFeeBreakdown.feePercent,
+        withdrawalFeeFixedUsd: withdrawalFeeBreakdown.feeFixedUsd,
         requestedVia: "api",
       },
     });
@@ -244,6 +261,9 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
           withdrawal: {
             ...requestResult.data,
             network: validation.data.destination.network,
+            requestedAmountUsd: validation.data.amount,
+            estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+            estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
             autoPayout: false,
           },
         },
@@ -257,6 +277,11 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
       metadata: {
         autoPayout: true,
         destinationNetwork: validation.data.destination.network,
+        requestedAmountUsd: validation.data.amount,
+        estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+        estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
+        withdrawalFeePercent: withdrawalFeeBreakdown.feePercent,
+        withdrawalFeeFixedUsd: withdrawalFeeBreakdown.feeFixedUsd,
       },
     });
 
@@ -269,6 +294,11 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
         metadata: {
           autoPayout: true,
           destinationNetwork: validation.data.destination.network,
+          requestedAmountUsd: validation.data.amount,
+          estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+          estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
+          withdrawalFeePercent: withdrawalFeeBreakdown.feePercent,
+          withdrawalFeeFixedUsd: withdrawalFeeBreakdown.feeFixedUsd,
           fallbackFailure: true,
         },
       });
@@ -293,6 +323,9 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
             ...completion.data,
             requestedAt: requestResult.data.requestedAt,
             network: validation.data.destination.network,
+            requestedAmountUsd: validation.data.amount,
+            estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+            estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
             autoPayout: true,
           },
         },
@@ -306,6 +339,9 @@ export async function handleWithdrawalRequest(request: Request): Promise<Withdra
           ...completion.data,
           requestedAt: requestResult.data.requestedAt,
           network: validation.data.destination.network,
+          requestedAmountUsd: validation.data.amount,
+          estimatedWithdrawalFeeUsd: withdrawalFeeBreakdown.feeAmountUsd,
+          estimatedNetPayoutUsd: withdrawalFeeBreakdown.netAmountUsd,
           autoPayout: true,
         },
       },
