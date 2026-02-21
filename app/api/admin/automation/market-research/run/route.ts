@@ -7,6 +7,8 @@ import { getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
+const ADMIN_RUN_TIMEOUT_BUFFER_MS = 60_000;
+const ADMIN_RUN_TIMEOUT_MS = Math.max(60_000, maxDuration * 1000 - ADMIN_RUN_TIMEOUT_BUFFER_MS);
 
 type RunScope = "public" | "institution";
 
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
         maxToSubmit: parsePositiveInt(body.maxToSubmit) ?? 8,
         modelName,
         scoutModelName,
+        runTimeoutMs: ADMIN_RUN_TIMEOUT_MS,
       });
 
       return NextResponse.json({
@@ -95,6 +98,7 @@ export async function POST(request: Request) {
       maxPerOrganization: parsePositiveInt(body.maxPerOrganization) ?? 3,
       modelName,
       scoutModelName,
+      runTimeoutMs: ADMIN_RUN_TIMEOUT_MS,
     });
 
     return NextResponse.json({

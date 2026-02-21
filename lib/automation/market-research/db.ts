@@ -100,6 +100,96 @@ function emptyProposalCounts(): RunProposalStatusCount {
   };
 }
 
+const DEFAULT_RUN_LOCK_STALE_MS = 2 * 60 * 60 * 1000;
+const MIN_RUN_LOCK_STALE_MS = 5 * 60 * 1000;
+
+type RunningRunRow = {
+  id: string;
+  started_at: string;
+};
+
+function parsePositiveEnvInt(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function runLockStaleAfterMs(): number {
+  const configured = parsePositiveEnvInt(process.env.MARKET_RESEARCH_RUN_LOCK_STALE_MS);
+  if (configured === null) return DEFAULT_RUN_LOCK_STALE_MS;
+  return Math.max(MIN_RUN_LOCK_STALE_MS, configured);
+}
+
+function parseTimeMs(value: string): number | null {
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+}
+
+function isRunLockStale(startedAt: string, staleAfterMs: number): boolean {
+  const startedAtMs = parseTimeMs(startedAt);
+  if (startedAtMs === null) {
+    return true;
+  }
+  return Date.now() - startedAtMs >= staleAfterMs;
+}
+
+async function findRunningRunByScope(
+  service: ReturnType<typeof createServiceClient>,
+  input: Pick<StartRunInput, "scope" | "organizationId">
+): Promise<RunningRunRow | null> {
+  let query = service
+    .from("market_research_runs")
+    .select("id, started_at")
+    .eq("scope", input.scope)
+    .eq("status", "running")
+    .order("started_at", { ascending: true })
+    .limit(1);
+
+  if (input.organizationId) {
+    query = query.eq("organization_id", input.organizationId);
+  } else {
+    query = query.is("organization_id", null);
+  }
+
+  const { data, error } = await query.maybeSingle();
+  if (error) {
+    throw new Error(`Unable to load lock state for research run start: ${error.message}`);
+  }
+  if (!data) return null;
+  return data as RunningRunRow;
+}
+
+async function failStaleRunningRun(input: {
+  service: ReturnType<typeof createServiceClient>;
+  runId: string;
+  staleAfterMs: number;
+}) {
+  const completedAt = new Date().toISOString();
+  const staleMinutes = Math.round(input.staleAfterMs / 60_000);
+  const message = `Run lock stale for ${staleMinutes}m+; marked failed so a new run can start.`;
+
+  const { error } = await input.service
+    .from("market_research_runs")
+    .update({
+      status: "failed",
+      completed_at: completedAt,
+      error_message: message,
+      summary: {
+        reason: "stale_run_lock_recovered",
+        staleAfterMs: input.staleAfterMs,
+        recoveredAt: completedAt,
+      },
+    })
+    .eq("id", input.runId)
+    .eq("status", "running");
+
+  if (error) {
+    throw new Error(`Unable to clear stale run lock ${input.runId}: ${error.message}`);
+  }
+}
+
 export function isMarketResearchEnabled(): boolean {
   return cleanBoolean(process.env.MARKET_RESEARCH_ENABLED);
 }
@@ -137,6 +227,43 @@ export async function startResearchRun(input: StartRunInput): Promise<StartRunRe
   }
 
   if (error && isUniqueViolation((error as { code?: string }).code)) {
+    const staleAfterMs = runLockStaleAfterMs();
+    const lockingRun = await findRunningRunByScope(service, {
+      scope: input.scope,
+      organizationId: input.organizationId,
+    });
+
+    if (lockingRun && isRunLockStale(lockingRun.started_at, staleAfterMs)) {
+      await failStaleRunningRun({
+        service,
+        runId: lockingRun.id,
+        staleAfterMs,
+      });
+
+      const retry = await service
+        .from("market_research_runs")
+        .insert(startPayload)
+        .select("id, started_at")
+        .single();
+
+      if (!retry.error && retry.data) {
+        return {
+          kind: "started",
+          runId: retry.data.id,
+          startedAt: retry.data.started_at,
+        };
+      }
+
+      if (retry.error && !isUniqueViolation((retry.error as { code?: string }).code)) {
+        throw new Error(`Unable to start research run after stale-lock recovery: ${retry.error.message}`);
+      }
+    }
+
+    const activeLock = await findRunningRunByScope(service, {
+      scope: input.scope,
+      organizationId: input.organizationId,
+    });
+
     const skipped = await service
       .from("market_research_runs")
       .insert({
@@ -148,6 +275,8 @@ export async function startResearchRun(input: StartRunInput): Promise<StartRunRe
         completed_at: new Date().toISOString(),
         summary: {
           reason: "run_lock_exists",
+          lockedByRunId: activeLock?.id ?? null,
+          lockedByStartedAt: activeLock?.started_at ?? null,
         },
       })
       .select("id, started_at")

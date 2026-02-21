@@ -52,6 +52,7 @@ export async function runPublicScan(input: PublicScanInput): Promise<PublicScanR
     modelName: input.modelName,
     scoutModelName: input.scoutModelName,
     maxCandidates,
+    deadline,
   });
 
   deadline.throwIfExpired("processing generated public proposals");

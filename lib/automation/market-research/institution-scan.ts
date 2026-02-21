@@ -87,6 +87,7 @@ export async function runInstitutionScan(input: InstitutionScanInput): Promise<I
         scoutModelName: input.scoutModelName,
         maxCandidates,
         organization,
+        deadline,
       });
 
       const processed = await processGeneratedProposals({

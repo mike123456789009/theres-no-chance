@@ -1,7 +1,7 @@
 import { DEFAULT_SCOUT_MODEL, OPENAI_CALL_TIMEOUT_MS } from "@/lib/automation/market-research/constants";
 import { listExistingMarketsForResearch, type ExistingMarketContext } from "@/lib/automation/market-research/db";
 import type { GeneratedMarketProposal, ResearchOrganization, ResearchRunScope } from "@/lib/automation/market-research/types";
-import { sleep } from "@/lib/automation/market-research/utils";
+import { sleep, type RunDeadline } from "@/lib/automation/market-research/utils";
 import { requiredEnv } from "@/lib/env";
 import { MARKET_CARD_SHADOW_TONES } from "@/lib/markets/presentation";
 import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_LABELS, type MarketCategoryKey } from "@/lib/markets/taxonomy";
@@ -12,6 +12,7 @@ type GenerateProposalBatchInput = {
   scoutModelName?: string;
   maxCandidates: number;
   organization?: ResearchOrganization;
+  deadline?: RunDeadline;
 };
 
 type OpenAiResponse = {
@@ -37,6 +38,9 @@ type ScoutLead = {
   candidateCloseTime: string;
   resolutionSourceHints: string[];
 };
+
+const DEADLINE_BUFFER_MS = 12_000;
+const MIN_OPENAI_CALL_TIMEOUT_MS = 8_000;
 
 const SCOUT_OUTPUT_SCHEMA: Record<string, unknown> = {
   type: "object",
@@ -257,6 +261,24 @@ function parseResponseJson(response: OpenAiResponse, label: string): unknown {
       }. Raw: ${text.slice(0, 240)}.`
     );
   }
+}
+
+function resolveStageTimeoutMs(input: {
+  stage: string;
+  requestedMs: number;
+  deadline?: RunDeadline;
+  minTimeoutMs?: number;
+}): number {
+  const requestedMs = Math.max(1_000, Math.floor(input.requestedMs));
+  if (!input.deadline) return requestedMs;
+
+  const minTimeoutMs = Math.max(1_000, input.minTimeoutMs ?? MIN_OPENAI_CALL_TIMEOUT_MS);
+  const remainingMs = Math.max(0, input.deadline.timeRemainingMs() - DEADLINE_BUFFER_MS);
+  if (remainingMs < minTimeoutMs) {
+    throw new Error(`Run deadline nearly exhausted before ${input.stage}.`);
+  }
+
+  return Math.min(requestedMs, remainingMs);
 }
 
 function buildResearchTools(scope: ResearchRunScope): Array<Record<string, unknown>> {
@@ -570,7 +592,13 @@ async function runScoutStage(
   existingMarkets: ExistingMarketContext[]
 ): Promise<ScoutLead[]> {
   const leadTarget = Math.max(Math.min(input.maxCandidates * 4, 64), 8);
-  const scoutTimeoutMs = Math.max(90_000, OPENAI_CALL_TIMEOUT_MS);
+  input.deadline?.throwIfExpired("starting scout model stage");
+  const scoutTimeoutMs = resolveStageTimeoutMs({
+    stage: "scout model call",
+    requestedMs: Math.max(90_000, OPENAI_CALL_TIMEOUT_MS),
+    deadline: input.deadline,
+    minTimeoutMs: 15_000,
+  });
 
   const payload = {
     model: scoutModelName,
@@ -595,6 +623,7 @@ async function runScoutStage(
   } as const satisfies Record<string, unknown>;
 
   const response = await createResponseWithRetry(payload, scoutTimeoutMs, 2);
+  input.deadline?.throwIfExpired("parsing scout stage output");
   const parsed = parseResponseJson(response, "scout");
   const leads = toScoutLeads(parsed);
   if (leads.length === 0) {
@@ -606,6 +635,13 @@ async function runScoutStage(
 
 async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutLead[]): Promise<GeneratedMarketProposal[]> {
   const useWebSearch = cleanBoolean(process.env.MARKET_RESEARCH_USE_WEB_SEARCH);
+  input.deadline?.throwIfExpired("starting proposal model stage");
+  const proposalTimeoutMs = resolveStageTimeoutMs({
+    stage: "proposal model call",
+    requestedMs: OPENAI_CALL_TIMEOUT_MS,
+    deadline: input.deadline,
+    minTimeoutMs: 15_000,
+  });
 
   const payload = {
     model: input.modelName,
@@ -630,7 +666,8 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
   } as const satisfies Record<string, unknown>;
 
   if (!useWebSearch) {
-    const directResponse = await createResponseWithRetry(payload, OPENAI_CALL_TIMEOUT_MS, 1);
+    const directResponse = await createResponseWithRetry(payload, proposalTimeoutMs, 1);
+    input.deadline?.throwIfExpired("parsing proposal stage output");
     const parsed = parseResponseJson(directResponse, "proposal");
     const proposals = toGeneratedProposals(parsed).slice(0, input.maxCandidates);
     if (proposals.length === 0) {
@@ -646,7 +683,7 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
         ...payload,
         tools: buildResearchTools(input.scope),
       },
-      OPENAI_CALL_TIMEOUT_MS,
+      proposalTimeoutMs,
       1
     );
   } catch (error) {
@@ -654,9 +691,19 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
       throw error;
     }
 
-    response = await createResponseWithRetry(payload, Math.min(60_000, OPENAI_CALL_TIMEOUT_MS), 1);
+    response = await createResponseWithRetry(
+      payload,
+      resolveStageTimeoutMs({
+        stage: "proposal fallback call",
+        requestedMs: Math.min(60_000, proposalTimeoutMs),
+        deadline: input.deadline,
+        minTimeoutMs: 5_000,
+      }),
+      1
+    );
   }
 
+  input.deadline?.throwIfExpired("parsing proposal stage output");
   const parsed = parseResponseJson(response, "proposal");
   const proposals = toGeneratedProposals(parsed).slice(0, input.maxCandidates);
   if (proposals.length === 0) {
@@ -668,14 +715,17 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
 
 export async function generateProposalBatch(input: GenerateProposalBatchInput): Promise<GeneratedMarketProposal[]> {
   const scoutModelName = input.scoutModelName?.trim() || DEFAULT_SCOUT_MODEL;
+  input.deadline?.throwIfExpired("loading existing market context");
   const existingMarkets = await listExistingMarketsForResearch({
     scope: input.scope,
     organizationId: input.organization?.id,
   });
+  input.deadline?.throwIfExpired("running scout stage");
   const leads = await runScoutStage(input, scoutModelName, existingMarkets);
 
   const leadBudget = Math.max(Math.min(input.maxCandidates * 3, leads.length), 4);
   const shortlistedLeads = rebalanceScoutLeads(leads, input.scope, leadBudget);
 
+  input.deadline?.throwIfExpired("running proposal stage");
   return runProposalStage(input, shortlistedLeads);
 }

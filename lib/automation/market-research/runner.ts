@@ -16,6 +16,7 @@ type RunPublicResearchInput = {
   maxToSubmit?: number;
   modelName?: string;
   scoutModelName?: string;
+  runTimeoutMs?: number;
 };
 
 type RunInstitutionResearchInput = {
@@ -24,6 +25,7 @@ type RunInstitutionResearchInput = {
   modelName?: string;
   scoutModelName?: string;
   organizationId?: string;
+  runTimeoutMs?: number;
 };
 
 function nowIso(): string {
@@ -39,6 +41,11 @@ function summarizeStatus(input: {
   if (input.submitFailed > 0) return "partial";
   if (input.submitted === 0) return "completed";
   return "completed";
+}
+
+function resolveRunTimeoutMs(value: number | undefined): number {
+  if (!Number.isFinite(value)) return RUN_TIMEOUT_MS;
+  return Math.max(30_000, Math.min(12 * 60 * 60 * 1000, Math.floor(value ?? RUN_TIMEOUT_MS)));
 }
 
 export async function runPublicResearch(input: RunPublicResearchInput): Promise<ResearchRunSummary> {
@@ -74,7 +81,7 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
     };
   }
 
-  const deadline = createRunDeadline(RUN_TIMEOUT_MS);
+  const deadline = createRunDeadline(resolveRunTimeoutMs(input.runTimeoutMs));
 
   try {
     const result = await runPublicScan({
@@ -179,7 +186,7 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
     };
   }
 
-  const deadline = createRunDeadline(RUN_TIMEOUT_MS);
+  const deadline = createRunDeadline(resolveRunTimeoutMs(input.runTimeoutMs));
 
   try {
     const result = await runInstitutionScan({
