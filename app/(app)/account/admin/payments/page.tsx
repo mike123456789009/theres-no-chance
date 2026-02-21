@@ -28,7 +28,11 @@ export default async function AdminPaymentsPage() {
           Unable to load Venmo queue: <code>{queue.errorMessage}</code>
         </p>
       ) : (
-        <AdminVenmoReconcileQueue rows={queue.rows} />
+        <AdminVenmoReconcileQueue
+          rows={queue.rows}
+          unmatchedFundingIntents={queue.unmatchedFundingIntents}
+          fundingIntentErrorMessage={queue.fundingIntentErrorMessage}
+        />
       )}
     </section>
   );
