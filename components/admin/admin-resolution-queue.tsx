@@ -1,7 +1,32 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
+type ResolutionEvidenceContext = {
+  id: string;
+  submittedBy: string;
+  submittedOutcome: string | null;
+  evidenceUrl: string | null;
+  evidenceText: string | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+type ResolutionChallengeContext = {
+  id: string;
+  createdBy: string;
+  status: string;
+  proposedOutcome: string | null;
+  challengeBondAmount: number;
+  reason: string;
+  createdAt: string;
+  expiresAt: string;
+  resolverBondOutcome: string | null;
+  resolverBondAmount: number | null;
+  resolverBondUserId: string | null;
+};
 
 type ResolutionMarket = {
   id: string;
@@ -23,6 +48,9 @@ type ResolutionMarket = {
   openChallengeCount: number;
   creatorId: string;
   tags: string[];
+  totalEvidenceCount: number;
+  recentEvidence: ResolutionEvidenceContext[];
+  challengeContext: ResolutionChallengeContext[];
 };
 
 type ResolveOutcome = "yes" | "no";
@@ -55,6 +83,19 @@ function formatCurrency(value: number): string {
 function formatStatus(value: string | null): string {
   if (!value) return "N/A";
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function truncateId(value: string): string {
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function summarizeText(value: string | null, maxLength: number): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, maxLength - 1)}…`;
 }
 
 export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, finalizedMarkets }: AdminResolutionQueueProps) {
@@ -103,6 +144,69 @@ export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, fi
     }
   }
 
+  function renderEvidenceContext(market: ResolutionMarket) {
+    if (market.totalEvidenceCount === 0) {
+      return <p className="admin-queue-empty">No evidence submitted yet.</p>;
+    }
+
+    return (
+      <ul className="admin-queue-context-list">
+        {market.recentEvidence.map((entry) => (
+          <li key={entry.id}>
+            <p className="admin-queue-context-meta">
+              {formatStatus(entry.submittedOutcome)} · {formatDate(entry.createdAt)} · <code>{truncateId(entry.submittedBy)}</code>
+            </p>
+            {entry.evidenceUrl ? (
+              <p>
+                <a href={entry.evidenceUrl} target="_blank" rel="noreferrer" className="admin-queue-context-link">
+                  {entry.evidenceUrl}
+                </a>
+              </p>
+            ) : null}
+            {summarizeText(entry.evidenceText, 200) ? (
+              <p className="admin-queue-context-body">{summarizeText(entry.evidenceText, 200)}</p>
+            ) : null}
+            {summarizeText(entry.notes, 160) ? (
+              <p className="admin-queue-context-body">Notes: {summarizeText(entry.notes, 160)}</p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  function renderChallengeContext(market: ResolutionMarket) {
+    if (market.challengeContext.length === 0) {
+      return <p className="admin-queue-empty">No challenge records found.</p>;
+    }
+
+    return (
+      <ul className="admin-queue-context-list">
+        {market.challengeContext.map((challenge) => (
+          <li key={challenge.id}>
+            <p className="admin-queue-context-meta">
+              {formatStatus(challenge.status)} · {formatDate(challenge.createdAt)} · <code>{truncateId(challenge.createdBy)}</code>
+            </p>
+            <p className="admin-queue-context-body">
+              Proposes {formatStatus(challenge.proposedOutcome)} with {formatCurrency(challenge.challengeBondAmount)} challenge stake.
+            </p>
+            {challenge.resolverBondOutcome ? (
+              <p className="admin-queue-context-body">
+                Base resolver bond: {formatStatus(challenge.resolverBondOutcome)}{" "}
+                {challenge.resolverBondAmount === null ? "" : `(${formatCurrency(challenge.resolverBondAmount)})`}
+                {challenge.resolverBondUserId ? ` by ${truncateId(challenge.resolverBondUserId)}` : ""}
+              </p>
+            ) : null}
+            {summarizeText(challenge.reason, 220) ? (
+              <p className="admin-queue-context-body">Reason: {summarizeText(challenge.reason, 220)}</p>
+            ) : null}
+            <p className="admin-queue-context-meta">Expires: {formatDate(challenge.expiresAt)}</p>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div className="admin-queue-wrap">
       {statusMessage ? (
@@ -138,6 +242,13 @@ export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, fi
                     Creator id: <code>{market.creatorId}</code>
                   </p>
                   {market.tags.length ? <p>Tags: {market.tags.join(", ")}</p> : null}
+                  <p>
+                    Evidence submissions: {market.totalEvidenceCount}
+                    {" · "}
+                    <Link href={`/markets/${market.id}`} className="admin-queue-market-link">
+                      Open market detail
+                    </Link>
+                  </p>
 
                   <div className="admin-queue-actions">
                     <button type="button" onClick={() => finalizeMarket(market.id)} disabled={pendingAny}>
@@ -179,6 +290,30 @@ export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, fi
                   <p>
                     Creator id: <code>{market.creatorId}</code>
                   </p>
+                  <p>
+                    Evidence submissions: {market.totalEvidenceCount}
+                    {" · "}
+                    <Link href={`/markets/${market.id}`} className="admin-queue-market-link">
+                      Open market detail
+                    </Link>
+                  </p>
+
+                  <div className="admin-queue-context-grid" aria-label="Adjudication context">
+                    <section className="admin-queue-context-panel" aria-label="Evidence context">
+                      <h4>Evidence context</h4>
+                      <p className="admin-queue-context-caption">
+                        Showing {Math.min(market.recentEvidence.length, market.totalEvidenceCount)} of {market.totalEvidenceCount}
+                      </p>
+                      {renderEvidenceContext(market)}
+                    </section>
+                    <section className="admin-queue-context-panel" aria-label="Challenge context">
+                      <h4>Challenge context</h4>
+                      <p className="admin-queue-context-caption">
+                        Showing {market.challengeContext.length} of {market.challengeCount} challenge records
+                      </p>
+                      {renderChallengeContext(market)}
+                    </section>
+                  </div>
 
                   <div className="admin-queue-actions">
                     <button type="button" onClick={() => finalizeMarket(market.id, "yes")} disabled={pendingAny}>
@@ -215,6 +350,13 @@ export function AdminResolutionQueue({ autoFinalizable, adjudicationRequired, fi
                 <p>YES / NO stake: {formatCurrency(market.yesBondTotal)} / {formatCurrency(market.noBondTotal)}</p>
                 <p>
                   Creator id: <code>{market.creatorId}</code>
+                </p>
+                <p>
+                  Evidence submissions: {market.totalEvidenceCount}
+                  {" · "}
+                  <Link href={`/markets/${market.id}`} className="admin-queue-market-link">
+                    Open market detail
+                  </Link>
                 </p>
               </article>
             ))}

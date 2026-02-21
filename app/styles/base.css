@@ -2924,6 +2924,82 @@ html[data-ui-style="modern"] .market-tile-probability a {
   line-height: 1.45;
 }
 
+.admin-queue-market-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.admin-queue-context-grid {
+  margin-top: 0.2rem;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.admin-queue-context-panel {
+  border: 2px dashed rgba(16, 16, 16, 0.42);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0.48rem 0.52rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.admin-queue-context-panel h4 {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: clamp(0.72rem, 0.92vw, 0.82rem);
+  letter-spacing: 0.03em;
+}
+
+.admin-queue-context-caption {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #4a4a4a;
+}
+
+.admin-queue-context-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.38rem;
+}
+
+.admin-queue-context-list li {
+  border-top: 1px solid rgba(16, 16, 16, 0.16);
+  padding-top: 0.38rem;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-queue-context-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.admin-queue-context-meta,
+.admin-queue-context-body {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.admin-queue-context-meta {
+  color: #555;
+}
+
+.admin-queue-context-link {
+  overflow-wrap: anywhere;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .admin-queue-note {
   display: grid;
   gap: 0.3rem;

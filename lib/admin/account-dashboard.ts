@@ -31,6 +31,30 @@ export type AdminQueueMarket = {
   tags: string[];
 };
 
+export type ResolutionEvidenceContext = {
+  id: string;
+  submittedBy: string;
+  submittedOutcome: string | null;
+  evidenceUrl: string | null;
+  evidenceText: string | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type ResolutionChallengeContext = {
+  id: string;
+  createdBy: string;
+  status: string;
+  proposedOutcome: string | null;
+  challengeBondAmount: number;
+  reason: string;
+  createdAt: string;
+  expiresAt: string;
+  resolverBondOutcome: string | null;
+  resolverBondAmount: number | null;
+  resolverBondUserId: string | null;
+};
+
 export type ResolutionMarket = {
   id: string;
   question: string;
@@ -51,6 +75,9 @@ export type ResolutionMarket = {
   openChallengeCount: number;
   creatorId: string;
   tags: string[];
+  totalEvidenceCount: number;
+  recentEvidence: ResolutionEvidenceContext[];
+  challengeContext: ResolutionChallengeContext[];
 };
 
 export type ResolutionChallenge = {
@@ -152,6 +179,18 @@ type ChallengeRow = {
   adjudicated_at: string | null;
   is_successful: boolean | null;
   payout_bonus_amount: number | string | null;
+  resolver_bond_id: string | null;
+};
+
+type EvidenceRow = {
+  id: string;
+  market_id: string;
+  submitted_by: string;
+  submitted_outcome: string | null;
+  evidence_url: string | null;
+  evidence_text: string | null;
+  notes: string | null;
+  created_at: string;
 };
 
 type PositionPreviewRow = {
@@ -400,7 +439,7 @@ export async function loadResolutionMarkets(): Promise<{
   const rows = (resolutionData ?? []) as ResolutionMarketRow[];
   const marketIds = Array.from(new Set(rows.map((row) => row.id)));
 
-  const [bondResult, challengeResult] = await Promise.all([
+  const [bondResult, challengeResult, evidenceResult] = await Promise.all([
     marketIds.length
       ? service
           .from("market_resolver_bonds")
@@ -411,10 +450,16 @@ export async function loadResolutionMarkets(): Promise<{
       ? service
           .from("market_disputes")
           .select(
-            "id, market_id, created_by, status, proposed_outcome, challenge_bond_amount, reason, created_at, expires_at, adjudicated_at, is_successful, payout_bonus_amount"
+            "id, market_id, created_by, status, proposed_outcome, challenge_bond_amount, reason, created_at, expires_at, adjudicated_at, is_successful, payout_bonus_amount, resolver_bond_id"
           )
           .in("market_id", marketIds)
       : Promise.resolve({ data: [] as ChallengeRow[], error: null }),
+    marketIds.length
+      ? service
+          .from("market_evidence")
+          .select("id, market_id, submitted_by, submitted_outcome, evidence_url, evidence_text, notes, created_at")
+          .in("market_id", marketIds)
+      : Promise.resolve({ data: [] as EvidenceRow[], error: null }),
   ]);
 
   if (bondResult.error) {
@@ -435,13 +480,25 @@ export async function loadResolutionMarkets(): Promise<{
     };
   }
 
+  if (evidenceResult.error) {
+    return {
+      autoFinalizable: [],
+      adjudicationRequired: [],
+      finalizedMarkets: [],
+      errorMessage: evidenceResult.error.message,
+    };
+  }
+
   const bondsByMarket = new Map<string, ResolverBondRow[]>();
+  const bondsById = new Map<string, ResolverBondRow>();
   const challengesByMarket = new Map<string, ChallengeRow[]>();
+  const evidenceByMarket = new Map<string, EvidenceRow[]>();
 
   ((bondResult.data ?? []) as ResolverBondRow[]).forEach((row) => {
     const existing = bondsByMarket.get(row.market_id) ?? [];
     existing.push(row);
     bondsByMarket.set(row.market_id, existing);
+    bondsById.set(row.id, row);
   });
 
   ((challengeResult.data ?? []) as ChallengeRow[]).forEach((row) => {
@@ -450,15 +507,55 @@ export async function loadResolutionMarkets(): Promise<{
     challengesByMarket.set(row.market_id, existing);
   });
 
+  ((evidenceResult.data ?? []) as EvidenceRow[]).forEach((row) => {
+    const existing = evidenceByMarket.get(row.market_id) ?? [];
+    existing.push(row);
+    evidenceByMarket.set(row.market_id, existing);
+  });
+
   const mapRow = (row: ResolutionMarketRow): ResolutionMarket => {
     const marketBonds = bondsByMarket.get(row.id) ?? [];
     const marketChallenges = challengesByMarket.get(row.id) ?? [];
+    const marketEvidence = evidenceByMarket.get(row.id) ?? [];
     const yesBondTotal = marketBonds
       .filter((bond) => bond.outcome === "yes")
       .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
     const noBondTotal = marketBonds
       .filter((bond) => bond.outcome === "no")
       .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+    const challengeContext = [...marketChallenges]
+      .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
+      .slice(0, 6)
+      .map((challenge): ResolutionChallengeContext => {
+        const resolverBond = challenge.resolver_bond_id ? bondsById.get(challenge.resolver_bond_id) ?? null : null;
+        return {
+          id: challenge.id,
+          createdBy: challenge.created_by,
+          status: challenge.status,
+          proposedOutcome: challenge.proposed_outcome,
+          challengeBondAmount: Math.max(0, toNumber(challenge.challenge_bond_amount, 0)),
+          reason: challenge.reason,
+          createdAt: challenge.created_at,
+          expiresAt: challenge.expires_at,
+          resolverBondOutcome: resolverBond?.outcome ?? null,
+          resolverBondAmount: resolverBond ? Math.max(0, toNumber(resolverBond.bond_amount, 0)) : null,
+          resolverBondUserId: resolverBond?.user_id ?? null,
+        };
+      });
+    const recentEvidence = [...marketEvidence]
+      .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at))
+      .slice(0, 6)
+      .map(
+        (entry): ResolutionEvidenceContext => ({
+          id: entry.id,
+          submittedBy: entry.submitted_by,
+          submittedOutcome: entry.submitted_outcome,
+          evidenceUrl: entry.evidence_url,
+          evidenceText: entry.evidence_text,
+          notes: entry.notes,
+          createdAt: entry.created_at,
+        })
+      );
 
     return {
       id: row.id,
@@ -482,6 +579,9 @@ export async function loadResolutionMarkets(): Promise<{
       ).length,
       creatorId: row.creator_id,
       tags: row.tags ?? [],
+      totalEvidenceCount: marketEvidence.length,
+      recentEvidence,
+      challengeContext,
     };
   };
 
