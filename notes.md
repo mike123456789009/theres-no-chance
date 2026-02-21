@@ -56,3 +56,12 @@
 - Prevention:
   - Keep this `notes.md` as a living "do-not-repeat" ledger.
   - Update it in the same fix commit when feedback is given, so the lesson and code change ship together.
+
+## 7) Do Not Scope UI Behavior Fixes To One View Unless Requested
+- Mistake:
+  - I implemented the style-toggle anchoring behavior only in markets when the requirement implied the reusable toggle behavior should be consistent wherever it appears.
+- Rule going forward:
+  - For reusable shared UI components, default to component-level/global behavior unless you explicitly ask for route-only scoping.
+- Prevention:
+  - When a request is about interaction mechanics (positioning/anchoring/expansion behavior), implement in shared token/component styles first.
+  - If I intentionally scope to one surface, I must explicitly call that out before shipping.

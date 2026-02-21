@@ -55,7 +55,13 @@ export function StyleToggle({ className }: Readonly<{ className?: string }>) {
   }, [isPaletteMenuOpen]);
 
   return (
-    <div className={joinClassNames("style-toggle-stack", className)}>
+    <div
+      className={joinClassNames(
+        "style-toggle-stack",
+        uiStyle === "modern" ? "has-palette-controls" : undefined,
+        className
+      )}
+    >
       <div className="style-toggle" role="group" aria-label="Visual style">
         <button
           type="button"

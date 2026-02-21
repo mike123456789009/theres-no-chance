@@ -58,10 +58,15 @@
 }
 
 .style-toggle-stack {
+  --style-toggle-anchor-width: 15.9rem;
   display: inline-flex;
   align-items: center;
   gap: 0.38rem;
   flex-wrap: nowrap;
+}
+
+.style-toggle-stack.has-palette-controls {
+  width: var(--style-toggle-anchor-width);
 }
 
 .palette-controls {
