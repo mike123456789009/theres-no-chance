@@ -3502,10 +3502,54 @@ html[data-ui-style="modern"] .market-tile-probability a {
   }
 
   .markets-brand-row {
-    gap: 0.48rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.44rem;
+    row-gap: 0.42rem;
+  }
+
+  .markets-brand-logo {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .markets-account-strip {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .markets-account-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .markets-style-toggle {
+    order: 1;
+  }
+
+  .markets-deposit-button {
+    order: 2;
+  }
+
+  .markets-account-avatar-menu,
+  .markets-account-link {
+    order: 3;
+  }
+
+  .markets-account-metric {
+    order: 4;
   }
 
   .markets-search-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
     grid-template-columns: minmax(0, 1fr);
   }
 
