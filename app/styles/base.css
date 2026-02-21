@@ -1716,7 +1716,8 @@ body.reveal-enabled .reveal-item[data-reveal-delay="4"] {
   gap: 0.5rem;
 }
 
-.markets-mobile-collapsible > summary {
+.markets-mobile-collapsible-input,
+.markets-mobile-collapsible-summary {
   display: none;
 }
 
@@ -3533,9 +3534,16 @@ html[data-ui-style="modern"] .market-tile-probability a {
 
   .markets-mobile-collapsible {
     margin-top: 0.04rem;
+    position: relative;
   }
 
-  .markets-mobile-collapsible > summary {
+  .markets-mobile-collapsible-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .markets-mobile-collapsible-summary {
     border: 2px solid var(--ink);
     box-shadow: 3px 3px 0 var(--ink);
     background: #fff;
@@ -3550,22 +3558,17 @@ html[data-ui-style="modern"] .market-tile-probability a {
     line-height: 1.22;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    list-style: none;
     cursor: pointer;
   }
 
-  .markets-mobile-collapsible > summary::after {
+  .markets-mobile-collapsible-summary::after {
     content: "Show";
     font-size: 0.63rem;
     color: #5d5d5d;
   }
 
-  .markets-mobile-collapsible[open] > summary::after {
+  .markets-mobile-collapsible-input:checked + .markets-mobile-collapsible-summary::after {
     content: "Hide";
-  }
-
-  .markets-mobile-collapsible > summary::-webkit-details-marker {
-    display: none;
   }
 
   .markets-mobile-collapsible-body {
@@ -3573,7 +3576,7 @@ html[data-ui-style="modern"] .market-tile-probability a {
     gap: 0.45rem;
   }
 
-  .markets-mobile-collapsible[open] .markets-mobile-collapsible-body {
+  .markets-mobile-collapsible-input:checked + .markets-mobile-collapsible-summary + .markets-mobile-collapsible-body {
     display: grid;
   }
 

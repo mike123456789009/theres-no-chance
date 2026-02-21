@@ -162,7 +162,7 @@ html[data-ui-style="modern"] .markets-account-dropdown a:hover {
   background: var(--surface-muted);
 }
 
-html[data-ui-style="modern"] .markets-mobile-collapsible > summary {
+html[data-ui-style="modern"] .markets-mobile-collapsible-summary {
   border-width: 1px;
   border-color: var(--border-strong);
   border-radius: 10px;
@@ -174,7 +174,7 @@ html[data-ui-style="modern"] .markets-mobile-collapsible > summary {
   letter-spacing: 0;
 }
 
-html[data-ui-style="modern"] .markets-mobile-collapsible > summary::after {
+html[data-ui-style="modern"] .markets-mobile-collapsible-summary::after {
   color: var(--text-muted);
 }
 

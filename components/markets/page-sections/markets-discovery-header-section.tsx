@@ -97,8 +97,16 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
           </div>
         </div>
 
-        <details className="markets-mobile-collapsible">
-          <summary className="markets-mobile-collapsible-summary">Browse + filter controls</summary>
+        <div className="markets-mobile-collapsible">
+          <input
+            className="markets-mobile-collapsible-input"
+            id="markets-mobile-collapsible-toggle"
+            type="checkbox"
+            aria-label="Toggle market browse and filter controls"
+          />
+          <label className="markets-mobile-collapsible-summary" htmlFor="markets-mobile-collapsible-toggle">
+            Browse + filter controls
+          </label>
 
           <div className="markets-mobile-collapsible-body">
             <MarketsCategoryNav items={MARKET_PRIMARY_NAV_ITEMS} />
@@ -154,7 +162,7 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
               </div>
             </div>
           </div>
-        </details>
+        </div>
       </div>
     </header>
   );
