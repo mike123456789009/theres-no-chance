@@ -1,23 +1,23 @@
 .markets-style-toggle {
   flex-shrink: 0;
-  --markets-vibe-reserve-width: 8.35rem;
+  --markets-toggle-anchor-width: 15.9rem;
+  width: var(--markets-toggle-anchor-width);
 }
 
 .markets-style-toggle .palette-controls {
-  width: var(--markets-vibe-reserve-width);
-  flex: 0 0 var(--markets-vibe-reserve-width);
+  width: auto;
+  flex: 0 0 auto;
   justify-content: flex-start;
-  min-width: 0;
 }
 
 .markets-style-toggle .palette-combo-pill {
-  width: 100%;
-  max-width: 100%;
-  justify-content: space-between;
+  width: auto;
+  max-width: none;
+  justify-content: flex-start;
 }
 
 .markets-style-toggle .palette-select-trigger {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 html[data-ui-style="modern"] .markets-product-page {
