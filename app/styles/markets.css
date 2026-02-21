@@ -1,5 +1,12 @@
 .markets-style-toggle {
   flex-shrink: 0;
+  --markets-vibe-reserve-width: 8rem;
+}
+
+.markets-style-toggle .palette-controls {
+  width: var(--markets-vibe-reserve-width);
+  flex: 0 0 var(--markets-vibe-reserve-width);
+  justify-content: flex-start;
 }
 
 html[data-ui-style="modern"] .markets-product-page {
