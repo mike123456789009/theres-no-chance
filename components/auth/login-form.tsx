@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import { storePasswordCredential } from "@/lib/auth/password-credential";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -36,6 +37,7 @@ export function LoginForm() {
         return;
       }
 
+      await storePasswordCredential({ email, password });
       setSuccessMessage("Logged in. Redirecting to markets...");
       window.location.assign("/markets");
     } catch (error) {
@@ -46,13 +48,15 @@ export function LoginForm() {
   }
 
   return (
-    <form className="auth-stack" onSubmit={onSubmit}>
+    <form className="auth-stack" onSubmit={onSubmit} autoComplete="on">
       <label className="auth-field">
         <span>Email</span>
         <input
+          id="login-email"
+          name="email"
           type="email"
           inputMode="email"
-          autoComplete="email"
+          autoComplete="username"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
@@ -63,6 +67,8 @@ export function LoginForm() {
         <span>Password</span>
         <div className="auth-password-row">
           <input
+            id="login-password"
+            name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             value={password}

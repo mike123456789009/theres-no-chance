@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { resolveAppBaseUrl } from "@/lib/app/base-url";
+import { storePasswordCredential } from "@/lib/auth/password-credential";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignupForm() {
@@ -41,6 +42,7 @@ export function SignupForm() {
         return;
       }
 
+      await storePasswordCredential({ email, password });
       setSuccessMessage("Account created. Redirecting to markets...");
       setEmail("");
       setPassword("");
@@ -53,13 +55,15 @@ export function SignupForm() {
   }
 
   return (
-    <form className="auth-stack" onSubmit={onSubmit}>
+    <form className="auth-stack" onSubmit={onSubmit} autoComplete="on">
       <label className="auth-field">
         <span>Email</span>
         <input
+          id="signup-email"
+          name="email"
           type="email"
           inputMode="email"
-          autoComplete="email"
+          autoComplete="username"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
@@ -70,6 +74,8 @@ export function SignupForm() {
         <span>Password</span>
         <div className="auth-password-row">
           <input
+            id="signup-password"
+            name="password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             minLength={8}

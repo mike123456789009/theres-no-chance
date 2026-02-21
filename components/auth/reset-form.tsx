@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { resolveAppBaseUrl } from "@/lib/app/base-url";
+import { storePasswordCredential } from "@/lib/auth/password-credential";
 import { createClient } from "@/lib/supabase/client";
 
 export function ResetForm() {
@@ -97,6 +98,10 @@ export function ResetForm() {
           } else {
             setHasRecoverySession(Boolean(session));
             if (session) {
+              const sessionEmail = session.user.email?.trim();
+              if (sessionEmail) {
+                setEmail(sessionEmail);
+              }
               setSuccessMessage("Reset link verified. Enter your new password below.");
             }
           }
@@ -192,6 +197,7 @@ export function ResetForm() {
         return;
       }
 
+      const sessionEmail = session.user.email?.trim() ?? email.trim();
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -201,6 +207,7 @@ export function ResetForm() {
         return;
       }
 
+      await storePasswordCredential({ email: sessionEmail, password: newPassword });
       setSuccessMessage("Password updated. You can now log in with the new password.");
       setNewPassword("");
       setHasRecoverySession(true);
@@ -213,11 +220,13 @@ export function ResetForm() {
 
   return (
     <div className="auth-dual-stack">
-      <form className="auth-stack" onSubmit={onSendReset}>
+      <form className="auth-stack" onSubmit={onSendReset} autoComplete="on">
         <h2 className="auth-section-title">Send reset link</h2>
         <label className="auth-field">
           <span>Email</span>
           <input
+            id="reset-request-email"
+            name="email"
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -231,12 +240,22 @@ export function ResetForm() {
         </button>
       </form>
 
-      <form className="auth-stack" onSubmit={onUpdatePassword}>
+      <form className="auth-stack" onSubmit={onUpdatePassword} autoComplete="on">
         <h2 className="auth-section-title">Set new password</h2>
+        <input
+          type="email"
+          name="email"
+          autoComplete="username"
+          value={email}
+          readOnly
+          hidden
+        />
         <label className="auth-field">
           <span>New password</span>
           <div className="auth-password-row">
             <input
+              id="reset-new-password"
+              name="new-password"
               type={showNewPassword ? "text" : "password"}
               autoComplete="new-password"
               minLength={8}
