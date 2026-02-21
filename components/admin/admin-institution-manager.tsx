@@ -53,6 +53,8 @@ type EmailDraft = {
   status: InstitutionEmailIdentity["status"];
 };
 
+type AdminInstitutionTab = "overview" | "domains" | "emails" | "merge";
+
 const MERGE_CONFIRM_PHRASE = "MERGE INSTITUTIONS";
 
 function clean(value: unknown): string {
@@ -82,10 +84,17 @@ function normalizeDomainDraft(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function shortId(value: string): string {
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 8)}...${value.slice(-4)}`;
+}
+
 export function AdminInstitutionManager() {
   const router = useRouter();
   const [institutions, setInstitutions] = useState<InstitutionSummary[]>([]);
   const [selectedInstitutionId, setSelectedInstitutionId] = useState("");
+  const [institutionQuery, setInstitutionQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<AdminInstitutionTab>("overview");
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(true);
   const [isLoadingEmails, setIsLoadingEmails] = useState(false);
   const [pendingActionKey, setPendingActionKey] = useState<string | null>(null);
@@ -107,6 +116,35 @@ export function AdminInstitutionManager() {
   const selectedInstitution = useMemo(
     () => institutions.find((institution) => institution.id === selectedInstitutionId) ?? null,
     [institutions, selectedInstitutionId]
+  );
+
+  const filteredInstitutions = useMemo(() => {
+    const query = clean(institutionQuery).toLowerCase();
+    if (!query) return institutions;
+
+    return institutions.filter((institution) => {
+      const haystack = [
+        institution.name,
+        institution.slug,
+        ...institution.domains.map((domain) => domain.domain),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [institutionQuery, institutions]);
+
+  const pickerInstitutions = filteredInstitutions.length > 0 ? filteredInstitutions : institutions;
+
+  const mergeSourceInstitution = useMemo(
+    () => institutions.find((institution) => institution.id === mergeSourceOrganizationId) ?? null,
+    [institutions, mergeSourceOrganizationId]
+  );
+
+  const mergeTargetInstitution = useMemo(
+    () => institutions.find((institution) => institution.id === mergeTargetOrganizationId) ?? null,
+    [institutions, mergeTargetOrganizationId]
   );
 
   async function loadInstitutions(options?: { preferredInstitutionId?: string }) {
@@ -500,32 +538,128 @@ export function AdminInstitutionManager() {
 
   return (
     <div className="account-institutions-stack">
-      <section className="create-section" aria-label="Institution directory">
-        <h2>Institution directory</h2>
-        <p className="create-note">Choose an institution to edit names, domain mappings, and linked institution emails.</p>
+      {statusMessage ? (
+        <p className={statusMessage.kind === "error" ? "create-note tnc-error-text" : "create-note"}>{statusMessage.text}</p>
+      ) : null}
+
+      <section className="create-section" aria-label="Institution manager guide">
+        <h2>How to use this tool</h2>
+        <ol className="institution-guide-list">
+          <li>Pick or search the institution you want to clean up.</li>
+          <li>Use the tabs to rename, fix domains, or reassign email identities.</li>
+          <li>Use Merge only after selecting a source and a canonical target.</li>
+        </ol>
+      </section>
+
+      <section className="create-section" aria-label="Institution selection">
+        <h2>1. Select institution</h2>
+        <div className="create-grid-two institution-picker-grid">
+          <label className="create-field">
+            <span>Search institution or domain</span>
+            <input
+              type="text"
+              value={institutionQuery}
+              onChange={(event) => setInstitutionQuery(event.target.value)}
+              placeholder="CMC, claremont, students.school.edu"
+            />
+          </label>
+
+          <label className="create-field">
+            <span>Selected institution</span>
+            <select value={selectedInstitutionId} onChange={(event) => setSelectedInstitutionId(event.target.value)}>
+              {pickerInstitutions.map((institution) => (
+                <option key={institution.id} value={institution.id}>
+                  {institution.name} ({institution.slug})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {isLoadingInstitutions ? <p className="create-note">Loading institution directory...</p> : null}
 
-        {institutions.length === 0 && !isLoadingInstitutions ? (
+        {!isLoadingInstitutions && institutions.length === 0 ? (
           <p className="create-note">No institutions are currently available.</p>
-        ) : (
-          <>
-            <label className="create-field">
-              <span>Selected institution</span>
-              <select value={selectedInstitutionId} onChange={(event) => setSelectedInstitutionId(event.target.value)}>
-                {institutions.map((institution) => (
-                  <option key={institution.id} value={institution.id}>
-                    {institution.name} ({institution.slug})
-                  </option>
-                ))}
-              </select>
-            </label>
+        ) : null}
+
+        {selectedInstitution ? (
+          <article className="institution-focus-card" aria-label="Selected institution summary">
+            <p>
+              <strong>{selectedInstitution.name}</strong> · slug <code>{selectedInstitution.slug}</code>
+            </p>
+            <p>
+              Created {formatDate(selectedInstitution.createdAt)} · Domains {selectedInstitution.domains.length}
+            </p>
+            <p>
+              Active members {selectedInstitution.counts.activeMembers} · total members {selectedInstitution.counts.totalMembers} ·
+              verified emails {selectedInstitution.counts.verifiedEmails} · pending emails {selectedInstitution.counts.pendingEmails}
+            </p>
+          </article>
+        ) : null}
+      </section>
+
+      <section className="create-section" aria-label="Institution actions">
+        <h2>2. Run actions</h2>
+        <div className="institution-tab-row" role="tablist" aria-label="Institution admin actions">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "overview"}
+            className={activeTab === "overview" ? "institution-tab-button is-active" : "institution-tab-button"}
+            onClick={() => setActiveTab("overview")}
+          >
+            Overview + rename
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "domains"}
+            className={activeTab === "domains" ? "institution-tab-button is-active" : "institution-tab-button"}
+            onClick={() => setActiveTab("domains")}
+          >
+            Domain mappings
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "emails"}
+            className={activeTab === "emails" ? "institution-tab-button is-active" : "institution-tab-button"}
+            onClick={() => setActiveTab("emails")}
+          >
+            Email identities
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "merge"}
+            className={activeTab === "merge" ? "institution-tab-button is-active" : "institution-tab-button"}
+            onClick={() => setActiveTab("merge")}
+          >
+            Merge institutions
+          </button>
+        </div>
+
+        {activeTab === "overview" ? (
+          <div className="institution-tab-panel" role="tabpanel" aria-label="Institution overview">
+            <p className="create-note">Rename the selected institution and review all institution records.</p>
 
             {selectedInstitution ? (
-              <p className="create-note">
-                Active members {selectedInstitution.counts.activeMembers} · total members {selectedInstitution.counts.totalMembers} ·
-                verified emails {selectedInstitution.counts.verifiedEmails} · pending emails {selectedInstitution.counts.pendingEmails}
-              </p>
+              <>
+                <label className="create-field">
+                  <span>Institution name</span>
+                  <input
+                    type="text"
+                    value={renameName}
+                    onChange={(event) => setRenameName(event.target.value)}
+                    minLength={2}
+                    maxLength={120}
+                  />
+                </label>
+
+                <button type="button" className="create-submit" disabled={Boolean(pendingActionKey)} onClick={handleRenameInstitution}>
+                  {pendingActionKey === "rename" ? "Saving..." : "Save institution name"}
+                </button>
+              </>
             ) : null}
 
             <div className="tnc-table-wrap">
@@ -540,7 +674,7 @@ export function AdminInstitutionManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {institutions.map((institution) => (
+                  {pickerInstitutions.map((institution) => (
                     <tr key={institution.id}>
                       <td>{institution.name}</td>
                       <td>{institution.slug}</td>
@@ -556,33 +690,12 @@ export function AdminInstitutionManager() {
                 </tbody>
               </table>
             </div>
-          </>
-        )}
-      </section>
+          </div>
+        ) : null}
 
-      {selectedInstitution ? (
-        <>
-          <section className="create-section" aria-label="Rename institution">
-            <h2>Rename institution</h2>
-            <label className="create-field">
-              <span>Institution name</span>
-              <input
-                type="text"
-                value={renameName}
-                onChange={(event) => setRenameName(event.target.value)}
-                minLength={2}
-                maxLength={120}
-              />
-            </label>
-
-            <button type="button" className="create-submit" disabled={Boolean(pendingActionKey)} onClick={handleRenameInstitution}>
-              {pendingActionKey === "rename" ? "Saving..." : "Save institution name"}
-            </button>
-          </section>
-
-          <section className="create-section" aria-label="Domain mappings">
-            <h2>Domain mappings</h2>
-            <p className="create-note">Map every accepted .edu domain variant (for example `cmc.edu` + `students.claremontmckenna.edu`).</p>
+        {activeTab === "domains" && selectedInstitution ? (
+          <div className="institution-tab-panel" role="tabpanel" aria-label="Domain mappings">
+            <p className="create-note">Add and edit every accepted .edu domain variant for this institution.</p>
 
             <div className="create-grid-two">
               <label className="create-field">
@@ -702,13 +815,12 @@ export function AdminInstitutionManager() {
                 </table>
               </div>
             )}
-          </section>
+          </div>
+        ) : null}
 
-          <section className="create-section" aria-label="Institution email identities">
-            <h2>Institution email identities</h2>
-            <p className="create-note">
-              Edit specific institution email addresses and reassign identities to a unified institution.
-            </p>
+        {activeTab === "emails" && selectedInstitution ? (
+          <div className="institution-tab-panel" role="tabpanel" aria-label="Institution email identities">
+            <p className="create-note">Edit specific institution emails and reassign them to another institution when needed.</p>
 
             {isLoadingEmails ? <p className="create-note">Loading identities...</p> : null}
 
@@ -793,7 +905,7 @@ export function AdminInstitutionManager() {
                             </select>
                           </td>
                           <td>
-                            <code>{identity.userId}</code>
+                            <code title={identity.userId}>{shortId(identity.userId)}</code>
                           </td>
                           <td>{formatDate(identity.updatedAt)}</td>
                           <td>
@@ -813,13 +925,13 @@ export function AdminInstitutionManager() {
                 </table>
               </div>
             ) : null}
-          </section>
+          </div>
+        ) : null}
 
-          <section className="create-section" aria-label="Merge institutions">
-            <h2>Merge institutions</h2>
+        {activeTab === "merge" ? (
+          <div className="institution-tab-panel" role="tabpanel" aria-label="Merge institutions">
             <p className="create-note">
-              Moves domain mappings, institution email identities, memberships, and market institution bindings into one canonical
-              institution.
+              Danger zone. This combines institution records into one canonical institution and updates linked data.
             </p>
 
             <div className="create-grid-two">
@@ -846,6 +958,18 @@ export function AdminInstitutionManager() {
               </label>
             </div>
 
+            <article className="institution-merge-preview" aria-label="Merge preview">
+              <p>
+                <strong>From:</strong> {mergeSourceInstitution?.name ?? "Select source"}
+              </p>
+              <p>
+                <strong>Into:</strong> {mergeTargetInstitution?.name ?? "Select target"}
+              </p>
+              {mergeSourceOrganizationId && mergeSourceOrganizationId === mergeTargetOrganizationId ? (
+                <p className="tnc-error-text">Source and target cannot be the same institution.</p>
+              ) : null}
+            </article>
+
             <label className="create-field">
               <span>Delete source institution after merge</span>
               <select value={mergeDeleteSource ? "yes" : "no"} onChange={(event) => setMergeDeleteSource(event.target.value === "yes")}>
@@ -867,13 +991,9 @@ export function AdminInstitutionManager() {
             <button type="button" className="create-submit" disabled={Boolean(pendingActionKey)} onClick={handleMergeInstitutions}>
               {pendingActionKey === "merge" ? "Merging..." : "Merge institutions"}
             </button>
-          </section>
-        </>
-      ) : null}
-
-      {statusMessage ? (
-        <p className={statusMessage.kind === "error" ? "create-note tnc-error-text" : "create-note"}>{statusMessage.text}</p>
-      ) : null}
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }

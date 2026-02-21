@@ -204,6 +204,69 @@
   gap: 0.45rem;
 }
 
+.institution-guide-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.institution-picker-grid {
+  align-items: end;
+}
+
+.institution-focus-card {
+  margin-top: 0.8rem;
+  border: 1px solid #101010;
+  background: #f8f8f8;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.institution-focus-card p {
+  margin: 0;
+}
+
+.institution-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.institution-tab-button {
+  border: 1px solid #101010;
+  background: #f5f5f5;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.institution-tab-button.is-active {
+  background: #101010;
+  color: #f2f2f2;
+}
+
+.institution-tab-panel {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.institution-merge-preview {
+  border: 1px solid #8b8b8b;
+  background: #fff6dc;
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.institution-merge-preview p {
+  margin: 0;
+}
+
 .venmo-qr-image {
   width: min(240px, 100%);
   height: auto;
@@ -302,7 +365,9 @@ html[data-ui-style="modern"] .admin-run-badge,
 html[data-ui-style="modern"] .admin-user-link,
 html[data-ui-style="modern"] .admin-grant-card,
 html[data-ui-style="modern"] .deposit-provider-card,
-html[data-ui-style="modern"] .deposit-status-banner {
+html[data-ui-style="modern"] .deposit-status-banner,
+html[data-ui-style="modern"] .institution-focus-card,
+html[data-ui-style="modern"] .institution-merge-preview {
   border-width: 1px;
   border-color: var(--border-strong);
   border-radius: 14px;
@@ -347,6 +412,17 @@ html[data-ui-style="modern"] .create-submit.create-submit-muted,
 html[data-ui-style="modern"] .admin-queue-actions button.is-muted {
   background: var(--surface-elevated);
   color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .institution-tab-button {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+html[data-ui-style="modern"] .institution-tab-button.is-active {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
 }
 
 html[data-ui-style="modern"] .create-field,
