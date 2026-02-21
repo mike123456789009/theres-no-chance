@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
-import { NextResponse } from "next/server";
+import { createOkMarketDetailResult, createTradeQuoteFixture, createViewerContextFixture } from "@/lib/test-helpers/api-mocks";
 
 vi.mock("@/lib/api/env-guards", () => ({
   getServerEnvReadiness: vi.fn(() => ({ isConfigured: true, missingEnv: [] })),
@@ -32,78 +32,6 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
   const mockContext = {
     params: Promise.resolve({ marketId: "test-market-123" }),
   };
-  const baseMarketDetail = {
-    id: "test-market-123",
-    question: "Will this market resolve by the target date?",
-    description: "This is a test market description used for route tests.",
-    resolvesYesIf: "An eligible source confirms the condition happened.",
-    resolvesNoIf: "An eligible source confirms the condition did not happen.",
-    status: "open",
-    resolutionMode: "admin",
-    visibility: "public",
-    accessBadge: "Public",
-    accessRequiresLogin: false,
-    closeTime: "2026-12-31T00:00:00.000Z",
-    expectedResolutionTime: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    feeBps: 200,
-    tags: [],
-    riskFlags: [],
-    evidenceRules: null,
-    disputeRules: null,
-    resolutionOutcome: null,
-    provisionalOutcome: null,
-    resolvedAt: null,
-    provisionalResolvedAt: null,
-    finalizedAt: null,
-    resolutionWindowEndsAt: null,
-    challengeWindowEndsAt: null,
-    adjudicationRequired: false,
-    adjudicationReason: null,
-    voidReason: null,
-    challengeBonusRate: 0.1,
-    challengeBondAmount: 1,
-    listingFeeAmount: 0.5,
-    creatorRakePaidAmount: 0,
-    creatorRakePaidAt: null,
-    finalOutcomeChangedByChallenge: false,
-    priceYes: 0.55,
-    priceNo: 0.45,
-    yesShares: 0,
-    noShares: 0,
-    poolShares: 0,
-    liquidityParameter: 100,
-    chartPoints: [{ timestamp: "2026-01-01T00:00:00.000Z", priceYes: 0.55 }],
-    viewerPosition: null,
-    sources: [],
-    cardShadowTone: "mint" as const,
-    actionRequired: "account_ready" as const,
-    viewerCanTrade: true,
-    viewerReadOnlyReason: null,
-    resolverStakeCap: 1,
-    yesBondTotal: 0,
-    noBondTotal: 0,
-    challengeCount: 0,
-    openChallengeCount: 0,
-    viewerResolverBond: null,
-    viewerChallenge: null,
-    viewerCanResolve: false,
-    viewerCanChallenge: false,
-    evidence: [],
-    resolverPrizeLockedTotal: 0,
-    resolverPrizeContributionCount: 0,
-    resolverPrizeRecentContributions: [],
-  };
-
-  function okMarketDetail(overrides: Partial<typeof baseMarketDetail> = {}) {
-    return {
-      kind: "ok" as const,
-      market: {
-        ...baseMarketDetail,
-        ...overrides,
-      },
-    };
-  }
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -130,33 +58,13 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
-      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
+      vi.mocked(getMarketDetail).mockResolvedValue(createOkMarketDetailResult());
 
       vi.mocked(quoteMarketTrade).mockResolvedValue({
         ok: true,
-        data: {
-          marketId: "test-market-123",
-          side: "yes",
-          action: "buy",
-          shares: 100,
-          feeBps: 200,
-          priceBeforeYes: 0.55,
-          priceAfterYes: 0.56,
-          priceBeforeSide: 0.55,
-          priceAfterSide: 0.56,
-          averagePrice: 0.555,
-          notional: 55.5,
-          feeAmount: 1.11,
-          netCashChange: -56.61,
-          slippageBps: 90,
-        },
+        data: createTradeQuoteFixture(),
       });
 
       const response = await POST(mockRequest, mockContext);
@@ -230,12 +138,12 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: false,
-        userId: null,
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(
+        createViewerContextFixture({
+          isAuthenticated: false,
+          userId: null,
+        })
+      );
 
       const response = await POST(mockRequest, mockContext);
       const json = await response.json();
@@ -264,12 +172,7 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
       vi.mocked(getMarketDetail).mockResolvedValue({
         kind: "login_required",
@@ -304,12 +207,7 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
       vi.mocked(getMarketDetail).mockResolvedValue({
         kind: "not_found",
@@ -342,14 +240,9 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
-      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail({ status: "closed" }));
+      vi.mocked(getMarketDetail).mockResolvedValue(createOkMarketDetailResult({ status: "closed" }));
 
       const response = await POST(mockRequest, mockContext);
       const json = await response.json();
@@ -379,12 +272,7 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
       vi.mocked(getMarketDetail).mockResolvedValue({
         kind: "institution_verification_required",
@@ -418,12 +306,7 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
       vi.mocked(getMarketDetail).mockResolvedValue({
         kind: "schema_missing",
@@ -460,14 +343,9 @@ describe("POST /api/markets/[marketId]/trade/quote", () => {
         },
       });
 
-      vi.mocked(getMarketViewerContext).mockResolvedValue({
-        isAuthenticated: true,
-        userId: "user-123",
-        activeOrganizationId: null,
-        hasActiveInstitution: false,
-      });
+      vi.mocked(getMarketViewerContext).mockResolvedValue(createViewerContextFixture());
 
-      vi.mocked(getMarketDetail).mockResolvedValue(okMarketDetail());
+      vi.mocked(getMarketDetail).mockResolvedValue(createOkMarketDetailResult());
 
       vi.mocked(quoteMarketTrade).mockResolvedValue({
         ok: false,

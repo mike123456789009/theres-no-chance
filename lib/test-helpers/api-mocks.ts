@@ -1,139 +1,102 @@
-import { vi } from "vitest";
+import type { TradeExecuteRpcResult, TradeQuoteRpcResult } from "@/lib/markets/trade-engine";
+import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets/types";
 
-/**
- * Mock Next.js Request object for testing API routes
- */
-export function createMockRequest(options: {
-  method?: string;
-  body?: unknown;
-  headers?: Record<string, string>;
-  params?: Record<string, string>;
-}): Request {
-  const { method = "POST", body, headers = {}, params = {} } = options;
-
-  const url = new URL("http://localhost:3000/api/test");
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-
-  const request = {
-    method,
-    url: url.toString(),
-    headers: new Headers(headers),
-    json: vi.fn().mockResolvedValue(body),
-  } as unknown as Request;
-
-  return request;
-}
-
-/**
- * Mock Next.js context with params
- */
-export function createMockContext(params: Record<string, string>) {
+export function createMarketDetailFixture(overrides: Partial<MarketDetailDTO> = {}): MarketDetailDTO {
   return {
-    params: Promise.resolve(params),
-  };
-}
-
-/**
- * Extract JSON from Next.js Response
- */
-export async function extractJsonFromResponse(response: Response): Promise<unknown> {
-  const text = await response.text();
-  return JSON.parse(text);
-}
-
-/**
- * Mock Supabase client for testing
- */
-export function createMockSupabaseClient() {
-  return {
-    auth: {
-      getUser: vi.fn(),
-    },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-    })),
-    rpc: vi.fn(),
-  };
-}
-
-/**
- * Mock authenticated user context
- */
-export function mockAuthenticatedUser(userId: string = "test-user-123") {
-  return {
-    data: {
-      user: {
-        id: userId,
-        email: "test@example.com",
-      },
-    },
-    error: null,
-  };
-}
-
-/**
- * Mock unauthenticated user context
- */
-export function mockUnauthenticatedUser() {
-  return {
-    data: {
-      user: null,
-    },
-    error: null,
-  };
-}
-
-/**
- * Mock market data
- */
-export function createMockMarket(overrides?: Partial<any>) {
-  return {
-    id: "market-123",
+    id: "test-market-123",
+    question: "Will this market resolve by the target date?",
+    description: "This is a test market description used for route tests.",
+    resolvesYesIf: "An eligible source confirms the condition happened.",
+    resolvesNoIf: "An eligible source confirms the condition did not happen.",
     status: "open",
-    question: "Test market question?",
+    resolutionMode: "admin",
+    visibility: "public",
+    accessBadge: "Public",
+    accessRequiresLogin: false,
+    closeTime: "2026-12-31T00:00:00.000Z",
+    expectedResolutionTime: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
     feeBps: 200,
-    priceYes: 0.5,
-    priceNo: 0.5,
-    createdAt: new Date().toISOString(),
-    closeTime: new Date(Date.now() + 86400000).toISOString(),
+    tags: [],
+    riskFlags: [],
+    evidenceRules: null,
+    disputeRules: null,
+    resolutionOutcome: null,
+    provisionalOutcome: null,
+    resolvedAt: null,
+    provisionalResolvedAt: null,
+    finalizedAt: null,
+    resolutionWindowEndsAt: null,
+    challengeWindowEndsAt: null,
+    adjudicationRequired: false,
+    adjudicationReason: null,
+    voidReason: null,
+    challengeBonusRate: 0.1,
+    challengeBondAmount: 1,
+    listingFeeAmount: 0.5,
+    creatorRakePaidAmount: 0,
+    creatorRakePaidAt: null,
+    finalOutcomeChangedByChallenge: false,
+    priceYes: 0.55,
+    priceNo: 0.45,
+    yesShares: 0,
+    noShares: 0,
+    poolShares: 0,
+    liquidityParameter: 100,
+    chartPoints: [{ timestamp: "2026-01-01T00:00:00.000Z", priceYes: 0.55 }],
+    viewerPosition: null,
+    sources: [],
+    cardShadowTone: "mint",
+    actionRequired: "account_ready",
+    viewerCanTrade: true,
+    viewerReadOnlyReason: null,
+    resolverStakeCap: 1,
+    yesBondTotal: 0,
+    noBondTotal: 0,
+    challengeCount: 0,
+    openChallengeCount: 0,
+    viewerResolverBond: null,
+    viewerChallenge: null,
+    viewerCanResolve: false,
+    viewerCanChallenge: false,
+    evidence: [],
+    resolverPrizeLockedTotal: 0,
+    resolverPrizeContributionCount: 0,
+    resolverPrizeRecentContributions: [],
     ...overrides,
   };
 }
 
-/**
- * Mock quote RPC result
- */
-export function createMockQuoteResult(overrides?: Partial<any>) {
+export function createOkMarketDetailResult(overrides: Partial<MarketDetailDTO> = {}) {
   return {
-    marketId: "market-123",
+    kind: "ok" as const,
+    market: createMarketDetailFixture(overrides),
+  };
+}
+
+export function createTradeQuoteFixture(overrides: Partial<TradeQuoteRpcResult> = {}): TradeQuoteRpcResult {
+  return {
+    marketId: "test-market-123",
     side: "yes",
     action: "buy",
     shares: 100,
     feeBps: 200,
-    priceBeforeYes: 0.5,
-    priceAfterYes: 0.52,
-    priceBeforeSide: 0.5,
-    priceAfterSide: 0.52,
-    averagePrice: 0.51,
-    notional: 51,
-    feeAmount: 1.02,
-    netCashChange: 52.02,
-    slippageBps: 200,
+    priceBeforeYes: 0.55,
+    priceAfterYes: 0.56,
+    priceBeforeSide: 0.55,
+    priceAfterSide: 0.56,
+    averagePrice: 0.555,
+    notional: 55.5,
+    feeAmount: 1.11,
+    netCashChange: -56.61,
+    slippageBps: 90,
     ...overrides,
   };
 }
 
-/**
- * Mock execute RPC result
- */
-export function createMockExecuteResult(overrides?: Partial<any>) {
-  const quoteData = createMockQuoteResult();
+export function createTradeExecutionFixture(overrides: Partial<TradeExecuteRpcResult> = {}): TradeExecuteRpcResult {
   return {
-    ...quoteData,
+    ...createTradeQuoteFixture(),
     reused: false,
     tradeFillId: "fill-123",
     userId: "user-123",
@@ -141,7 +104,17 @@ export function createMockExecuteResult(overrides?: Partial<any>) {
     positionYesShares: 100,
     positionNoShares: 0,
     positionRealizedPnl: 0,
-    executedAt: new Date().toISOString(),
+    executedAt: "2024-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+export function createViewerContextFixture(overrides: Partial<MarketViewerContext> = {}): MarketViewerContext {
+  return {
+    isAuthenticated: true,
+    userId: "user-123",
+    activeOrganizationId: null,
+    hasActiveInstitution: false,
     ...overrides,
   };
 }
