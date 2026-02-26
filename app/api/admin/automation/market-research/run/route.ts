@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { DEFAULT_RESEARCH_MODEL, DEFAULT_SCOUT_MODEL } from "@/lib/automation/market-research/constants";
 import { runInstitutionResearch, runPublicResearch } from "@/lib/automation/market-research/runner";
 import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
 import { getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
-const ADMIN_RUN_TIMEOUT_BUFFER_MS = 60_000;
+export const maxDuration = 800;
+const ADMIN_RUN_TIMEOUT_BUFFER_MS = 90_000;
 const ADMIN_RUN_TIMEOUT_MS = Math.max(60_000, maxDuration * 1000 - ADMIN_RUN_TIMEOUT_BUFFER_MS);
 
 type RunScope = "public" | "institution";
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
   }
 
   const submit = parseBoolean(body.submit, true);
-  const modelName = clean(process.env.MARKET_RESEARCH_MODEL) || "gpt-5";
-  const scoutModelName = clean(process.env.MARKET_RESEARCH_SCOUT_MODEL) || "gpt-5-mini";
+  const modelName = clean(process.env.MARKET_RESEARCH_MODEL) || DEFAULT_RESEARCH_MODEL;
+  const scoutModelName = clean(process.env.MARKET_RESEARCH_SCOUT_MODEL) || DEFAULT_SCOUT_MODEL;
 
   try {
     if (scope === "public") {

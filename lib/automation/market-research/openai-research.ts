@@ -221,7 +221,14 @@ async function createResponseWithRetry(
 
       return JSON.parse(rawBody) as OpenAiResponse;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error("Unknown OpenAI request error.");
+      if (
+        error instanceof Error &&
+        (error.name === "AbortError" || error.message.toLowerCase().includes("aborted"))
+      ) {
+        lastError = new Error(`OpenAI request timed out after ${timeoutMs}ms (attempt ${attempt}/${attempts}).`);
+      } else {
+        lastError = error instanceof Error ? error : new Error("Unknown OpenAI request error.");
+      }
       if (attempt >= attempts) {
         throw lastError;
       }
