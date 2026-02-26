@@ -204,7 +204,7 @@ export async function submitAutomationMarketProposal(
   const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {
     p_market_id: market.id,
     p_user_id: botUserId,
-    p_amount: 0.5,
+    p_amount: 0,
   });
 
   if (listingFeeError) {
