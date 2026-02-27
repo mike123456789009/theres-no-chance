@@ -9,7 +9,7 @@ import {
 import type { GeneratedMarketProposal, GeneratedProposalSource, ResearchOrganization, ResearchRunScope } from "@/lib/automation/market-research/types";
 import { fallbackFingerprint, normalizeFingerprint, normalizeStringList, normalizeWhitespace, toHttpsUrl } from "@/lib/automation/market-research/utils";
 import type { AutomationMarketProposalInput } from "@/lib/markets/submit-automation-proposal";
-import { MARKET_CATEGORY_KEYS, CATEGORY_TO_CARD_TONE, type MarketCategoryKey } from "@/lib/markets/taxonomy";
+import { MARKET_CATEGORY_KEYS, pickCategoryCardTone, type MarketCategoryKey } from "@/lib/markets/taxonomy";
 
 type ProposalValidationOk = {
   ok: true;
@@ -353,7 +353,7 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
     sources,
     eventFingerprint,
     scanScope: input.scope,
-    cardShadowTone: CATEGORY_TO_CARD_TONE[category],
+    cardShadowTone: pickCategoryCardTone(category, eventFingerprint || question),
     organizationId: input.organization?.id ?? null,
     runId: input.runId,
     confidence,
