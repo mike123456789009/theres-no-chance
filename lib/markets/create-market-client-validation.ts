@@ -9,12 +9,8 @@ import {
 
 export type CreateMarketWizardStep =
   | "rules"
-  | "resolvable"
-  | "listingFee"
-  | "rake"
   | "evidence"
   | "basics"
-  | "idea"
   | "criteria"
   | "sources"
   | "review";

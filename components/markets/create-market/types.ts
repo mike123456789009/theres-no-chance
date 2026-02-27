@@ -21,12 +21,8 @@ export type WizardStep = CreateMarketWizardStep;
 
 export const WIZARD_STEPS: Array<{ id: WizardStep; label: string }> = [
   { id: "rules", label: "Rules" },
-  { id: "resolvable", label: "Resolvable" },
-  { id: "listingFee", label: "Listing fee" },
-  { id: "rake", label: "Maker rake" },
-  { id: "evidence", label: "Evidence" },
+  { id: "evidence", label: "Economics + policy" },
   { id: "basics", label: "Basics" },
-  { id: "idea", label: "Idea" },
   { id: "criteria", label: "Criteria" },
   { id: "sources", label: "References" },
   { id: "review", label: "Review" },

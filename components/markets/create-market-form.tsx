@@ -4,10 +4,6 @@ import {
   BasicsStep,
   CriteriaStep,
   EvidenceStep,
-  IdeaStep,
-  ListingFeeStep,
-  RakeStep,
-  ResolvableStep,
   ReviewStep,
   RulesStep,
   SourcesStep,
@@ -31,9 +27,6 @@ export function CreateMarketForm() {
 
       <section className="create-section create-wizard-card" aria-label={`Wizard step ${wizard.stepIndex + 1}`}>
         {wizard.currentStep === "rules" ? <RulesStep /> : null}
-        {wizard.currentStep === "resolvable" ? <ResolvableStep /> : null}
-        {wizard.currentStep === "listingFee" ? <ListingFeeStep /> : null}
-        {wizard.currentStep === "rake" ? <RakeStep /> : null}
         {wizard.currentStep === "evidence" ? <EvidenceStep /> : null}
 
         {wizard.currentStep === "basics" ? (
@@ -52,21 +45,14 @@ export function CreateMarketForm() {
           />
         ) : null}
 
-        {wizard.currentStep === "idea" ? (
-          <IdeaStep
-            ideaInput={wizard.ideaInput}
-            isGenerating={wizard.isGenerating}
-            onIdeaInputChange={wizard.setIdeaInput}
-            onGenerateCriteria={() => {
-              void wizard.generateCriteria();
-            }}
-          />
-        ) : null}
-
         {wizard.currentStep === "criteria" ? (
           <CriteriaStep
             resolvesYesIf={wizard.resolvesYesIf}
             resolvesNoIf={wizard.resolvesNoIf}
+            isGenerating={wizard.isGenerating}
+            onGenerateCriteria={() => {
+              void wizard.generateCriteria();
+            }}
             onResolvesYesIfChange={wizard.setResolvesYesIf}
             onResolvesNoIfChange={wizard.setResolvesNoIf}
           />

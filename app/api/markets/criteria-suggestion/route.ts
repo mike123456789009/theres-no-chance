@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { requiredEnv } from "@/lib/env";
 
 type CriteriaSuggestionBody = {
-  idea?: unknown;
   question?: unknown;
+  description?: unknown;
   closeTime?: unknown;
+  visibility?: unknown;
 };
 
 type OpenAiResponse = {
@@ -59,7 +60,12 @@ function parseCriteriaJson(raw: string): { resolvesYesIf: string; resolvesNoIf: 
   }
 }
 
-async function suggestCriteria(input: { idea: string; question: string; closeTime: string }): Promise<{
+async function suggestCriteria(input: {
+  question: string;
+  description: string;
+  closeTime: string;
+  visibility: string;
+}): Promise<{
   resolvesYesIf: string;
   resolvesNoIf: string;
 }> {
@@ -73,8 +79,10 @@ async function suggestCriteria(input: { idea: string; question: string; closeTim
     "- criteria must be externally verifiable",
     "- avoid subjective language",
     "- include clear deadline/outcome checks when possible",
+    "Use the market basics context below and do not invent facts.",
     `Market question: ${input.question || "(not provided)"}`,
-    `Market idea/context: ${input.idea}`,
+    `Market description: ${input.description || "(not provided)"}`,
+    `Market visibility: ${input.visibility || "(not provided)"}`,
     `Market close time: ${input.closeTime || "(not provided)"}`,
   ].join("\n");
 
@@ -151,15 +159,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
   }
 
-  const idea = cleanText(body.idea, 3000);
   const question = cleanText(body.question, 180);
+  const description = cleanText(body.description, 3000);
   const closeTime = cleanText(body.closeTime, 120);
+  const visibility = cleanText(body.visibility, 40);
 
-  if (idea.length < 12) {
+  const validationErrors: string[] = [];
+  if (question.length < 12) {
+    validationErrors.push("question must be at least 12 characters.");
+  }
+  if (description.length < 30) {
+    validationErrors.push("description must be at least 30 characters.");
+  }
+  if (!closeTime || Number.isNaN(new Date(closeTime).getTime())) {
+    validationErrors.push("closeTime must be a valid date.");
+  }
+
+  if (validationErrors.length > 0) {
     return NextResponse.json(
       {
         error: "Validation failed.",
-        details: ["idea must be at least 12 characters."],
+        details: validationErrors,
       },
       { status: 400 }
     );
@@ -167,9 +187,10 @@ export async function POST(request: Request) {
 
   try {
     const criteria = await suggestCriteria({
-      idea,
       question,
+      description,
       closeTime,
+      visibility,
     });
 
     return NextResponse.json({

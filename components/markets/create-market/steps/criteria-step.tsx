@@ -3,16 +3,24 @@ import type { ChangeEvent } from "react";
 type CriteriaStepProps = {
   resolvesYesIf: string;
   resolvesNoIf: string;
+  isGenerating: boolean;
+  onGenerateCriteria: () => void;
   onResolvesYesIfChange: (value: string) => void;
   onResolvesNoIfChange: (value: string) => void;
 };
 
 export function CriteriaStep(props: CriteriaStepProps) {
-  const { resolvesYesIf, resolvesNoIf, onResolvesYesIfChange, onResolvesNoIfChange } = props;
+  const { resolvesYesIf, resolvesNoIf, isGenerating, onGenerateCriteria, onResolvesYesIfChange, onResolvesNoIfChange } = props;
 
   return (
     <>
       <h2>Edit resolution criteria</h2>
+      <p className="create-note">Generate a draft from your market basics (question, description, close time, visibility).</p>
+      <div className="create-actions">
+        <button className="create-submit" type="button" onClick={onGenerateCriteria} disabled={isGenerating}>
+          {isGenerating ? "Generating..." : "Generate binary criteria"}
+        </button>
+      </div>
 
       <label className="create-field">
         <span>Resolves YES if</span>

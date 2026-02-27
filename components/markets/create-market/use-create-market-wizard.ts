@@ -26,7 +26,6 @@ export function useCreateMarketWizard() {
   const [description, setDescription] = useState("");
   const [resolvesYesIf, setResolvesYesIf] = useState("");
   const [resolvesNoIf, setResolvesNoIf] = useState("");
-  const [ideaInput, setIdeaInput] = useState("");
   const [closeTimeLocal, setCloseTimeLocal] = useState(() => toLocalInputValue(new Date(Date.now() + 86_400_000 * 7)));
   const [visibility, setVisibility] = useState("public");
   const [tagsInput, setTagsInput] = useState("");
@@ -158,8 +157,24 @@ export function useCreateMarketWizard() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (ideaInput.trim().length < 12) {
-      setErrorMessage("Describe your market idea in at least 12 characters before generating criteria.");
+    const basicsValidationError = validateCreateMarketWizardStep("basics", {
+      question,
+      description,
+      resolvesYesIf,
+      resolvesNoIf,
+      closeTimeLocal,
+      sources,
+      institutionMarketSelected,
+      hasActiveInstitution,
+    });
+    if (basicsValidationError) {
+      setErrorMessage(basicsValidationError);
+      return;
+    }
+
+    const closeTime = toIsoDateTime(closeTimeLocal);
+    if (!closeTime) {
+      setErrorMessage("Close time must be a valid date.");
       return;
     }
 
@@ -172,9 +187,10 @@ export function useCreateMarketWizard() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          idea: ideaInput,
           question,
-          closeTime: toIsoDateTime(closeTimeLocal),
+          description,
+          closeTime,
+          visibility: institutionMarketSelected ? "institution" : visibility,
         }),
       });
 
@@ -203,7 +219,17 @@ export function useCreateMarketWizard() {
     } finally {
       setIsGenerating(false);
     }
-  }, [closeTimeLocal, ideaInput, question]);
+  }, [
+    closeTimeLocal,
+    description,
+    hasActiveInstitution,
+    institutionMarketSelected,
+    question,
+    resolvesNoIf,
+    resolvesYesIf,
+    sources,
+    visibility,
+  ]);
 
   const submitMarket = useCallback(
     async (submissionMode: "draft" | "review") => {
@@ -305,7 +331,6 @@ export function useCreateMarketWizard() {
     description,
     resolvesYesIf,
     resolvesNoIf,
-    ideaInput,
     closeTimeLocal,
     visibility,
     tagsInput,
@@ -323,7 +348,6 @@ export function useCreateMarketWizard() {
     setDescription,
     setResolvesYesIf,
     setResolvesNoIf,
-    setIdeaInput,
     setCloseTimeLocal,
     setVisibility,
     setTagsInput,
