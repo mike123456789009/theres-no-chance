@@ -18,11 +18,20 @@ type PublicScanResult = ProcessCandidateSummary & {
   usedScoutModel: string;
 };
 
+const ECONOMY_HEAVY_CATEGORIES = new Set<GeneratedMarketProposal["category"]>(["economy", "finance", "crypto"]);
+
+function categoryPriority(category: GeneratedMarketProposal["category"]): number {
+  if (category === "sports") return 0;
+  if (ECONOMY_HEAVY_CATEGORIES.has(category)) return 3;
+  return 1;
+}
+
 function rebalancePublicCandidates(candidates: GeneratedMarketProposal[], maxToSubmit: number): GeneratedMarketProposal[] {
   if (candidates.length === 0) return [];
+  const prioritized = [...candidates].sort((a, b) => categoryPriority(a.category) - categoryPriority(b.category));
 
-  const us = candidates.filter((candidate) => candidate.usFocus === true);
-  const world = candidates.filter((candidate) => candidate.usFocus !== true);
+  const us = prioritized.filter((candidate) => candidate.usFocus === true);
+  const world = prioritized.filter((candidate) => candidate.usFocus !== true);
 
   const targetWorld = Math.max(1, Math.round(maxToSubmit * 0.2));
   const targetUs = Math.max(0, maxToSubmit - targetWorld);
@@ -32,7 +41,7 @@ function rebalancePublicCandidates(candidates: GeneratedMarketProposal[], maxToS
   ordered.push(...us.slice(0, targetUs));
 
   const seen = new Set(ordered);
-  for (const candidate of candidates) {
+  for (const candidate of prioritized) {
     if (!seen.has(candidate)) {
       ordered.push(candidate);
       seen.add(candidate);

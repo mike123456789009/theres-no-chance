@@ -139,6 +139,22 @@ function withinCloseWindow(closeTime: Date, nowMs: number): boolean {
   return delta >= MIN_CLOSE_WINDOW_MS && delta <= MAX_CLOSE_WINDOW_MS;
 }
 
+function hasAmbiguousQuestionSubject(question: string): boolean {
+  return /^will\s+(this|that|it|they|he|she|these|those)\b/i.test(question);
+}
+
+function hasExplicitQuestionTimeAnchor(question: string): boolean {
+  if (/\b20\d{2}\b/.test(question)) return true;
+  if (/\bq[1-4]\s*20\d{2}\b/i.test(question)) return true;
+  if (
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(question)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function validateGeneratedProposal(input: ValidateGeneratedProposalInput): ProposalValidationResult {
   const raw = input.generated as unknown as Record<string, unknown>;
 
@@ -169,6 +185,45 @@ export function validateGeneratedProposal(input: ValidateGeneratedProposalInput)
       ok: false,
       kind: "invalid",
       reason: "Required proposal text fields are missing.",
+      question,
+      category,
+      confidence,
+      eventFingerprint,
+      sourcesSnapshot: sources,
+    };
+  }
+
+  if (question.length < 24) {
+    return {
+      ok: false,
+      kind: "quality",
+      reason: "Question title is too short to be clear on card without opening details.",
+      question,
+      category,
+      confidence,
+      eventFingerprint,
+      sourcesSnapshot: sources,
+    };
+  }
+
+  if (hasAmbiguousQuestionSubject(question)) {
+    return {
+      ok: false,
+      kind: "quality",
+      reason: "Question title starts with an ambiguous subject (for example: this/that/it/they).",
+      question,
+      category,
+      confidence,
+      eventFingerprint,
+      sourcesSnapshot: sources,
+    };
+  }
+
+  if (!hasExplicitQuestionTimeAnchor(question)) {
+    return {
+      ok: false,
+      kind: "quality",
+      reason: "Question title must include an explicit date/season/year anchor for card clarity.",
       question,
       category,
       confidence,

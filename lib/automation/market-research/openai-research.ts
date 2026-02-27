@@ -41,6 +41,13 @@ type ScoutLead = {
 
 const DEADLINE_BUFFER_MS = 12_000;
 const MIN_OPENAI_CALL_TIMEOUT_MS = 8_000;
+const ECONOMY_HEAVY_CATEGORIES = new Set<MarketCategoryKey>(["economy", "finance", "crypto"]);
+
+function categoryPriority(category: MarketCategoryKey): number {
+  if (category === "sports") return 0;
+  if (ECONOMY_HEAVY_CATEGORIES.has(category)) return 3;
+  return 1;
+}
 
 const SCOUT_OUTPUT_SCHEMA: Record<string, unknown> = {
   type: "object",
@@ -388,12 +395,13 @@ function compactExistingMarkets(existingMarkets: ExistingMarketContext[], scope:
 
 function rebalanceScoutLeads(leads: ScoutLead[], scope: ResearchRunScope, targetLeadCount: number): ScoutLead[] {
   const clampedTarget = Math.max(1, Math.min(64, targetLeadCount));
+  const prioritized = [...leads].sort((a, b) => categoryPriority(a.category) - categoryPriority(b.category));
   if (scope !== "public") {
-    return leads.slice(0, clampedTarget);
+    return prioritized.slice(0, clampedTarget);
   }
 
-  const us = leads.filter((lead) => lead.usFocus === true);
-  const world = leads.filter((lead) => lead.usFocus !== true);
+  const us = prioritized.filter((lead) => lead.usFocus === true);
+  const world = prioritized.filter((lead) => lead.usFocus !== true);
   const targetWorld = Math.max(1, Math.round(clampedTarget * 0.25));
   const targetUs = Math.max(0, clampedTarget - targetWorld);
 
@@ -402,7 +410,7 @@ function rebalanceScoutLeads(leads: ScoutLead[], scope: ResearchRunScope, target
   selected.push(...us.slice(0, targetUs));
 
   const seen = new Set(selected.map((lead) => lead.id));
-  for (const lead of leads) {
+  for (const lead of prioritized) {
     if (seen.has(lead.id)) continue;
     selected.push(lead);
     seen.add(lead.id);
@@ -425,11 +433,16 @@ Your job is to rapidly surface plausible event leads for deeper investigation.
 
 Every lead MUST include:
 - a stable id slug for dedupe
-- a concise yes/no-style question seed
+- a concise yes/no-style question seed that is self-contained on its own
 - candidateCloseTime in ISO-8601 format, with close between 24 hours and 45 days from now
 - category from this list:
 ${categoryDefinitions}
 - resolutionSourceHints naming official entities likely to publish definitive outcomes
+
+Question seed clarity requirements:
+- Include specific named entities (team, league, athlete, company, country, agency, event, or tournament) in the question seed.
+- Include an explicit time anchor (month/day/year, named event date, or season/year) in the question seed.
+- Avoid vague references like "this game", "this event", "they", or "it".
 
 Novelty and clutter control:
 - You will receive existing market context.
@@ -450,6 +463,8 @@ Public scan requirements:
 - Target roughly 80% U.S. leads and 20% global leads.
 - Prioritize events with broad consumer relevance.
 - Exclude events already resolved or clearly stale.
+- Keep lead mix broad: economy/finance/crypto combined should usually be no more than about 35% of the batch.
+- Include meaningful non-economy opportunities each run, especially sports plus politics/geopolitics/tech/culture/world/climate-science.
 `.trim();
   }
 
@@ -528,7 +543,10 @@ ${categoryDefinitions}
 
 Important:
 - feeBps should usually be 200 unless exceptional.
-- keep question concise and answerable.
+- keep question concise, answerable, and self-contained as a card title.
+- question must name the specific subject and context (who/what/which competition or event).
+- question should include an explicit time anchor (date/month/year/season) instead of vague timing.
+- avoid vague references like "this game", "this event", "they", or "it".
 - include tags and riskFlags.
 - eventFingerprint should be stable across repeated scans for the same event.
 - if official source quality is unclear, do not include that proposal.
@@ -543,6 +561,8 @@ Public scan requirements:
 - Maintain approximately 80% U.S. focus and 20% world opportunities.
 - Prefer near-term events with broad market interest.
 - Avoid stale, duplicate-feeling, or low-resolution-confidence markets.
+- Keep final proposal mix broad: economy/finance/crypto combined should usually be no more than about 35%.
+- Ensure strong non-economy coverage, especially sports and at least a few from politics/geopolitics/tech/culture/world/climate-science when quality allows.
 `.trim();
   }
 
