@@ -91,6 +91,19 @@ function resolveCardShadowTone(accessRules: MarketAccessRules, marketId: string)
   return explicitTone ?? fallbackCardShadowToneFromId(marketId);
 }
 
+function toTimestamp(value: string): number {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function compareByVolumeThenAgeDesc(a: MarketCardDTO, b: MarketCardDTO): number {
+  if (b.poolShares !== a.poolShares) {
+    return b.poolShares - a.poolShares;
+  }
+
+  return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
+}
+
 export async function listDiscoveryMarketCards(options: {
   supabase: SupabaseServerClient;
   viewer: MarketViewerContext;
@@ -110,7 +123,7 @@ export async function listDiscoveryMarketCards(options: {
     request = request.eq("status", query.status);
   }
 
-  if (query.sort === "newest") {
+  if (query.sort === "newest" || query.sort === "volume") {
     request = request.order("created_at", { ascending: false });
   } else {
     request = request.order("close_time", { ascending: true });
@@ -156,7 +169,7 @@ export async function listDiscoveryMarketCards(options: {
         serviceRequest = serviceRequest.eq("status", query.status);
       }
 
-      if (query.sort === "newest") {
+      if (query.sort === "newest" || query.sort === "volume") {
         serviceRequest = serviceRequest.order("created_at", { ascending: false });
       } else {
         serviceRequest = serviceRequest.order("close_time", { ascending: true });
@@ -239,6 +252,10 @@ export async function listDiscoveryMarketCards(options: {
     .filter((market): market is MarketCardDTO => market !== null)
     .filter((market) => shouldIncludeForCategory({ category: query.category, market, nowMs }))
     .filter((market) => shouldIncludeForSearch(market, query.search));
+
+  if (query.sort === "volume") {
+    markets.sort(compareByVolumeThenAgeDesc);
+  }
 
   if (query.sort === "probability_high") {
     markets.sort((a, b) => b.priceYes - a.priceYes);

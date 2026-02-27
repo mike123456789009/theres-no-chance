@@ -38,7 +38,7 @@ describe("read-markets query parsing", () => {
       category: "trending",
       status: "all",
       access: "all",
-      sort: "closing_soon",
+      sort: "volume",
     });
   });
 

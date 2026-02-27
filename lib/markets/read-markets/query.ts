@@ -22,7 +22,7 @@ function parseSort(value: string): MarketDiscoverySort {
   if ((MARKET_DISCOVERY_SORTS as readonly string[]).includes(value)) {
     return value as MarketDiscoverySort;
   }
-  return "closing_soon";
+  return "volume";
 }
 
 function parseAccess(value: string): MarketDiscoveryAccessFilter {

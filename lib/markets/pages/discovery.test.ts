@@ -14,7 +14,7 @@ function createDiscoveryQuery(): MarketDiscoveryQuery {
     category: "trending",
     status: "all",
     access: "all",
-    sort: "closing_soon",
+    sort: "volume",
   };
 }
 

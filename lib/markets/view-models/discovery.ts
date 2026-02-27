@@ -18,6 +18,7 @@ export const ACCESS_FILTER_OPTIONS: Array<{ value: string; label: string }> = [
 ];
 
 export const SORT_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "volume", label: "Highest volume" },
   { value: "closing_soon", label: "Closing soon" },
   { value: "newest", label: "Newest" },
   { value: "probability_high", label: "Highest yes" },

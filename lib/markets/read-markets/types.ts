@@ -3,7 +3,7 @@ import type { MarketCardShadowTone } from "@/lib/markets/presentation";
 import type { MarketCategoryKey } from "@/lib/markets/taxonomy";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
 
-export const MARKET_DISCOVERY_SORTS = ["closing_soon", "newest", "probability_high", "probability_low"] as const;
+export const MARKET_DISCOVERY_SORTS = ["volume", "closing_soon", "newest", "probability_high", "probability_low"] as const;
 export const MARKET_DISCOVERY_ACCESS_FILTERS = ["all", "public", "institution"] as const;
 
 export type MarketDiscoverySort = (typeof MARKET_DISCOVERY_SORTS)[number];
