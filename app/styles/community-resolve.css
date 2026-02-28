@@ -9,7 +9,7 @@
   border: 6px solid var(--ink);
   box-shadow: 8px 8px 0 var(--ink);
   background: var(--bg);
-  padding: clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1.1rem, 2.6vw, 1.65rem);
 }
 
 .community-resolve-hero-links {
@@ -34,10 +34,10 @@
 
 .community-resolve-layout {
   width: min(1120px, 100%);
-  margin: 1.1rem auto 0;
+  margin: 1.2rem auto 0;
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .community-resolve-rail {
@@ -47,7 +47,7 @@
   border: 4px solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
   background: #f7f5ee;
-  padding: 0.8rem;
+  padding: 0.9rem;
 }
 
 .community-resolve-rail-label,
@@ -62,20 +62,20 @@
 
 .community-resolve-rail ol {
   list-style: none;
-  margin: 0.7rem 0 0;
+  margin: 0.8rem 0 0;
   padding: 0;
   display: grid;
-  gap: 0.42rem;
+  gap: 0.5rem;
 }
 
 .community-resolve-rail li {
   display: grid;
   grid-template-columns: 1.8rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.45rem;
+  align-items: start;
+  gap: 0.48rem;
   border: 2px solid rgba(16, 16, 16, 0.45);
   background: #fff;
-  padding: 0.4rem;
+  padding: 0.46rem 0.5rem;
 }
 
 .community-resolve-rail li span {
@@ -101,10 +101,10 @@
 }
 
 .community-resolve-active-media {
-  margin-top: 0.9rem;
+  margin-top: 1rem;
   border: 2px solid var(--ink);
   background: #fff;
-  padding: 0.58rem;
+  padding: 0.66rem;
 }
 
 .community-resolve-active-image {
@@ -117,7 +117,7 @@
 }
 
 .community-resolve-active-media p {
-  margin: 0.4rem 0 0;
+  margin: 0.5rem 0 0;
   font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.75rem;
   line-height: 1.4;
@@ -125,17 +125,18 @@
 
 .community-resolve-stages {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .community-resolve-stages article {
   border: 4px solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
   background: #f4f3ef;
-  padding: 0.8rem;
+  padding: 0.95rem;
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-  gap: 0.8rem;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
   opacity: 0.78;
   transition: opacity 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
@@ -149,13 +150,12 @@
   border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);
   background: linear-gradient(135deg, #fcefd3 0%, #f8d9bf 45%, #f5f2e7 100%);
-  min-height: 180px;
   display: grid;
   align-content: start;
   justify-items: center;
-  gap: 0.5rem;
+  gap: 0.58rem;
   text-align: center;
-  padding: 0.8rem;
+  padding: 0.72rem;
 }
 
 .community-resolve-stage-badge {
@@ -190,14 +190,20 @@
 
 .community-resolve-stage-copy {
   display: grid;
-  gap: 0.5rem;
-  align-content: center;
+  gap: 0.6rem;
+  align-content: start;
+  padding-top: 0.1rem;
 }
 
 .community-resolve-stage-copy h2 {
   margin: 0;
   font-size: clamp(1rem, 1.9vw, 1.5rem);
   text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.community-resolve-stage-copy p {
+  max-width: 58ch;
 }
 
 html[data-ui-style="modern"] .community-resolve-page {
@@ -264,6 +270,7 @@ html[data-ui-style="modern"] .community-resolve-stages article.is-active {
 @media (max-width: 900px) {
   .community-resolve-layout {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
   }
 
   .community-resolve-rail {
@@ -274,9 +281,11 @@ html[data-ui-style="modern"] .community-resolve-stages article.is-active {
 @media (max-width: 720px) {
   .community-resolve-stages article {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.72rem;
+    padding: 0.72rem;
   }
 
   .community-resolve-stage-media {
-    min-height: 130px;
+    padding: 0.62rem;
   }
 }
