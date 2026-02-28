@@ -817,7 +817,8 @@ function layout(font, force = false) {
       const desiredBottom = -H / 2 + bottomSafe;
       const minShift = desiredBottom - currentMinY;
       const maxShift = desiredTop - currentMaxY;
-      const preferredShift = clamp(chromeBottomInset * 0.18, 0, H * 0.08);
+      const upwardNudge = clamp(H * 0.014, 6, 14);
+      const preferredShift = clamp(chromeBottomInset * 0.18 - upwardNudge, -H * 0.08, H * 0.08);
 
       let fittedShift = preferredShift;
       if (minShift <= maxShift) {
