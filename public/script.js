@@ -340,7 +340,32 @@ function setMeshOpacity(mesh, opacity) {
   const alpha = clamp(opacity, 0, 1);
   const bgColor = new THREE.Color(themeColors.background);
   const blendedColor = new THREE.Color();
-  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  const materials = [];
+
+  function appendMaterialsFromObject(object) {
+    if (!object || !object.material) return;
+    if (Array.isArray(object.material)) {
+      object.material.forEach((material) => {
+        if (material) materials.push(material);
+      });
+      return;
+    }
+    materials.push(object.material);
+  }
+
+  appendMaterialsFromObject(mesh);
+
+  if (materials.length === 0 && typeof mesh.traverse === "function") {
+    mesh.traverse((node) => {
+      if (!node.isMesh) return;
+      appendMaterialsFromObject(node);
+    });
+  }
+
+  if (materials.length === 0) {
+    return;
+  }
+
   materials.forEach((material) => {
     const userData = material.userData || (material.userData = {});
 
@@ -411,9 +436,18 @@ function getSwapKeyAtPointer(clientX, clientY) {
   hoverPointer.x = (x / rect.width) * 2 - 1;
   hoverPointer.y = -(y / rect.height) * 2 + 1;
   hoverRaycaster.setFromCamera(hoverPointer, camera);
-  const intersections = hoverRaycaster.intersectObjects([aWord.mesh, noWord.mesh], false);
+  const intersections = hoverRaycaster.intersectObjects([aWord.mesh, noWord.mesh], true);
   if (intersections.length === 0) return null;
-  return intersections[0].object === aWord.mesh ? "a" : "no";
+
+  let node = intersections[0].object;
+  while (node) {
+    const swapKey = node.userData?.swapKey;
+    if (swapKey === "a" || swapKey === "no") {
+      return swapKey;
+    }
+    node = node.parent;
+  }
+  return null;
 }
 
 function handleHeroPointerMove(event) {
@@ -593,12 +627,13 @@ function layout(font, force = false) {
     const aWord = suffixWords.find((word) => word.key === "a");
 
     if (theresWord && noWord && chanceWord && slashWord && aWord) {
-      const columnSize = clamp(W * 0.16, 72, 116);
-      const columnDepth = clamp(columnSize * 0.22, 14, 30);
-      const columnGap = clamp(columnSize * 0.12, 7, 14);
-      const sidePadding = clamp(W * 0.04, 8, 18);
-      const centerLaneWidth = clamp(W * 0.17, 64, 112);
-      const topBottomPadding = clamp(H * 0.06, 14, 42);
+      const columnSize = clamp(W * 0.19, 82, 132);
+      const columnDepth = clamp(columnSize * 0.14, 8, 18);
+      const columnGap = clamp(columnSize * 0.11, 6, 12);
+      const sidePadding = clamp(W * 0.018, 3, 10);
+      const centerLaneWidth = clamp(W * 0.13, 44, 86);
+      const topBottomPadding = clamp(H * 0.012, 2, 10);
+      const sideWidthBoost = 1.14;
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -620,21 +655,21 @@ function layout(font, force = false) {
       });
 
       const maxColumnHeight = Math.max(1, H - topBottomPadding * 2);
-      const maxColumnWidth = Math.max(1, (W - sidePadding * 2 - centerLaneWidth) / 2);
+      const maxColumnWidth = Math.max(1, (W - sidePadding * 2 - centerLaneWidth) / (2 * sideWidthBoost));
       const rawMaxWidth = Math.max(theresStack.width, chanceStack.width);
       const rawMaxHeight = Math.max(theresStack.height, chanceStack.height);
-      const columnScale = Math.min(1, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
+      const columnScale = Math.min(1.08, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
 
-      theresStack.group.scale.setScalar(columnScale);
-      chanceStack.group.scale.setScalar(columnScale);
+      theresStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
+      chanceStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
 
-      const theresWidth = theresStack.width * columnScale;
-      const chanceWidth = chanceStack.width * columnScale;
+      const theresWidth = theresStack.width * sideWidthBoost * columnScale;
+      const chanceWidth = chanceStack.width * sideWidthBoost * columnScale;
       const theresX = -W / 2 + sidePadding + theresWidth / 2;
       const chanceX = W / 2 - sidePadding - chanceWidth / 2;
       const leftColumnRightEdge = theresX + theresWidth / 2;
       const rightColumnLeftEdge = chanceX - chanceWidth / 2;
-      const laneInset = clamp(W * 0.026, 8, 16);
+      const laneInset = clamp(W * 0.014, 3, 8);
       const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
 
       theresStack.group.position.set(theresX, 0, 0);
@@ -643,18 +678,22 @@ function layout(font, force = false) {
       scene.add(theresStack.group);
       scene.add(chanceStack.group);
 
-      const centerSize = clamp(W * 0.165, 64, 108);
-      const centerDepth = clamp(centerSize * 0.24, 12, 24);
-      const centerGap = clamp(H * 0.028, 10, 24);
-      const slashXScale = 0.66;
+      const centerSize = clamp(W * 0.2, 78, 132);
+      const centerDepth = clamp(centerSize * 0.13, 7, 16);
+      const centerGap = clamp(H * 0.032, 12, 30);
+      const noInternalGap = clamp(centerSize * 0.16, 9, 20);
+      const noWidthBoost = 1.14;
+      const aWidthBoost = 1.12;
+      const slashXScale = 0.74;
 
-      const noMeshEntry = buildWordMesh({
+      const noStack = buildStackedWordGroup({
         text: noWord.text,
         font,
         size: centerSize,
         depth: centerDepth,
         color: noWord.color,
         materialsByColor,
+        letterGap: noInternalGap,
       });
 
       const aMeshEntry = buildWordMesh({
@@ -675,39 +714,47 @@ function layout(font, force = false) {
         materialsByColor,
       });
 
-      const rawCenterWidth = Math.max(noMeshEntry.width, slashMeshEntry.width * slashXScale, aMeshEntry.width);
-      const rawCenterHeight = noMeshEntry.height + centerGap * 2 + slashMeshEntry.height + aMeshEntry.height;
-      const centerHeightBudget = clamp(H * 0.4, 132, 300);
+      const rawCenterWidth = Math.max(noStack.width * noWidthBoost, slashMeshEntry.width * slashXScale, aMeshEntry.width * aWidthBoost);
+      const rawCenterHeight = noStack.height + centerGap + slashMeshEntry.height + centerGap + aMeshEntry.height;
+      const centerHeightBudget = clamp(H * 0.56, 220, 420);
       const fitScaleByWidth = availableCenterLane / rawCenterWidth;
       const fitScaleByHeight = centerHeightBudget / rawCenterHeight;
-      const centerScale = clamp(Math.min(fitScaleByWidth, fitScaleByHeight, columnScale * 0.96) * 1.04, 0.28, 1.06);
+      const centerScale = clamp(Math.min(fitScaleByWidth, fitScaleByHeight, columnScale * 1.06) * 1.05, 0.34, 1.2);
 
-      noMeshEntry.mesh.scale.setScalar(centerScale);
-      aMeshEntry.mesh.scale.setScalar(centerScale);
+      noStack.group.scale.set(noWidthBoost * centerScale, centerScale, centerScale);
+      aMeshEntry.mesh.scale.set(aWidthBoost * centerScale, centerScale, centerScale);
       slashMeshEntry.mesh.scale.set(slashXScale * centerScale, centerScale, centerScale);
 
-      const noHeightScaled = noMeshEntry.height * centerScale;
+      const noHeightScaled = noStack.height * centerScale;
       const slashHeightScaled = slashMeshEntry.height * centerScale;
       const aHeightScaled = aMeshEntry.height * centerScale;
-      const centerTotalHeight = noHeightScaled + centerGap * 2 + slashHeightScaled + aHeightScaled;
+      const centerGapScaled = centerGap * centerScale;
+      const centerTotalHeight = noHeightScaled + centerGapScaled * 2 + slashHeightScaled + aHeightScaled;
       const centerTopEdge = -centerTotalHeight / 2;
 
       const noCenterY = centerTopEdge + noHeightScaled / 2;
-      const slashCenterY = centerTopEdge + noHeightScaled + centerGap + slashHeightScaled / 2;
-      const aCenterY = centerTopEdge + noHeightScaled + centerGap + slashHeightScaled + centerGap + aHeightScaled / 2;
+      const slashCenterY = centerTopEdge + noHeightScaled + centerGapScaled + slashHeightScaled / 2;
+      const aCenterY = centerTopEdge + noHeightScaled + centerGapScaled + slashHeightScaled + centerGapScaled + aHeightScaled / 2;
 
-      placeMeshAtCenter(noMeshEntry, 0, noCenterY);
+      noStack.group.position.set(0, noCenterY, 0);
       placeMeshAtCenter(aMeshEntry, 0, aCenterY);
       placeMeshAtCenter(slashMeshEntry, 0, slashCenterY);
 
-      scene.add(noMeshEntry.mesh);
+      noStack.group.userData.swapKey = "no";
+      noStack.group.traverse((node) => {
+        if (!node.isMesh) return;
+        node.userData.swapKey = "no";
+      });
+      aMeshEntry.mesh.userData.swapKey = "a";
+
+      scene.add(noStack.group);
       scene.add(aMeshEntry.mesh);
       scene.add(slashMeshEntry.mesh);
 
       const mobileEntries = [
         { ...theresWord, mesh: theresStack.group },
         { ...chanceWord, mesh: chanceStack.group },
-        { ...noWord, mesh: noMeshEntry.mesh },
+        { ...noWord, mesh: noStack.group },
         { ...aWord, mesh: aMeshEntry.mesh },
         { ...slashWord, mesh: slashMeshEntry.mesh },
       ];
@@ -791,6 +838,9 @@ function layout(font, force = false) {
     const meshMaterials = materialsByColor[word.color].map((material) => material.clone());
     const mesh = new THREE.Mesh(geometry, meshMaterials);
     mesh.scale.setScalar(wordScale);
+    if (word.key === "no") {
+      mesh.userData.swapKey = "no";
+    }
     if (renderMode === "webgl") mesh.castShadow = true;
 
     const targetLeftX = -W / 2 + margin;
@@ -839,6 +889,9 @@ function layout(font, force = false) {
       const suffixMeshMaterials = materialsByColor[suffixWord.color].map((material) => material.clone());
       const suffixMesh = new THREE.Mesh(suffixGeometry, suffixMeshMaterials);
       suffixMesh.scale.set(suffixScaleX, suffixScale, suffixScale);
+      if (suffixWord.key === "a") {
+        suffixMesh.userData.swapKey = "a";
+      }
       if (renderMode === "webgl") suffixMesh.castShadow = true;
 
       const suffixGap =
