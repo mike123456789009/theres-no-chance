@@ -114,6 +114,10 @@ const hoverPointer = new THREE.Vector2();
 let hoveredSwapKey = null;
 let pinnedSwapKey = "no";
 let layoutMode = "desktop";
+let stageStartY = 0;
+let scrollLoopRaf = 0;
+let lastScrollEventTime = 0;
+const SCROLL_LOOP_IDLE_MS = 120;
 
 function setRenderMode(mode) {
   renderMode = mode;
@@ -1034,10 +1038,37 @@ function layout(font, force = false) {
 }
 
 function computeProgress() {
+  const scrollY = window.scrollY || window.pageYOffset || 0;
   const scrollable = stage.offsetHeight - window.innerHeight;
-  const stageTop = stage.getBoundingClientRect().top;
-  const traveled = clamp(-stageTop, 0, Math.max(0, scrollable));
+  const traveled = clamp(scrollY - stageStartY, 0, Math.max(0, scrollable));
   return scrollable > 0 ? traveled / scrollable : 0;
+}
+
+function refreshStageStartY() {
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+  stageStartY = stage.getBoundingClientRect().top + scrollY;
+}
+
+function stopScrollRenderLoop() {
+  if (!scrollLoopRaf) return;
+  cancelAnimationFrame(scrollLoopRaf);
+  scrollLoopRaf = 0;
+}
+
+function runScrollRenderLoop(now) {
+  scrollLoopRaf = 0;
+  applyScroll(computeProgress());
+  render();
+
+  if (now - lastScrollEventTime < SCROLL_LOOP_IDLE_MS) {
+    scrollLoopRaf = requestAnimationFrame(runScrollRenderLoop);
+  }
+}
+
+function queueSmoothScrollRender() {
+  lastScrollEventTime = performance.now();
+  if (scrollLoopRaf) return;
+  scrollLoopRaf = requestAnimationFrame(runScrollRenderLoop);
 }
 
 function applyScroll(progress) {
@@ -1119,6 +1150,7 @@ function applyScroll(progress) {
 }
 
 function syncSceneToScrollPosition() {
+  stopScrollRenderLoop();
   applyScroll(computeProgress());
   queueRender();
 }
@@ -1216,6 +1248,7 @@ async function main() {
     setupScene();
     const font = await loadFont();
 
+    refreshStageStartY();
     layout(font);
     applyScroll(computeProgress());
     render();
@@ -1225,6 +1258,7 @@ async function main() {
     wrap.addEventListener("click", handleHeroClick);
 
     window.addEventListener("resize", () => {
+      refreshStageStartY();
       layout(font);
       syncSceneToScrollPosition();
     });
@@ -1232,12 +1266,13 @@ async function main() {
     window.addEventListener(
       "scroll",
       () => {
-        syncSceneToScrollPosition();
+        queueSmoothScrollRender();
       },
       { passive: true }
     );
 
     window.addEventListener("pageshow", () => {
+      refreshStageStartY();
       const action = handlePendingAuthReturn();
       if (action === "reload" || action === "handled") {
         return;
@@ -1246,6 +1281,7 @@ async function main() {
     });
 
     window.addEventListener("popstate", () => {
+      refreshStageStartY();
       const action = handlePendingAuthReturn();
       if (action === "reload" || action === "handled") {
         return;
@@ -1255,6 +1291,7 @@ async function main() {
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") return;
+      refreshStageStartY();
       const action = handlePendingAuthReturn();
       if (action === "reload" || action === "handled") {
         return;
@@ -1263,6 +1300,7 @@ async function main() {
     });
 
     window.addEventListener("focus", () => {
+      refreshStageStartY();
       const action = handlePendingAuthReturn();
       if (action === "reload" || action === "handled") {
         return;
@@ -1271,6 +1309,7 @@ async function main() {
     });
 
     window.addEventListener("tnc:ui-style-changed", () => {
+      refreshStageStartY();
       layout(font, true);
       syncSceneToScrollPosition();
     });
