@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Stage = {
   id: string;
@@ -83,29 +83,59 @@ const STAGES: Stage[] = [
 
 export default function CommunityResolvePage() {
   const [activeId, setActiveId] = useState<string>(STAGES[0].id);
+  const stageRefs = useRef<Array<HTMLElement | null>>([]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    let rafId = 0;
 
-        if (visible?.target instanceof HTMLElement) {
-          const stageId = visible.target.dataset.stageId;
-          if (stageId) setActiveId(stageId);
+    const updateActiveStage = () => {
+      rafId = 0;
+
+      const viewportAnchor = window.innerHeight * 0.42;
+      let nearestVisible: { id: string; distance: number } | null = null;
+      let nearestAny: { id: string; distance: number } | null = null;
+
+      for (let index = 0; index < stageRefs.current.length; index += 1) {
+        const node = stageRefs.current[index];
+        if (!node) continue;
+
+        const rect = node.getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        const distance = Math.abs(center - viewportAnchor);
+        const stageId = STAGES[index]?.id;
+
+        if (!stageId) continue;
+
+        if (!nearestAny || distance < nearestAny.distance) {
+          nearestAny = { id: stageId, distance };
         }
-      },
-      {
-        threshold: [0.3, 0.55, 0.8],
-        rootMargin: "-20% 0px -30% 0px",
+
+        const isVisible = rect.bottom >= 0 && rect.top <= window.innerHeight;
+        if (isVisible && (!nearestVisible || distance < nearestVisible.distance)) {
+          nearestVisible = { id: stageId, distance };
+        }
       }
-    );
 
-    const nodes = document.querySelectorAll<HTMLElement>("[data-stage-id]");
-    nodes.forEach((node) => observer.observe(node));
+      const nextActiveId = nearestVisible?.id ?? nearestAny?.id ?? STAGES[0].id;
+      setActiveId((current) => (current === nextActiveId ? current : nextActiveId));
+    };
 
-    return () => observer.disconnect();
+    const queueUpdate = () => {
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(updateActiveStage);
+    };
+
+    queueUpdate();
+    window.addEventListener("scroll", queueUpdate, { passive: true });
+    window.addEventListener("resize", queueUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", queueUpdate);
+      window.removeEventListener("resize", queueUpdate);
+      if (rafId !== 0) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, []);
 
   const activeStage = useMemo(() => STAGES.find((stage) => stage.id === activeId) ?? STAGES[0], [activeId]);
@@ -151,7 +181,14 @@ export default function CommunityResolvePage() {
 
         <div className="community-resolve-stages">
           {STAGES.map((stage, index) => (
-            <article key={stage.id} data-stage-id={stage.id} className={activeId === stage.id ? "is-active" : undefined}>
+            <article
+              key={stage.id}
+              data-stage-id={stage.id}
+              className={activeId === stage.id ? "is-active" : undefined}
+              ref={(node) => {
+                stageRefs.current[index] = node;
+              }}
+            >
               <div className="community-resolve-stage-media">
                 <div className="community-resolve-stage-badge">{index + 1}</div>
                 <Image src={stage.assetPath} alt={stage.assetAlt} width={920} height={560} className="community-resolve-stage-image" />

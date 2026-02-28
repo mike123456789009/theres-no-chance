@@ -136,14 +136,13 @@
   display: grid;
   grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
   gap: 0.8rem;
-  opacity: 0.72;
-  transform: translateY(10px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  opacity: 0.78;
+  transition: opacity 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .community-resolve-stages article.is-active {
   opacity: 1;
-  transform: translateY(0);
+  box-shadow: 8px 8px 0 var(--ink);
 }
 
 .community-resolve-stage-media {
@@ -255,6 +254,11 @@ html[data-ui-style="modern"] .community-resolve-active-media {
 html[data-ui-style="modern"] .community-resolve-rail li.is-active {
   border-color: var(--accent-primary);
   box-shadow: var(--shadow-soft);
+}
+
+html[data-ui-style="modern"] .community-resolve-stages article.is-active {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-card);
 }
 
 @media (max-width: 900px) {
