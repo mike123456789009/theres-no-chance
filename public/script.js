@@ -23,6 +23,7 @@ const WORD_CONFIGS = [
   { key: "a", text: "A", color: "gold", row: 1, segment: [0.33, 0.66], direction: "right" },
 ];
 const MAIN_WORD_KEYS = new Set(["theres", "no", "chance"]);
+const MOBILE_LAYOUT_MAX_WIDTH = 640;
 
 const DEFAULT_COLORS = {
   background: 0xececec,
@@ -112,6 +113,7 @@ const hoverRaycaster = new THREE.Raycaster();
 const hoverPointer = new THREE.Vector2();
 let hoveredSwapKey = null;
 let pinnedSwapKey = "no";
+let layoutMode = "desktop";
 
 function setRenderMode(mode) {
   renderMode = mode;
@@ -254,12 +256,17 @@ function disposeTextures() {
 
 function disposeWords() {
   for (const item of words) {
-    item.mesh.geometry.dispose();
-    if (Array.isArray(item.mesh.material)) {
-      item.mesh.material.forEach((mat) => mat.dispose());
-    } else {
-      item.mesh.material.dispose();
-    }
+    item.mesh.traverse((node) => {
+      if (!node.isMesh) return;
+      if (node.geometry) {
+        node.geometry.dispose();
+      }
+      if (Array.isArray(node.material)) {
+        node.material.forEach((material) => material.dispose());
+      } else if (node.material) {
+        node.material.dispose();
+      }
+    });
     scene.remove(item.mesh);
   }
   words = [];
@@ -434,6 +441,92 @@ function handleHeroClick(event) {
   queueRender();
 }
 
+function isMobileLayoutViewport(width) {
+  return width <= MOBILE_LAYOUT_MAX_WIDTH;
+}
+
+function buildWordMesh({
+  text,
+  font,
+  size,
+  depth,
+  color,
+  materialsByColor,
+  curveSegments = 14,
+  scaleX = 1,
+  scaleY = 1,
+  scaleZ = 1,
+}) {
+  const geometry = new TextGeometry(text, {
+    font,
+    size,
+    depth,
+    curveSegments,
+    bevelEnabled: false,
+  });
+  geometry.computeBoundingBox();
+
+  const materials = materialsByColor[color].map((material) => material.clone());
+  const mesh = new THREE.Mesh(geometry, materials);
+  mesh.scale.set(scaleX, scaleY, scaleZ);
+  if (renderMode === "webgl") {
+    mesh.castShadow = true;
+  }
+
+  const bbox = geometry.boundingBox;
+  const width = bbox.max.x - bbox.min.x;
+  const height = bbox.max.y - bbox.min.y;
+  return { mesh, bbox, width, height };
+}
+
+function placeMeshAtCenter(meshEntry, centerX, centerY) {
+  const { mesh, bbox, width, height } = meshEntry;
+  mesh.position.set(
+    centerX - (bbox.min.x + width / 2) * mesh.scale.x,
+    centerY - (bbox.min.y + height / 2) * mesh.scale.y,
+    0
+  );
+}
+
+function buildStackedWordGroup({ text, font, size, depth, color, materialsByColor, letterGap }) {
+  const group = new THREE.Group();
+  const letters = Array.from(text);
+  const letterEntries = [];
+  let totalHeight = 0;
+  let maxWidth = 0;
+
+  for (const letter of letters) {
+    const letterMesh = buildWordMesh({
+      text: letter,
+      font,
+      size,
+      depth,
+      color,
+      materialsByColor,
+      curveSegments: 12,
+    });
+    letterEntries.push(letterMesh);
+    totalHeight += letterMesh.height;
+    maxWidth = Math.max(maxWidth, letterMesh.width);
+  }
+
+  totalHeight += letterGap * Math.max(0, letterEntries.length - 1);
+
+  let yCursor = totalHeight / 2;
+  letterEntries.forEach((entry) => {
+    const yCenter = yCursor - entry.height / 2;
+    placeMeshAtCenter(entry, 0, yCenter);
+    group.add(entry.mesh);
+    yCursor -= entry.height + letterGap;
+  });
+
+  return {
+    group,
+    width: maxWidth,
+    height: totalHeight,
+  };
+}
+
 function layout(font, force = false) {
   syncThemeColors();
 
@@ -443,6 +536,7 @@ function layout(font, force = false) {
   if (!force && W === lastW && H === lastH) return;
   lastW = W;
   lastH = H;
+  layoutMode = isMobileLayoutViewport(W) ? "mobile" : "desktop";
 
   setRendererSize(W, H);
   camera.left = -W / 2;
@@ -488,6 +582,140 @@ function layout(font, force = false) {
 
   const mainWords = WORD_CONFIGS.filter((word) => MAIN_WORD_KEYS.has(word.key));
   const suffixWords = WORD_CONFIGS.filter((word) => !MAIN_WORD_KEYS.has(word.key) && word.row === 1);
+
+  if (layoutMode === "mobile") {
+    let didBuildMobileLayout = false;
+    const theresWord = mainWords.find((word) => word.key === "theres");
+    const noWord = mainWords.find((word) => word.key === "no");
+    const chanceWord = mainWords.find((word) => word.key === "chance");
+    const slashWord = suffixWords.find((word) => word.key === "slash");
+    const aWord = suffixWords.find((word) => word.key === "a");
+
+    if (theresWord && noWord && chanceWord && slashWord && aWord) {
+      const columnSize = clamp(W * 0.15, 70, 110);
+      const columnDepth = clamp(columnSize * 0.31, 24, 56);
+      const columnGap = clamp(columnSize * 0.14, 8, 18);
+      const sidePadding = clamp(W * 0.08, 14, 32);
+      const centerLaneWidth = clamp(W * 0.24, 96, 170);
+      const topBottomPadding = clamp(H * 0.1, 30, 72);
+
+      const theresStack = buildStackedWordGroup({
+        text: theresWord.text.replace("'", ""),
+        font,
+        size: columnSize,
+        depth: columnDepth,
+        color: theresWord.color,
+        materialsByColor,
+        letterGap: columnGap,
+      });
+      const chanceStack = buildStackedWordGroup({
+        text: chanceWord.text,
+        font,
+        size: columnSize,
+        depth: columnDepth,
+        color: chanceWord.color,
+        materialsByColor,
+        letterGap: columnGap,
+      });
+
+      const maxColumnHeight = Math.max(1, H - topBottomPadding * 2);
+      const maxColumnWidth = Math.max(1, (W - sidePadding * 2 - centerLaneWidth) / 2);
+      const rawMaxWidth = Math.max(theresStack.width, chanceStack.width);
+      const rawMaxHeight = Math.max(theresStack.height, chanceStack.height);
+      const columnScale = Math.min(1, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
+
+      theresStack.group.scale.setScalar(columnScale);
+      chanceStack.group.scale.setScalar(columnScale);
+
+      const theresWidth = theresStack.width * columnScale;
+      const chanceWidth = chanceStack.width * columnScale;
+      const theresX = -W / 2 + sidePadding + theresWidth / 2;
+      const chanceX = W / 2 - sidePadding - chanceWidth / 2;
+
+      theresStack.group.position.set(theresX, 0, 0);
+      chanceStack.group.position.set(chanceX, 0, 0);
+
+      scene.add(theresStack.group);
+      scene.add(chanceStack.group);
+
+      const centerSize = clamp(W * 0.18, 80, 136);
+      const centerDepth = clamp(centerSize * 0.34, 28, 60);
+      const centerScale = clamp(columnScale * 0.98, 0.58, 1);
+      const centerPairGap = clamp(W * 0.12, 26, 62);
+
+      const noMeshEntry = buildWordMesh({
+        text: noWord.text,
+        font,
+        size: centerSize,
+        depth: centerDepth,
+        color: noWord.color,
+        materialsByColor,
+      });
+      noMeshEntry.mesh.scale.setScalar(centerScale);
+
+      const aMeshEntry = buildWordMesh({
+        text: aWord.text,
+        font,
+        size: centerSize,
+        depth: centerDepth,
+        color: aWord.color,
+        materialsByColor,
+      });
+      aMeshEntry.mesh.scale.setScalar(centerScale);
+
+      const slashMeshEntry = buildWordMesh({
+        text: slashWord.text,
+        font,
+        size: centerSize,
+        depth: centerDepth,
+        color: slashWord.color,
+        materialsByColor,
+        scaleX: centerScale * 0.72,
+        scaleY: centerScale,
+        scaleZ: centerScale,
+      });
+
+      const noCenterX = -centerPairGap - (noMeshEntry.width * noMeshEntry.mesh.scale.x) / 2;
+      const aCenterX = centerPairGap + (aMeshEntry.width * aMeshEntry.mesh.scale.x) / 2;
+      const centerY = 0;
+
+      placeMeshAtCenter(noMeshEntry, noCenterX, centerY);
+      placeMeshAtCenter(aMeshEntry, aCenterX, centerY);
+      placeMeshAtCenter(slashMeshEntry, 0, centerY);
+
+      scene.add(noMeshEntry.mesh);
+      scene.add(aMeshEntry.mesh);
+      scene.add(slashMeshEntry.mesh);
+
+      const mobileEntries = [
+        { ...theresWord, mesh: theresStack.group },
+        { ...chanceWord, mesh: chanceStack.group },
+        { ...noWord, mesh: noMeshEntry.mesh },
+        { ...aWord, mesh: aMeshEntry.mesh },
+        { ...slashWord, mesh: slashMeshEntry.mesh },
+      ];
+
+      mobileEntries.forEach((entry) => {
+        entry.baseX = entry.mesh.position.x;
+        entry.baseY = entry.mesh.position.y;
+        words.push(entry);
+        wordMap.set(entry.key, entry);
+      });
+      didBuildMobileLayout = true;
+    }
+
+    if (didBuildMobileLayout) {
+      Object.values(materialsByColor)
+        .flat()
+        .forEach((material) => material.dispose());
+
+      applySwapState();
+      needsRender = true;
+      return;
+    }
+
+    layoutMode = "desktop";
+  }
 
   const mainGeos = mainWords.map((word) => {
     const geometry = new TextGeometry(word.text, {
@@ -675,15 +903,54 @@ function applyScroll(progress) {
 
   if (!prefersReduced) {
     const W = lastW || wrap.getBoundingClientRect().width || window.innerWidth;
-    const slideLeftDist = -W * 1.35;
-    const slideRightDist = W * 1.35;
 
-    words.forEach((word) => {
-      const [start, end] = word.segment;
-      const t = segProgress(progress, start, end);
-      const dist = word.direction === "right" ? slideRightDist : slideLeftDist;
-      word.mesh.position.x = word.baseX + dist * t;
-    });
+    if (layoutMode === "mobile") {
+      const H = lastH || wrap.getBoundingClientRect().height || window.innerHeight;
+      const verticalExitProgress = smoothstep(segProgress(progress, 0, 0.64));
+      const horizontalExitProgress = smoothstep(segProgress(progress, 0.64, 1));
+      const verticalExitDistance = H * 1.36;
+      const horizontalExitDistance = W * 1.3;
+
+      const theresWord = wordMap.get("theres");
+      if (theresWord) {
+        theresWord.mesh.position.x = theresWord.baseX;
+        theresWord.mesh.position.y = theresWord.baseY - verticalExitDistance * verticalExitProgress;
+      }
+
+      const chanceWord = wordMap.get("chance");
+      if (chanceWord) {
+        chanceWord.mesh.position.x = chanceWord.baseX;
+        chanceWord.mesh.position.y = chanceWord.baseY + verticalExitDistance * verticalExitProgress;
+      }
+
+      const noWord = wordMap.get("no");
+      if (noWord) {
+        noWord.mesh.position.x = noWord.baseX - horizontalExitDistance * horizontalExitProgress;
+        noWord.mesh.position.y = noWord.baseY;
+      }
+
+      const aWord = wordMap.get("a");
+      if (aWord) {
+        aWord.mesh.position.x = aWord.baseX + horizontalExitDistance * horizontalExitProgress;
+        aWord.mesh.position.y = aWord.baseY;
+      }
+
+      const slashWord = wordMap.get("slash");
+      if (slashWord) {
+        slashWord.mesh.position.x = slashWord.baseX;
+        slashWord.mesh.position.y = slashWord.baseY;
+      }
+    } else {
+      const slideLeftDist = -W * 1.35;
+      const slideRightDist = W * 1.35;
+
+      words.forEach((word) => {
+        const [start, end] = word.segment;
+        const t = segProgress(progress, start, end);
+        const dist = word.direction === "right" ? slideRightDist : slideLeftDist;
+        word.mesh.position.x = word.baseX + dist * t;
+      });
+    }
   }
 
   needsRender = true;
