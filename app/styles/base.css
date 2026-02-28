@@ -3352,23 +3352,8 @@ html[data-ui-style="modern"] .market-tile-probability a {
     font-size: 0.69rem;
   }
 
-  .stage-pin {
-    align-items: center;
-    padding: clamp(0.68rem, 3.8vw, 1rem);
-  }
-
   .hero-3d-wrap {
-    width: min(92vw, 540px);
-    height: min(78vh, 620px);
-    margin-left: 0;
-    border: 4px solid var(--ink);
-    box-shadow: 5px 5px 0 var(--ink);
-    background: var(--bg);
-    overflow: hidden;
-  }
-
-  .hero-transition-cta {
-    bottom: clamp(0.8rem, 3.4vh, 1.6rem);
+    height: min(76vh, 560px);
   }
 
   .scroll-cue {

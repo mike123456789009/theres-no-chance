@@ -380,6 +380,17 @@ function applySwapState() {
   const slashWord = wordMap.get("slash");
   const aWord = wordMap.get("a");
   if (!noWord || !aWord) return;
+
+  if (layoutMode === "mobile") {
+    setMeshOpacity(noWord.mesh, 1);
+    setMeshOpacity(aWord.mesh, 1);
+    if (slashWord) {
+      setMeshOpacity(slashWord.mesh, 0.62);
+    }
+    needsRender = true;
+    return;
+  }
+
   const activeSwapKey = hoveredSwapKey ?? pinnedSwapKey;
   const isAActive = activeSwapKey === "a";
 
@@ -592,12 +603,12 @@ function layout(font, force = false) {
     const aWord = suffixWords.find((word) => word.key === "a");
 
     if (theresWord && noWord && chanceWord && slashWord && aWord) {
-      const columnSize = clamp(W * 0.15, 70, 110);
-      const columnDepth = clamp(columnSize * 0.31, 24, 56);
-      const columnGap = clamp(columnSize * 0.14, 8, 18);
-      const sidePadding = clamp(W * 0.08, 14, 32);
-      const centerLaneWidth = clamp(W * 0.24, 96, 170);
-      const topBottomPadding = clamp(H * 0.1, 30, 72);
+      const columnSize = clamp(W * 0.135, 62, 98);
+      const columnDepth = clamp(columnSize * 0.31, 20, 48);
+      const columnGap = clamp(columnSize * 0.15, 8, 16);
+      const sidePadding = clamp(W * 0.05, 10, 22);
+      const centerLaneWidth = clamp(W * 0.2, 72, 128);
+      const topBottomPadding = clamp(H * 0.08, 20, 52);
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -631,6 +642,10 @@ function layout(font, force = false) {
       const chanceWidth = chanceStack.width * columnScale;
       const theresX = -W / 2 + sidePadding + theresWidth / 2;
       const chanceX = W / 2 - sidePadding - chanceWidth / 2;
+      const leftColumnRightEdge = theresX + theresWidth / 2;
+      const rightColumnLeftEdge = chanceX - chanceWidth / 2;
+      const laneInset = clamp(W * 0.026, 8, 16);
+      const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
 
       theresStack.group.position.set(theresX, 0, 0);
       chanceStack.group.position.set(chanceX, 0, 0);
@@ -638,10 +653,10 @@ function layout(font, force = false) {
       scene.add(theresStack.group);
       scene.add(chanceStack.group);
 
-      const centerSize = clamp(W * 0.18, 80, 136);
-      const centerDepth = clamp(centerSize * 0.34, 28, 60);
-      const centerScale = clamp(columnScale * 0.98, 0.58, 1);
-      const centerPairGap = clamp(W * 0.12, 26, 62);
+      const centerSize = clamp(W * 0.11, 48, 74);
+      const centerDepth = clamp(centerSize * 0.34, 16, 34);
+      const centerGap = clamp(W * 0.016, 6, 12);
+      const slashXScale = 0.68;
 
       const noMeshEntry = buildWordMesh({
         text: noWord.text,
@@ -651,7 +666,6 @@ function layout(font, force = false) {
         color: noWord.color,
         materialsByColor,
       });
-      noMeshEntry.mesh.scale.setScalar(centerScale);
 
       const aMeshEntry = buildWordMesh({
         text: aWord.text,
@@ -661,7 +675,6 @@ function layout(font, force = false) {
         color: aWord.color,
         materialsByColor,
       });
-      aMeshEntry.mesh.scale.setScalar(centerScale);
 
       const slashMeshEntry = buildWordMesh({
         text: slashWord.text,
@@ -670,18 +683,34 @@ function layout(font, force = false) {
         depth: centerDepth,
         color: slashWord.color,
         materialsByColor,
-        scaleX: centerScale * 0.72,
-        scaleY: centerScale,
-        scaleZ: centerScale,
       });
 
-      const noCenterX = -centerPairGap - (noMeshEntry.width * noMeshEntry.mesh.scale.x) / 2;
-      const aCenterX = centerPairGap + (aMeshEntry.width * aMeshEntry.mesh.scale.x) / 2;
+      const rawCenterWidth =
+        noMeshEntry.width + slashMeshEntry.width * slashXScale + aMeshEntry.width + centerGap * 2;
+      const rawCenterHeight = Math.max(noMeshEntry.height, slashMeshEntry.height, aMeshEntry.height);
+      const centerHeightBudget = H * 0.18;
+      const fitScaleByWidth = availableCenterLane / rawCenterWidth;
+      const fitScaleByHeight = centerHeightBudget / rawCenterHeight;
+      const centerScale = clamp(Math.min(fitScaleByWidth, fitScaleByHeight, columnScale * 0.88), 0.28, 1);
+
+      noMeshEntry.mesh.scale.setScalar(centerScale);
+      aMeshEntry.mesh.scale.setScalar(centerScale);
+      slashMeshEntry.mesh.scale.set(slashXScale * centerScale, centerScale, centerScale);
+
+      const noWidthScaled = noMeshEntry.width * centerScale;
+      const slashWidthScaled = slashMeshEntry.width * slashXScale * centerScale;
+      const aWidthScaled = aMeshEntry.width * centerScale;
+      const centerTotalWidth = noWidthScaled + centerGap * 2 + slashWidthScaled + aWidthScaled;
+      const centerLeftEdge = -centerTotalWidth / 2;
+
+      const noCenterX = centerLeftEdge + noWidthScaled / 2;
+      const slashCenterX = centerLeftEdge + noWidthScaled + centerGap + slashWidthScaled / 2;
+      const aCenterX = centerLeftEdge + noWidthScaled + centerGap + slashWidthScaled + centerGap + aWidthScaled / 2;
       const centerY = 0;
 
       placeMeshAtCenter(noMeshEntry, noCenterX, centerY);
       placeMeshAtCenter(aMeshEntry, aCenterX, centerY);
-      placeMeshAtCenter(slashMeshEntry, 0, centerY);
+      placeMeshAtCenter(slashMeshEntry, slashCenterX, centerY);
 
       scene.add(noMeshEntry.mesh);
       scene.add(aMeshEntry.mesh);
