@@ -552,11 +552,12 @@ function buildStackedWordGroup({ text, font, size, depth, color, materialsByColo
   const stackRight = maxWidth / 2;
   letterEntries.forEach((entry) => {
     const yCenter = yCursor - entry.height / 2;
+    const glyphCenterFromLeft = entry.bbox.min.x + entry.width / 2;
     let centerX = 0;
     if (align === "left") {
-      centerX = stackLeft + entry.width / 2;
+      centerX = stackLeft + glyphCenterFromLeft;
     } else if (align === "right") {
-      centerX = stackRight - entry.width / 2;
+      centerX = stackRight + entry.bbox.min.x - entry.width / 2;
     }
     placeMeshAtCenter(entry, centerX, yCenter);
     group.add(entry.mesh);
@@ -591,6 +592,13 @@ function layout(font, force = false) {
   lastW = W;
   lastH = H;
   layoutMode = isMobileLayoutViewport(W) ? "mobile" : "desktop";
+
+  if (layoutMode === "mobile") {
+    camera.position.set(0, 0, 680);
+  } else {
+    camera.position.set(160, 0, 680);
+  }
+  camera.lookAt(0, 0, 0);
 
   setRendererSize(W, H);
   camera.left = -W / 2;
@@ -649,7 +657,7 @@ function layout(font, force = false) {
       const columnSize = clamp(W * 0.21, 94, 154);
       const columnDepth = clamp(columnSize * 0.1, 6, 14);
       const columnGap = clamp(columnSize * 0.085, 5, 11);
-      const sidePadding = clamp(W * 0.014, 2, 8);
+      const sidePadding = clamp(W * 0.028, 10, 16);
       const centerLaneWidth = clamp(W * 0.11, 36, 72);
       const topBottomPadding = clamp(H * 0.004, 0, 4);
       const sideWidthBoost = 1.2;
