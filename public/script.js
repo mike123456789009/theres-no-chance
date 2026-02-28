@@ -711,9 +711,10 @@ function layout(font, force = false) {
       const rawMaxWidth = Math.max(theresStack.width, chanceStack.width);
       const rawMaxHeight = Math.max(theresStack.height, chanceStack.height);
       const columnScale = Math.min(1.16, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
+      const sideColumnScale = columnScale * 0.965;
 
-      theresStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
-      chanceStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
+      theresStack.group.scale.set(sideWidthBoost * sideColumnScale, sideColumnScale, sideColumnScale);
+      chanceStack.group.scale.set(sideWidthBoost * sideColumnScale, sideColumnScale, sideColumnScale);
 
       const theresBounds = getObjectBounds(theresStack.group);
       const chanceBounds = getObjectBounds(chanceStack.group);
