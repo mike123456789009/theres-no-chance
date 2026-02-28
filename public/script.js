@@ -1099,7 +1099,7 @@ function applyScroll(progress) {
 
       const slashWord = wordMap.get("slash");
       if (slashWord) {
-        slashWord.mesh.position.x = slashWord.baseX;
+        slashWord.mesh.position.x = slashWord.baseX + horizontalExitDistance * horizontalExitProgress;
         slashWord.mesh.position.y = slashWord.baseY;
       }
     } else {
