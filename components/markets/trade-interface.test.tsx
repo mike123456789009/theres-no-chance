@@ -113,6 +113,33 @@ describe("TradeInterface", () => {
     expect(screen.getByRole("button", { name: "Buy 25 YES shares" })).toBeDisabled();
   });
 
+  it("prefers quote detail when both error and detail are returned", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse(false, {
+        error: "Trade quote unavailable.",
+        detail: "Slippage exceeds max slippage setting.",
+      })
+    );
+
+    render(
+      <TradeInterface
+        marketId="market-1"
+        marketStatus="open"
+        currentPriceYes={0.5}
+        currentPriceNo={0.5}
+        isAuthenticated
+      />
+    );
+
+    await act(async () => waitForQuoteDebounce());
+
+    await waitFor(() => {
+      expect(screen.getByText("Slippage exceeds max slippage setting.")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Trade quote unavailable.")).not.toBeInTheDocument();
+  });
+
   it("handles execute success path and resets order size", async () => {
     fetchMock
       .mockResolvedValueOnce(mockJsonResponse(true, { quote: createQuote() }))
@@ -179,5 +206,42 @@ describe("TradeInterface", () => {
     });
 
     expect(screen.getByRole("button", { name: "Buy 25 YES shares" })).toBeEnabled();
+  });
+
+  it("prefers execute detail when both error and detail are returned", async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockJsonResponse(true, { quote: createQuote() }))
+      .mockResolvedValueOnce(
+        mockJsonResponse(false, {
+          error: "Trade cannot be executed.",
+          detail: "Insufficient available wallet balance.",
+        })
+      );
+
+    const user = userEvent.setup();
+
+    render(
+      <TradeInterface
+        marketId="market-1"
+        marketStatus="open"
+        currentPriceYes={0.5}
+        currentPriceNo={0.5}
+        isAuthenticated
+      />
+    );
+
+    await act(async () => waitForQuoteDebounce());
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Buy 25 YES shares" })).toBeEnabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Buy 25 YES shares" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Insufficient available wallet balance.")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Trade cannot be executed.")).not.toBeInTheDocument();
   });
 });
