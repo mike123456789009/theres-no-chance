@@ -711,7 +711,7 @@ function layout(font, force = false) {
       const rawMaxWidth = Math.max(theresStack.width, chanceStack.width);
       const rawMaxHeight = Math.max(theresStack.height, chanceStack.height);
       const columnScale = Math.min(1.16, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
-      const sideColumnScale = columnScale * 0.965;
+      const sideColumnScale = columnScale * 0.95;
 
       theresStack.group.scale.set(sideWidthBoost * sideColumnScale, sideColumnScale, sideColumnScale);
       chanceStack.group.scale.set(sideWidthBoost * sideColumnScale, sideColumnScale, sideColumnScale);
@@ -730,6 +730,7 @@ function layout(font, force = false) {
       const rightColumnLeftEdge = chanceBounds.minX + chanceX;
       const laneInset = clamp(W * 0.008, 1, 5);
       const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
+      const laneCenterX = (leftColumnRightEdge + rightColumnLeftEdge) / 2;
 
       theresStack.group.position.set(theresX, 0, 0);
       chanceStack.group.position.set(chanceX, 0, 0);
@@ -797,9 +798,9 @@ function layout(font, force = false) {
       const slashCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled / 2;
       const aCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled - centerGapScaled - aHeightScaled / 2;
 
-      noStack.group.position.set(0, noCenterY, 0);
-      placeMeshAtCenter(aMeshEntry, 0, aCenterY);
-      placeMeshAtCenter(slashMeshEntry, 0, slashCenterY);
+      noStack.group.position.set(laneCenterX, noCenterY, 0);
+      placeMeshAtCenter(aMeshEntry, laneCenterX, aCenterY);
+      placeMeshAtCenter(slashMeshEntry, laneCenterX, slashCenterY);
 
       const mobileObjects = [theresStack.group, chanceStack.group, noStack.group, aMeshEntry.mesh, slashMeshEntry.mesh];
       let currentMinY = Number.POSITIVE_INFINITY;
