@@ -593,12 +593,12 @@ function layout(font, force = false) {
     const aWord = suffixWords.find((word) => word.key === "a");
 
     if (theresWord && noWord && chanceWord && slashWord && aWord) {
-      const columnSize = clamp(W * 0.135, 62, 98);
-      const columnDepth = clamp(columnSize * 0.31, 20, 48);
-      const columnGap = clamp(columnSize * 0.15, 8, 16);
-      const sidePadding = clamp(W * 0.05, 10, 22);
-      const centerLaneWidth = clamp(W * 0.2, 72, 128);
-      const topBottomPadding = clamp(H * 0.08, 20, 52);
+      const columnSize = clamp(W * 0.16, 72, 116);
+      const columnDepth = clamp(columnSize * 0.22, 14, 30);
+      const columnGap = clamp(columnSize * 0.12, 7, 14);
+      const sidePadding = clamp(W * 0.04, 8, 18);
+      const centerLaneWidth = clamp(W * 0.17, 64, 112);
+      const topBottomPadding = clamp(H * 0.06, 14, 42);
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -643,8 +643,8 @@ function layout(font, force = false) {
       scene.add(theresStack.group);
       scene.add(chanceStack.group);
 
-      const centerSize = clamp(W * 0.14, 56, 92);
-      const centerDepth = clamp(centerSize * 0.34, 16, 34);
+      const centerSize = clamp(W * 0.165, 64, 108);
+      const centerDepth = clamp(centerSize * 0.24, 12, 24);
       const centerGap = clamp(H * 0.028, 10, 24);
       const slashXScale = 0.66;
 
@@ -677,10 +677,10 @@ function layout(font, force = false) {
 
       const rawCenterWidth = Math.max(noMeshEntry.width, slashMeshEntry.width * slashXScale, aMeshEntry.width);
       const rawCenterHeight = noMeshEntry.height + centerGap * 2 + slashMeshEntry.height + aMeshEntry.height;
-      const centerHeightBudget = clamp(H * 0.34, 120, 260);
+      const centerHeightBudget = clamp(H * 0.4, 132, 300);
       const fitScaleByWidth = availableCenterLane / rawCenterWidth;
       const fitScaleByHeight = centerHeightBudget / rawCenterHeight;
-      const centerScale = clamp(Math.min(fitScaleByWidth, fitScaleByHeight, columnScale * 0.9), 0.25, 1);
+      const centerScale = clamp(Math.min(fitScaleByWidth, fitScaleByHeight, columnScale * 0.96) * 1.04, 0.28, 1.06);
 
       noMeshEntry.mesh.scale.setScalar(centerScale);
       aMeshEntry.mesh.scale.setScalar(centerScale);
