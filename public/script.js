@@ -627,13 +627,13 @@ function layout(font, force = false) {
     const aWord = suffixWords.find((word) => word.key === "a");
 
     if (theresWord && noWord && chanceWord && slashWord && aWord) {
-      const columnSize = clamp(W * 0.19, 82, 132);
-      const columnDepth = clamp(columnSize * 0.14, 8, 18);
-      const columnGap = clamp(columnSize * 0.11, 6, 12);
-      const sidePadding = clamp(W * 0.018, 3, 10);
-      const centerLaneWidth = clamp(W * 0.13, 44, 86);
-      const topBottomPadding = clamp(H * 0.012, 2, 10);
-      const sideWidthBoost = 1.14;
+      const columnSize = clamp(W * 0.21, 94, 154);
+      const columnDepth = clamp(columnSize * 0.1, 6, 14);
+      const columnGap = clamp(columnSize * 0.085, 5, 11);
+      const sidePadding = clamp(W * 0.01, 1, 6);
+      const centerLaneWidth = clamp(W * 0.11, 36, 72);
+      const topBottomPadding = clamp(H * 0.004, 0, 4);
+      const sideWidthBoost = 1.2;
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -658,18 +658,20 @@ function layout(font, force = false) {
       const maxColumnWidth = Math.max(1, (W - sidePadding * 2 - centerLaneWidth) / (2 * sideWidthBoost));
       const rawMaxWidth = Math.max(theresStack.width, chanceStack.width);
       const rawMaxHeight = Math.max(theresStack.height, chanceStack.height);
-      const columnScale = Math.min(1.08, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
+      const columnScale = Math.min(1.16, maxColumnHeight / rawMaxHeight, maxColumnWidth / rawMaxWidth);
 
       theresStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
       chanceStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
 
       const theresWidth = theresStack.width * sideWidthBoost * columnScale;
       const chanceWidth = chanceStack.width * sideWidthBoost * columnScale;
-      const theresX = -W / 2 + sidePadding + theresWidth / 2;
-      const chanceX = W / 2 - sidePadding - chanceWidth / 2;
-      const leftColumnRightEdge = theresX + theresWidth / 2;
-      const rightColumnLeftEdge = chanceX - chanceWidth / 2;
-      const laneInset = clamp(W * 0.014, 3, 8);
+      const leftOuterEdge = -W / 2 + sidePadding;
+      const rightOuterEdge = W / 2 - sidePadding;
+      const theresX = leftOuterEdge + theresWidth / 2;
+      const chanceX = rightOuterEdge - chanceWidth / 2;
+      const leftColumnRightEdge = leftOuterEdge + theresWidth;
+      const rightColumnLeftEdge = rightOuterEdge - chanceWidth;
+      const laneInset = clamp(W * 0.008, 1, 5);
       const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
 
       theresStack.group.position.set(theresX, 0, 0);
@@ -730,11 +732,11 @@ function layout(font, force = false) {
       const aHeightScaled = aMeshEntry.height * centerScale;
       const centerGapScaled = centerGap * centerScale;
       const centerTotalHeight = noHeightScaled + centerGapScaled * 2 + slashHeightScaled + aHeightScaled;
-      const centerTopEdge = -centerTotalHeight / 2;
+      const centerTopEdge = centerTotalHeight / 2;
 
-      const noCenterY = centerTopEdge + noHeightScaled / 2;
-      const slashCenterY = centerTopEdge + noHeightScaled + centerGapScaled + slashHeightScaled / 2;
-      const aCenterY = centerTopEdge + noHeightScaled + centerGapScaled + slashHeightScaled + centerGapScaled + aHeightScaled / 2;
+      const noCenterY = centerTopEdge - noHeightScaled / 2;
+      const slashCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled / 2;
+      const aCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled - centerGapScaled - aHeightScaled / 2;
 
       noStack.group.position.set(0, noCenterY, 0);
       placeMeshAtCenter(aMeshEntry, 0, aCenterY);
