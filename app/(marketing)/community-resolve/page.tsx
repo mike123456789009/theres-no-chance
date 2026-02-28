@@ -81,6 +81,8 @@ const STAGES: Stage[] = [
   },
 ];
 
+const ACTIVE_SWITCH_HYSTERESIS_PX = 28;
+
 export default function CommunityResolvePage() {
   const [activeId, setActiveId] = useState<string>(STAGES[0].id);
   const stageRefs = useRef<Array<HTMLElement | null>>([]);
@@ -94,6 +96,7 @@ export default function CommunityResolvePage() {
       const viewportAnchor = window.innerHeight * 0.42;
       let nearestVisible: { id: string; distance: number } | null = null;
       let nearestAny: { id: string; distance: number } | null = null;
+      const stageMetrics = new Map<string, { distance: number; isVisible: boolean }>();
 
       for (let index = 0; index < stageRefs.current.length; index += 1) {
         const node = stageRefs.current[index];
@@ -106,18 +109,35 @@ export default function CommunityResolvePage() {
 
         if (!stageId) continue;
 
+        const isVisible = rect.bottom >= 0 && rect.top <= window.innerHeight;
+        stageMetrics.set(stageId, { distance, isVisible });
+
         if (!nearestAny || distance < nearestAny.distance) {
           nearestAny = { id: stageId, distance };
         }
 
-        const isVisible = rect.bottom >= 0 && rect.top <= window.innerHeight;
         if (isVisible && (!nearestVisible || distance < nearestVisible.distance)) {
           nearestVisible = { id: stageId, distance };
         }
       }
 
-      const nextActiveId = nearestVisible?.id ?? nearestAny?.id ?? STAGES[0].id;
-      setActiveId((current) => (current === nextActiveId ? current : nextActiveId));
+      const candidateId = nearestVisible?.id ?? nearestAny?.id ?? STAGES[0].id;
+      setActiveId((current) => {
+        if (current === candidateId) return current;
+
+        const currentMetric = stageMetrics.get(current);
+        const candidateMetric = stageMetrics.get(candidateId);
+        if (!candidateMetric) return current;
+        if (!currentMetric) return candidateId;
+
+        const currentOutOfView = !currentMetric.isVisible;
+        const candidateClearlyCloser = candidateMetric.distance + ACTIVE_SWITCH_HYSTERESIS_PX < currentMetric.distance;
+        if (!currentOutOfView && !candidateClearlyCloser) {
+          return current;
+        }
+
+        return candidateId;
+      });
     };
 
     const queueUpdate = () => {
