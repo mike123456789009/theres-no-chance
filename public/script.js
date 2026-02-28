@@ -523,7 +523,17 @@ function placeMeshAtCenter(meshEntry, centerX, centerY) {
   );
 }
 
-function buildStackedWordGroup({ text, font, size, depth, color, materialsByColor, letterGap, align = "center" }) {
+function buildStackedWordGroup({
+  text,
+  font,
+  size,
+  depth,
+  color,
+  materialsByColor,
+  letterGap,
+  align = "center",
+  uniformLetterWidth = false,
+}) {
   const group = new THREE.Group();
   const letters = Array.from(text);
   const letterEntries = [];
@@ -547,17 +557,24 @@ function buildStackedWordGroup({ text, font, size, depth, color, materialsByColo
 
   totalHeight += letterGap * Math.max(0, letterEntries.length - 1);
 
+  if (uniformLetterWidth && maxWidth > 0) {
+    letterEntries.forEach((entry) => {
+      const widthScale = maxWidth / Math.max(1, entry.width);
+      entry.mesh.scale.x = widthScale;
+    });
+  }
+
   let yCursor = totalHeight / 2;
   const stackLeft = -maxWidth / 2;
   const stackRight = maxWidth / 2;
   letterEntries.forEach((entry) => {
     const yCenter = yCursor - entry.height / 2;
-    const glyphCenterFromLeft = entry.bbox.min.x + entry.width / 2;
+    const scaledWidth = entry.width * entry.mesh.scale.x;
     let centerX = 0;
     if (align === "left") {
-      centerX = stackLeft + glyphCenterFromLeft;
+      centerX = stackLeft + scaledWidth / 2;
     } else if (align === "right") {
-      centerX = stackRight + entry.bbox.min.x - entry.width / 2;
+      centerX = stackRight - scaledWidth / 2;
     }
     placeMeshAtCenter(entry, centerX, yCenter);
     group.add(entry.mesh);
@@ -657,7 +674,7 @@ function layout(font, force = false) {
       const columnSize = clamp(W * 0.21, 94, 154);
       const columnDepth = clamp(columnSize * 0.1, 6, 14);
       const columnGap = clamp(columnSize * 0.085, 5, 11);
-      const sidePadding = clamp(W * 0.028, 10, 16);
+      const sidePadding = clamp(W * 0.05, 16, 28);
       const centerLaneWidth = clamp(W * 0.11, 36, 72);
       const topBottomPadding = clamp(H * 0.004, 0, 4);
       const sideWidthBoost = 1.2;
@@ -675,6 +692,7 @@ function layout(font, force = false) {
         materialsByColor,
         letterGap: columnGap,
         align: "left",
+        uniformLetterWidth: true,
       });
       const chanceStack = buildStackedWordGroup({
         text: chanceWord.text,
@@ -685,6 +703,7 @@ function layout(font, force = false) {
         materialsByColor,
         letterGap: columnGap,
         align: "right",
+        uniformLetterWidth: true,
       });
 
       const maxColumnHeight = Math.max(1, H - topBottomPadding * 2);
@@ -700,8 +719,12 @@ function layout(font, force = false) {
       const chanceBounds = getObjectBounds(chanceStack.group);
       const leftOuterEdge = -W / 2 + sidePadding;
       const rightOuterEdge = W / 2 - sidePadding;
-      const theresX = leftOuterEdge - theresBounds.minX;
-      const chanceX = rightOuterEdge - chanceBounds.maxX;
+      let theresX = leftOuterEdge - theresBounds.minX;
+      let chanceX = rightOuterEdge - chanceBounds.maxX;
+      const theresLeftEdge = theresBounds.minX + theresX;
+      const chanceRightEdge = chanceBounds.maxX + chanceX;
+      theresX += leftOuterEdge - theresLeftEdge;
+      chanceX += rightOuterEdge - chanceRightEdge;
       const leftColumnRightEdge = theresBounds.maxX + theresX;
       const rightColumnLeftEdge = chanceBounds.minX + chanceX;
       const laneInset = clamp(W * 0.008, 1, 5);
@@ -719,7 +742,7 @@ function layout(font, force = false) {
       const noInternalGap = clamp(centerSize * 0.16, 9, 20);
       const noWidthBoost = 1.14;
       const aWidthBoost = 1.12;
-      const slashXScale = 0.74;
+      const slashXScale = 0.86;
 
       const noStack = buildStackedWordGroup({
         text: noWord.text,
@@ -730,6 +753,7 @@ function layout(font, force = false) {
         materialsByColor,
         letterGap: noInternalGap,
         align: "center",
+        uniformLetterWidth: true,
       });
 
       const aMeshEntry = buildWordMesh({

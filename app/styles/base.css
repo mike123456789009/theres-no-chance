@@ -3266,6 +3266,19 @@ html[data-ui-style="modern"] .market-tile-probability a {
 }
 
 @media (max-width: 640px) {
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
   .account-pane {
     border-bottom-width: 3px;
     padding: 0.74rem;
