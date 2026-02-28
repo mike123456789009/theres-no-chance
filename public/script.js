@@ -562,6 +562,17 @@ function buildStackedWordGroup({ text, font, size, depth, color, materialsByColo
   };
 }
 
+function getObjectBounds(object) {
+  object.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(object);
+  return {
+    minX: box.min.x,
+    maxX: box.max.x,
+    minY: box.min.y,
+    maxY: box.max.y,
+  };
+}
+
 function layout(font, force = false) {
   syncThemeColors();
 
@@ -630,10 +641,15 @@ function layout(font, force = false) {
       const columnSize = clamp(W * 0.21, 94, 154);
       const columnDepth = clamp(columnSize * 0.1, 6, 14);
       const columnGap = clamp(columnSize * 0.085, 5, 11);
-      const sidePadding = clamp(W * 0.01, 1, 6);
+      const sidePadding = clamp(W * 0.014, 2, 8);
       const centerLaneWidth = clamp(W * 0.11, 36, 72);
       const topBottomPadding = clamp(H * 0.004, 0, 4);
       const sideWidthBoost = 1.2;
+      const viewportHeight = Math.max(window.visualViewport?.height || 0, window.innerHeight || 0, H);
+      const chromeBottomInset = window.visualViewport
+        ? Math.max(0, window.innerHeight - window.visualViewport.height)
+        : 0;
+      const mobileVerticalShift = clamp(viewportHeight * 0.045 + chromeBottomInset * 0.75, H * 0.03, H * 0.18);
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -663,19 +679,19 @@ function layout(font, force = false) {
       theresStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
       chanceStack.group.scale.set(sideWidthBoost * columnScale, columnScale, columnScale);
 
-      const theresWidth = theresStack.width * sideWidthBoost * columnScale;
-      const chanceWidth = chanceStack.width * sideWidthBoost * columnScale;
+      const theresBounds = getObjectBounds(theresStack.group);
+      const chanceBounds = getObjectBounds(chanceStack.group);
       const leftOuterEdge = -W / 2 + sidePadding;
       const rightOuterEdge = W / 2 - sidePadding;
-      const theresX = leftOuterEdge + theresWidth / 2;
-      const chanceX = rightOuterEdge - chanceWidth / 2;
-      const leftColumnRightEdge = leftOuterEdge + theresWidth;
-      const rightColumnLeftEdge = rightOuterEdge - chanceWidth;
+      const theresX = leftOuterEdge - theresBounds.minX;
+      const chanceX = rightOuterEdge - chanceBounds.maxX;
+      const leftColumnRightEdge = theresBounds.maxX + theresX;
+      const rightColumnLeftEdge = chanceBounds.minX + chanceX;
       const laneInset = clamp(W * 0.008, 1, 5);
       const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
 
-      theresStack.group.position.set(theresX, 0, 0);
-      chanceStack.group.position.set(chanceX, 0, 0);
+      theresStack.group.position.set(theresX, mobileVerticalShift, 0);
+      chanceStack.group.position.set(chanceX, mobileVerticalShift, 0);
 
       scene.add(theresStack.group);
       scene.add(chanceStack.group);
@@ -738,9 +754,10 @@ function layout(font, force = false) {
       const slashCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled / 2;
       const aCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled - centerGapScaled - aHeightScaled / 2;
 
-      noStack.group.position.set(0, noCenterY, 0);
-      placeMeshAtCenter(aMeshEntry, 0, aCenterY);
-      placeMeshAtCenter(slashMeshEntry, 0, slashCenterY);
+      const centerYOffset = mobileVerticalShift;
+      noStack.group.position.set(0, noCenterY + centerYOffset, 0);
+      placeMeshAtCenter(aMeshEntry, 0, aCenterY + centerYOffset);
+      placeMeshAtCenter(slashMeshEntry, 0, slashCenterY + centerYOffset);
 
       noStack.group.userData.swapKey = "no";
       noStack.group.traverse((node) => {
@@ -980,7 +997,8 @@ function applyScroll(progress) {
       const H = lastH || wrap.getBoundingClientRect().height || window.innerHeight;
       const verticalExitProgress = smoothstep(segProgress(progress, 0, 0.64));
       const horizontalExitProgress = smoothstep(segProgress(progress, 0.64, 1));
-      const verticalExitDistance = H * 1.36;
+      const viewportHeight = Math.max(window.visualViewport?.height || 0, window.innerHeight || 0, H);
+      const verticalExitDistance = viewportHeight * 1.52;
       const horizontalExitDistance = W * 1.3;
 
       const theresWord = wordMap.get("theres");

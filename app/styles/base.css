@@ -3352,8 +3352,13 @@ html[data-ui-style="modern"] .market-tile-probability a {
     font-size: 0.69rem;
   }
 
+  .stage-pin {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
   .hero-3d-wrap {
-    height: min(92vh, 760px);
+    height: min(100svh, 760px);
   }
 
   .scroll-cue {
