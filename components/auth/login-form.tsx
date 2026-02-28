@@ -9,14 +9,21 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [infoMessage, setInfoMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const prefilled = new URLSearchParams(window.location.search).get("email")?.trim() ?? "";
-    if (!prefilled) return;
-    setEmail((current) => (current ? current : prefilled));
+    const searchParams = new URLSearchParams(window.location.search);
+    const prefilled = searchParams.get("email")?.trim() ?? "";
+    if (prefilled) {
+      setEmail((current) => (current ? current : prefilled));
+    }
+
+    if (searchParams.get("confirmed") === "1") {
+      setInfoMessage("Email confirmed. Log in with your password to continue.");
+    }
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -90,6 +97,7 @@ export function LoginForm() {
         {isSubmitting ? "LOGGING IN..." : "LOG IN"}
       </button>
 
+      {infoMessage ? <p className="auth-status">{infoMessage}</p> : null}
       {errorMessage ? <p className="auth-status auth-error">{errorMessage}</p> : null}
       {successMessage ? <p className="auth-status auth-success">{successMessage}</p> : null}
     </form>

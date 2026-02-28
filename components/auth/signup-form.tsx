@@ -13,6 +13,7 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,6 +26,9 @@ export function SignupForm() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setPendingConfirmationEmail("");
+
+    const normalizedEmail = email.trim();
 
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -36,11 +40,14 @@ export function SignupForm() {
     try {
       const supabase = createClient();
       const redirectBaseUrl = resolveAppBaseUrl();
-      const { error } = await supabase.auth.signUp({
-        email,
+      const loginRedirectUrl = new URL("/login", redirectBaseUrl);
+      loginRedirectUrl.searchParams.set("email", normalizedEmail);
+      loginRedirectUrl.searchParams.set("confirmed", "1");
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
         password,
         options: {
-          emailRedirectTo: `${redirectBaseUrl}/markets`,
+          emailRedirectTo: loginRedirectUrl.toString(),
         },
       });
 
@@ -49,12 +56,21 @@ export function SignupForm() {
         return;
       }
 
-      await storePasswordCredential({ email, password });
-      setSuccessMessage("Account created. Redirecting to markets...");
-      setEmail("");
+      await storePasswordCredential({ email: normalizedEmail, password });
+
+      if (data.session) {
+        setSuccessMessage("Account created. Redirecting to markets...");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        window.location.assign("/markets");
+        return;
+      }
+
+      setPendingConfirmationEmail(normalizedEmail);
+      setSuccessMessage("Account created. Check your inbox, confirm your email, then log in.");
       setPassword("");
       setConfirmPassword("");
-      window.location.assign("/markets");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create account right now.");
     } finally {
@@ -122,6 +138,12 @@ export function SignupForm() {
 
       {errorMessage ? <p className="auth-status auth-error">{errorMessage}</p> : null}
       {successMessage ? <p className="auth-status auth-success">{successMessage}</p> : null}
+      {pendingConfirmationEmail ? (
+        <p className="auth-status">
+          Confirmation email sent to <strong>{pendingConfirmationEmail}</strong>. After confirming,{" "}
+          <a href={`/login?email=${encodeURIComponent(pendingConfirmationEmail)}&confirmed=1`}>log in here</a>.
+        </p>
+      ) : null}
     </form>
   );
 }
