@@ -523,7 +523,7 @@ function placeMeshAtCenter(meshEntry, centerX, centerY) {
   );
 }
 
-function buildStackedWordGroup({ text, font, size, depth, color, materialsByColor, letterGap }) {
+function buildStackedWordGroup({ text, font, size, depth, color, materialsByColor, letterGap, align = "center" }) {
   const group = new THREE.Group();
   const letters = Array.from(text);
   const letterEntries = [];
@@ -548,9 +548,17 @@ function buildStackedWordGroup({ text, font, size, depth, color, materialsByColo
   totalHeight += letterGap * Math.max(0, letterEntries.length - 1);
 
   let yCursor = totalHeight / 2;
+  const stackLeft = -maxWidth / 2;
+  const stackRight = maxWidth / 2;
   letterEntries.forEach((entry) => {
     const yCenter = yCursor - entry.height / 2;
-    placeMeshAtCenter(entry, 0, yCenter);
+    let centerX = 0;
+    if (align === "left") {
+      centerX = stackLeft + entry.width / 2;
+    } else if (align === "right") {
+      centerX = stackRight - entry.width / 2;
+    }
+    placeMeshAtCenter(entry, centerX, yCenter);
     group.add(entry.mesh);
     yCursor -= entry.height + letterGap;
   });
@@ -649,7 +657,6 @@ function layout(font, force = false) {
       const chromeBottomInset = window.visualViewport
         ? Math.max(0, window.innerHeight - window.visualViewport.height)
         : 0;
-      const mobileVerticalShift = clamp(viewportHeight * 0.045 + chromeBottomInset * 0.75, H * 0.03, H * 0.18);
 
       const theresStack = buildStackedWordGroup({
         text: theresWord.text.replace("'", ""),
@@ -659,6 +666,7 @@ function layout(font, force = false) {
         color: theresWord.color,
         materialsByColor,
         letterGap: columnGap,
+        align: "left",
       });
       const chanceStack = buildStackedWordGroup({
         text: chanceWord.text,
@@ -668,6 +676,7 @@ function layout(font, force = false) {
         color: chanceWord.color,
         materialsByColor,
         letterGap: columnGap,
+        align: "right",
       });
 
       const maxColumnHeight = Math.max(1, H - topBottomPadding * 2);
@@ -690,8 +699,8 @@ function layout(font, force = false) {
       const laneInset = clamp(W * 0.008, 1, 5);
       const availableCenterLane = Math.max(1, rightColumnLeftEdge - leftColumnRightEdge - laneInset * 2);
 
-      theresStack.group.position.set(theresX, mobileVerticalShift, 0);
-      chanceStack.group.position.set(chanceX, mobileVerticalShift, 0);
+      theresStack.group.position.set(theresX, 0, 0);
+      chanceStack.group.position.set(chanceX, 0, 0);
 
       scene.add(theresStack.group);
       scene.add(chanceStack.group);
@@ -712,6 +721,7 @@ function layout(font, force = false) {
         color: noWord.color,
         materialsByColor,
         letterGap: noInternalGap,
+        align: "center",
       });
 
       const aMeshEntry = buildWordMesh({
@@ -754,10 +764,37 @@ function layout(font, force = false) {
       const slashCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled / 2;
       const aCenterY = centerTopEdge - noHeightScaled - centerGapScaled - slashHeightScaled - centerGapScaled - aHeightScaled / 2;
 
-      const centerYOffset = mobileVerticalShift;
-      noStack.group.position.set(0, noCenterY + centerYOffset, 0);
-      placeMeshAtCenter(aMeshEntry, 0, aCenterY + centerYOffset);
-      placeMeshAtCenter(slashMeshEntry, 0, slashCenterY + centerYOffset);
+      noStack.group.position.set(0, noCenterY, 0);
+      placeMeshAtCenter(aMeshEntry, 0, aCenterY);
+      placeMeshAtCenter(slashMeshEntry, 0, slashCenterY);
+
+      const mobileObjects = [theresStack.group, chanceStack.group, noStack.group, aMeshEntry.mesh, slashMeshEntry.mesh];
+      let currentMinY = Number.POSITIVE_INFINITY;
+      let currentMaxY = Number.NEGATIVE_INFINITY;
+      mobileObjects.forEach((object) => {
+        const bounds = getObjectBounds(object);
+        currentMinY = Math.min(currentMinY, bounds.minY);
+        currentMaxY = Math.max(currentMaxY, bounds.maxY);
+      });
+
+      const topSafe = clamp(H * 0.01, 2, 8);
+      const bottomSafe = clamp(H * 0.018 + chromeBottomInset * 0.25, 8, 26);
+      const desiredTop = H / 2 - topSafe;
+      const desiredBottom = -H / 2 + bottomSafe;
+      const minShift = desiredBottom - currentMinY;
+      const maxShift = desiredTop - currentMaxY;
+      const preferredShift = clamp(chromeBottomInset * 0.18, 0, H * 0.08);
+
+      let fittedShift = preferredShift;
+      if (minShift <= maxShift) {
+        fittedShift = clamp(preferredShift, minShift, maxShift);
+      } else {
+        fittedShift = (minShift + maxShift) / 2;
+      }
+
+      mobileObjects.forEach((object) => {
+        object.position.y += fittedShift;
+      });
 
       noStack.group.userData.swapKey = "no";
       noStack.group.traverse((node) => {
