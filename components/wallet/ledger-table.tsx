@@ -44,6 +44,13 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function describeFundingLabel(rawProvider: string): string {
+  const provider = rawProvider.trim().toLowerCase();
+  if (provider === "venmo") return "venmo";
+  if (provider) return "legacy funding";
+  return "";
+}
+
 function extractMarketId(metadata: Record<string, unknown>): string | null {
   const marketId = clean(metadata.marketId) || clean(metadata.market_id);
   return marketId || null;
@@ -60,7 +67,7 @@ function renderMeta(metadata: Record<string, unknown>): React.ReactNode {
   const intent = clean(metadata.intent);
   const key = clean(metadata.key);
   const tokensGranted = clean(metadata.tokensGranted) || clean(metadata.tokens_granted);
-  const provider = clean(metadata.provider);
+  const providerLabel = describeFundingLabel(clean(metadata.provider));
   const invoiceCode = clean(metadata.invoiceCode) || clean(metadata.invoice_code);
   const grossAmountUsd = parseMoneyValue(metadata.grossAmountUsd ?? metadata.gross_amount_usd);
   const feeAmountUsd = parseMoneyValue(metadata.feeAmountUsd ?? metadata.fee_amount_usd);
@@ -80,7 +87,7 @@ function renderMeta(metadata: Record<string, unknown>): React.ReactNode {
   if (grossAmountUsd !== null || feeAmountUsd !== null || netAmountUsd !== null) {
     return (
       <span>
-        {provider ? `${provider} ` : ""}
+        {providerLabel ? `${providerLabel} · ` : ""}
         gross {formatCurrency(Math.max(0, grossAmountUsd ?? 0))} · fee {formatCurrency(Math.max(0, feeAmountUsd ?? 0))} · net{" "}
         {formatCurrency(Math.max(0, netAmountUsd ?? 0))}
         {invoiceCode ? ` · ${invoiceCode}` : ""}

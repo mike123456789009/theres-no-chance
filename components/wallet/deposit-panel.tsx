@@ -144,58 +144,6 @@ export function DepositPanel({
     }
   }
 
-  async function startCoinbaseCharge() {
-    setErrorMessage("");
-    setPendingKey("coinbase");
-
-    if (parsedAmount === null) {
-      setErrorMessage("Enter a valid deposit amount.");
-      setPendingKey(null);
-      return;
-    }
-
-    if (parsedAmount < minDepositUsd || parsedAmount > maxDepositUsd) {
-      setErrorMessage(`Amount must be between ${formatCurrency(minDepositUsd)} and ${formatCurrency(maxDepositUsd)}.`);
-      setPendingKey(null);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/payments/coinbase/charge", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amountUsd: parsedAmount,
-        }),
-      });
-
-      const result = (await response.json().catch(() => null)) as unknown;
-      if (!response.ok) {
-        setErrorMessage(getErrorText(result) ?? "Coinbase charge initialization failed.");
-        return;
-      }
-
-      if (!result || typeof result !== "object" || Array.isArray(result)) {
-        setErrorMessage("Coinbase charge returned malformed response.");
-        return;
-      }
-
-      const url = clean((result as { charge?: { url?: string } }).charge?.url);
-      if (!url) {
-        setErrorMessage("Coinbase charge did not return a redirect URL.");
-        return;
-      }
-
-      window.location.assign(url);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Network error starting Coinbase charge.");
-    } finally {
-      setPendingKey(null);
-    }
-  }
-
   async function copyRequiredNote() {
     if (!venmoIntent) return;
     if (!navigator.clipboard?.writeText) {
@@ -218,10 +166,11 @@ export function DepositPanel({
   const displayQr = clean(venmoDisplay.qrImageUrl) || venmoQrImageUrl;
 
   return (
-    <section className="create-section" aria-label="Deposit options">
+    <section className="create-section" aria-label="Venmo deposit">
       <h2>Deposit</h2>
       <p className="create-note">
-        Deposits are credited at full gross amount. Venmo processing fee is taken when you withdraw.
+        Venmo is the active wallet funding method. Deposits are credited at full gross amount, and Venmo processing
+        fee is taken when you withdraw.
       </p>
 
       {errorMessage ? <p className="create-note tnc-error-text">{errorMessage}</p> : null}
@@ -335,32 +284,6 @@ export function DepositPanel({
               </p>
             </div>
           )}
-        </article>
-
-        <article className="deposit-provider-card">
-          <h3>USDC (Coinbase Commerce)</h3>
-          <p className="create-note">
-            Coinbase deposits are credited dollar-for-dollar. No Venmo fee is applied to this provider.
-          </p>
-          {parsedAmount ? (
-            <div className="deposit-breakdown">
-              <p className="create-note">
-                You pay: <strong>{formatCurrency(parsedAmount)}</strong>
-              </p>
-              <p className="create-note">
-                Coinbase fee in app credit: <strong>{formatCurrency(0)}</strong>
-              </p>
-              <p className="create-note">
-                You are credited: <strong>{formatCurrency(parsedAmount)}</strong>
-              </p>
-            </div>
-          ) : (
-            <p className="create-note">Enter a valid amount to continue.</p>
-          )}
-
-          <button type="button" className="create-submit" disabled={Boolean(pendingKey)} onClick={startCoinbaseCharge}>
-            {pendingKey === "coinbase" ? "Starting..." : "Pay with Coinbase"}
-          </button>
         </article>
       </div>
     </section>

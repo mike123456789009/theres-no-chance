@@ -18,7 +18,6 @@ function createDependencies(overrides?: Partial<AdminUsersPageDataDependencies>)
     listTradeFills: async () => [],
     listCreatedMarkets: async () => [],
     listWithdrawals: async () => [],
-    listTokenPurchases: async () => [],
     listDisputes: async () => [],
     listMarketQuestions: async () => [],
   };
@@ -155,7 +154,6 @@ describe("loadAdminUsersPageData", () => {
     const listTradeFills = vi.fn(async () => []);
     const listCreatedMarkets = vi.fn(async () => []);
     const listWithdrawals = vi.fn(async () => []);
-    const listTokenPurchases = vi.fn(async () => []);
     const listDisputes = vi.fn(async () => []);
     const listMarketQuestions = vi.fn(async () => []);
 
@@ -172,7 +170,6 @@ describe("loadAdminUsersPageData", () => {
         listTradeFills,
         listCreatedMarkets,
         listWithdrawals,
-        listTokenPurchases,
         listDisputes,
         listMarketQuestions,
       }),
@@ -188,7 +185,6 @@ describe("loadAdminUsersPageData", () => {
     expect(listTradeFills).not.toHaveBeenCalled();
     expect(listCreatedMarkets).not.toHaveBeenCalled();
     expect(listWithdrawals).not.toHaveBeenCalled();
-    expect(listTokenPurchases).not.toHaveBeenCalled();
     expect(listDisputes).not.toHaveBeenCalled();
     expect(listMarketQuestions).not.toHaveBeenCalled();
   });

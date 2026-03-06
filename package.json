@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "verify:public-barrels": "tsc --noEmit -p tsconfig.public-barrels.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && node -e \"require('fs').rmSync('.next/dev/types/validator.ts', { force: true })\" && tsc --noEmit",
     "test": "vitest run",
     "verify": "npm run lint && npm run verify:public-barrels && npm run typecheck && npm test && npm run build",
     "test:watch": "vitest",

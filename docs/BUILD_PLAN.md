@@ -11,11 +11,10 @@ We will evolve the current static landing page into a full prediction market app
 
 Locked decisions:
 - Keep current landing as canonical marketing page (`/`).
-- Build app on **Next.js (App Router + TypeScript)** for routing, auth guards, admin tools, and payment webhooks.
+- Build app on **Next.js (App Router + TypeScript)** for routing, auth guards, admin tools, and payment/reconciliation routes.
 - Use **Supabase** for auth, Postgres, RLS, and storage.
 - Use **AMM binary pricing model** for v1 (Yes/No contracts where implied prices sum to 1; winning share settles to 1 unit).
-- Use **Stripe** for fiat purchases/subscriptions and **Stripe Identity** for KYC eligibility signals.
-- Use **Coinbase Commerce** for USDC payments, with **Base** as the primary network path.
+- Use **Venmo** as the only wallet funding method in v1, with invoice-code-based reconciliation and admin review support.
 - Resolution authority in v1: **Platform Admin Final**.
 - Market creation flow in v1: **Approval Required** before open trading.
 - Private/institution gating in v1: **email-signup + verified institution domain rules** (e.g., `@college.edu`, `@students.college.edu`).
@@ -88,11 +87,11 @@ Locked decisions:
   - available vs reserved balances.
 - `ledger_entries`
   - immutable money/token ledger with idempotency keys (single source of truth).
-- `subscription_plans`, `user_subscriptions`, `token_grants`
-- `token_pack_purchases`
+- `funding_intents`
+- `deposit_receipts`
 - `withdrawal_requests`
 - `webhook_events`
-  - webhook payload + idempotency/processing status for Stripe/Coinbase.
+  - ingestion payload + idempotency/processing status for external payment/reconciliation events.
 - `admin_action_log`
   - approve/reject/halt/resolve/finalize audit trail.
 
@@ -112,22 +111,12 @@ Locked decisions:
 
 ## Payments & Billing Design
 
-## Stripe (fiat)
-- Use Checkout Sessions for:
-  - one-time token packs,
-  - subscription tiers.
-- Webhooks:
-  - `checkout.session.completed`,
-  - subscription lifecycle events,
-  - refunds/chargebacks.
-- On success: write ledger credit + receipt record.
-
-## Coinbase Commerce (USDC on Base)
-- Create hosted charge from server route.
-- Only expose publishable client flow; API key server-side.
-- Webhook verifies signatures and idempotently credits ledger.
-- Payment metadata links charge to user and funding intent.
-- **Security note**: rotate the Coinbase key that was shared in chat, then store new key in env.
+## Venmo funding
+- Generate a funding intent and invoice code from the wallet page.
+- Require the exact invoice code in the Venmo payment note.
+- Reconcile incoming Venmo payments by exact note + amount match.
+- Write deposit receipts and idempotent wallet credits from the reconcile flow.
+- Route unmatched or edited-note payments into admin review.
 
 ## Withdrawals
 - Auto payout mode enabled, but still gated by:
@@ -216,10 +205,8 @@ Locked decisions:
 - `POST /api/admin/markets/:id/halt`
 - `POST /api/admin/markets/:id/resolve`
 - `POST /api/admin/markets/:id/finalize`
-- `POST /api/payments/stripe/checkout`
-- `POST /api/payments/coinbase/charge`
-- `POST /api/webhooks/stripe`
-- `POST /api/webhooks/coinbase`
+- `POST /api/payments/venmo/intent`
+- `POST /api/payments/venmo/reconcile`
 - `POST /api/withdrawals`
 
 ## Client contracts
@@ -229,13 +216,14 @@ Locked decisions:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_ID_*` (tiers/packs)
-- `COINBASE_COMMERCE_API_KEY`
-- `COINBASE_COMMERCE_WEBHOOK_SECRET`
 - `ADMIN_ALLOWLIST_EMAILS`
 - `APP_BASE_URL`
+- `VENMO_USERNAME`
+- `VENMO_PAYMENT_URL`
+- `VENMO_PUBLIC_QR_PATH`
+- `VENMO_RECONCILE_BEARER_SECRET`
+- `VENMO_FEE_PERCENT`
+- `VENMO_FEE_FIXED_USD`
 - `OPENAI_API_KEY`
 - `MARKET_RESEARCH_BOT_USER_ID`
 - `MARKET_RESEARCH_ENABLED`
@@ -257,8 +245,8 @@ Locked decisions:
 10. **Market detail**: implement sketch layout with metadata/resolution panels.
 11. **AMM quote/execute engine**: pricing, slippage, fee calc, trade execution + ledger.
 12. **Position panel + portfolio**: holdings, P&L, history.
-13. **Stripe token store**: subscriptions + packs + webhook ledger credits.
-14. **Coinbase Commerce USDC (Base)**: charge creation + webhook crediting.
+13. **Venmo funding intents**: invoice-code generation + wallet deposit flow.
+14. **Venmo reconciliation pipeline**: incoming payment ingest, exact-match crediting, and admin review queue.
 15. **Withdrawal pipeline**: eligibility checks + auto payout states.
 16. **Resolution/dispute pipeline**: pending/resolved/finalized with dispute window.
 17. **Private/institution markets**: group/domain-gated visibility and membership checks.
@@ -279,8 +267,8 @@ Each step is one commit + one deploy + deployment note in commit message, matchi
 - Auth + role-based route protection.
 - Market create -> review -> open flow.
 - Admin approve/reject/halt/resolve/finalize.
-- Stripe webhook idempotency and ledger credit.
-- Coinbase webhook verification and duplicate-event handling.
+- Venmo intent creation, validation, and funding-intent persistence.
+- Venmo reconcile exact-match crediting, duplicate handling, and review-required paths.
 - Withdrawal lifecycle transitions and failure paths.
 - Domain-gated market visibility rules.
 
@@ -302,8 +290,7 @@ Each step is one commit + one deploy + deployment note in commit message, matchi
 - Current landing design remains the canonical marketing page.
 - Framework migration to Next.js is acceptable if UI is visually preserved.
 - v1 trading uses AMM (not order book).
-- USDC provider is Coinbase Commerce; primary network target is Base.
-- Stripe handles non-crypto payments and KYC provider integration (Stripe Identity).
+- Wallet funding is Venmo-only for this cycle.
 - Market review is mandatory before open trading.
 - Resolution authority is platform admin final in v1.
 - AI market proposals are generated and submitted by a single dedicated bot user.

@@ -1,5 +1,41 @@
 # Change History
 
+## 2026-03-06 - Venmo-Only Funding Cutover
+Status: completed
+
+Short description:
+- Removed retired Stripe and Coinbase payment routes, webhook handlers, and provider libraries from the runtime codebase.
+- Simplified wallet and landing-page funding copy so Venmo is the only advertised and supported deposit path.
+- Reworked admin and wallet history views to treat old non-Venmo payment metadata as generic legacy funding instead of active providers.
+- Updated the build plan to reflect a Venmo-only funding architecture for the current product direction.
+
+Files/areas touched:
+- Runtime funding surface:
+  - `components/wallet/deposit-panel.tsx`
+  - `components/wallet/ledger-table.tsx`
+  - `app/(app)/account/wallet/page.tsx`
+  - `app/(marketing)/page.tsx`
+- Admin history cleanup:
+  - `app/(app)/account/admin/users/page-content.tsx`
+  - `app/(app)/account/admin/users/page-data.ts`
+  - `app/(app)/account/admin/users/page-data.test.ts`
+- Removed retired provider code:
+  - `app/api/payments/stripe/checkout/route.ts`
+  - `app/api/payments/coinbase/charge/route.ts`
+  - `app/api/webhooks/stripe/route.ts`
+  - `app/api/webhooks/coinbase/route.ts`
+  - `app/api/webhooks/coinbase/route.test.ts`
+  - `lib/payments/stripe.ts`
+  - `lib/payments/stripe-webhook.ts`
+  - `lib/payments/coinbase.ts`
+  - `lib/payments/coinbase-webhook.ts`
+- Regression coverage and docs:
+  - `components/wallet/deposit-panel.test.tsx`
+  - `docs/BUILD_PLAN.md`
+
+User-visible change:
+- The product now presents Venmo as the sole wallet funding method, and retired provider names no longer appear in active wallet, landing, or admin funding UI.
+
 ## 2026-03-06 - Public Barrel Guardrails + Product Positioning Refresh
 Status: completed
 

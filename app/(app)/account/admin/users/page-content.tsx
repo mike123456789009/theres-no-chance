@@ -48,14 +48,19 @@ function formatStatus(value: string): string {
 
 function summarizeLedgerSource(entry: LedgerRow): string {
   const metadata = entry.metadata ?? {};
-  const provider = clean(metadata.provider) || (clean(metadata.stripeSessionId) ? "stripe" : clean(metadata.coinbaseChargeId) ? "coinbase" : "");
+  const provider = clean(metadata.provider).toLowerCase();
   const key = clean(metadata.key) || clean(metadata.intent);
 
-  if (entry.entry_type === "pack_purchase" || entry.entry_type === "subscription_grant" || entry.entry_type === "deposit") {
-    if (provider && key) return `${provider}:${key}`;
-    if (provider) return provider;
+  if (entry.entry_type === "pack_purchase" || entry.entry_type === "subscription_grant") {
+    return "legacy funding";
+  }
+
+  if (entry.entry_type === "deposit") {
+    if (provider === "venmo") return "venmo deposit";
+    if (provider) return "legacy funding";
+    if (key === "usd_topup") return "deposit";
     if (key) return key;
-    return "system credit";
+    return "deposit";
   }
 
   if (entry.entry_type.includes("withdrawal")) return "withdrawal";
@@ -179,37 +184,7 @@ type FundingHistorySectionProps = {
 function FundingHistorySection({ data }: FundingHistorySectionProps) {
   return (
     <section className="create-section" aria-label="Funding and deposit history">
-      <h2>Deposits + funding sources</h2>
-      {data.tokenPurchases.length === 0 ? (
-        <p className="create-note">No token purchases recorded.</p>
-      ) : (
-        <div className="tnc-table-wrap">
-          <table className="admin-history-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Provider</th>
-                <th>Pack</th>
-                <th>Amount</th>
-                <th>Tokens</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.tokenPurchases.map((purchase) => (
-                <tr key={purchase.id}>
-                  <td>{formatDate(purchase.created_at)}</td>
-                  <td>{purchase.stripe_session_id ? "Stripe" : purchase.coinbase_charge_id ? "Coinbase" : "Unknown"}</td>
-                  <td>{purchase.pack_key}</td>
-                  <td>{formatCurrency(purchase.amount_paid_cents / 100)}</td>
-                  <td>{purchase.tokens_granted.toLocaleString("en-US")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <h2>Ledger overview</h2>
+      <h2>Deposits + ledger history</h2>
       {data.ledgerEntries.length === 0 ? (
         <p className="create-note">No ledger entries found.</p>
       ) : (

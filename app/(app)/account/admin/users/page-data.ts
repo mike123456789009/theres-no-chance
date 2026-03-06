@@ -71,16 +71,6 @@ export type WithdrawalRow = {
   processed_at: string | null;
 };
 
-export type TokenPurchaseRow = {
-  id: string;
-  pack_key: string;
-  amount_paid_cents: number;
-  tokens_granted: number;
-  stripe_session_id: string | null;
-  coinbase_charge_id: string | null;
-  created_at: string;
-};
-
 export type DisputeRow = {
   id: string;
   market_id: string;
@@ -111,7 +101,6 @@ export type AdminUsersPageData = {
   tradeFills: TradeFillRow[];
   createdMarkets: CreatedMarketRow[];
   withdrawals: WithdrawalRow[];
-  tokenPurchases: TokenPurchaseRow[];
   disputes: DisputeRow[];
   marketQuestionById: Record<string, string>;
 };
@@ -136,7 +125,6 @@ export type AdminUsersPageDataDependencies = {
   listTradeFills: (service: ServiceClient, userId: string) => Promise<TradeFillRow[]>;
   listCreatedMarkets: (service: ServiceClient, userId: string) => Promise<CreatedMarketRow[]>;
   listWithdrawals: (service: ServiceClient, userId: string) => Promise<WithdrawalRow[]>;
-  listTokenPurchases: (service: ServiceClient, userId: string) => Promise<TokenPurchaseRow[]>;
   listDisputes: (service: ServiceClient, userId: string) => Promise<DisputeRow[]>;
   listMarketQuestions: (service: ServiceClient, marketIds: string[]) => Promise<MarketQuestionRow[]>;
 };
@@ -254,15 +242,6 @@ const defaultDependencies: AdminUsersPageDataDependencies = {
       .limit(220);
     return (data ?? []) as WithdrawalRow[];
   },
-  listTokenPurchases: async (service, userId) => {
-    const { data } = await service
-      .from("token_pack_purchases")
-      .select("id, pack_key, amount_paid_cents, tokens_granted, stripe_session_id, coinbase_charge_id, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(220);
-    return (data ?? []) as TokenPurchaseRow[];
-  },
   listDisputes: async (service, userId) => {
     const { data } = await service
       .from("market_disputes")
@@ -333,17 +312,15 @@ export async function loadAdminUsersPageData(options?: {
   let tradeFills: TradeFillRow[] = [];
   let createdMarkets: CreatedMarketRow[] = [];
   let withdrawals: WithdrawalRow[] = [];
-  let tokenPurchases: TokenPurchaseRow[] = [];
   let disputes: DisputeRow[] = [];
   let marketQuestionById: Record<string, string> = {};
 
   if (selectedUser) {
-    [ledgerEntries, tradeFills, createdMarkets, withdrawals, tokenPurchases, disputes] = await Promise.all([
+    [ledgerEntries, tradeFills, createdMarkets, withdrawals, disputes] = await Promise.all([
       dependencies.listLedgerEntries(service, selectedUser.id),
       dependencies.listTradeFills(service, selectedUser.id),
       dependencies.listCreatedMarkets(service, selectedUser.id),
       dependencies.listWithdrawals(service, selectedUser.id),
-      dependencies.listTokenPurchases(service, selectedUser.id),
       dependencies.listDisputes(service, selectedUser.id),
     ]);
 
@@ -370,7 +347,6 @@ export async function loadAdminUsersPageData(options?: {
     tradeFills,
     createdMarkets,
     withdrawals,
-    tokenPurchases,
     disputes,
     marketQuestionById,
   };

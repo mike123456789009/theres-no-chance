@@ -112,7 +112,6 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
   const params = toUrlSearchParams(resolvedSearchParams);
   const checkoutState = clean(params.get("checkout")).toLowerCase();
-  const checkoutProvider = clean(params.get("provider")).toLowerCase();
   const fundingIntentId = clean(params.get("funding_intent_id"));
 
   const supabase = await createClient();
@@ -233,7 +232,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       banner = {
         kind: "unknown",
         title: "Deposit status pending",
-        detail: "Deposit record not found yet. Refresh in a moment while webhook crediting completes.",
+        detail: "Deposit record not found yet. Refresh in a moment while matching completes.",
         showRefresh: true,
       };
     } else if (fundingIntent.status === "credited") {
@@ -241,18 +240,18 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       banner = {
         kind: "credited",
         title: "Deposit credited",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} credited ${formatCurrency(
-          gross
-        )}. Venmo withdrawal fee applies when cashing out. Funding intent id: ${fundingIntent.id}`,
+        detail: `Deposit credited ${formatCurrency(gross)}. Venmo withdrawal fee applies when cashing out. Funding intent id: ${
+          fundingIntent.id
+        }${fundingIntent.invoice_code ? ` · invoice ${fundingIntent.invoice_code}` : ""}`,
       };
     } else {
       const gross = toNumber(fundingIntent.requested_amount_usd, 0);
       banner = {
         kind: "pending",
         title: "Deposit pending",
-        detail: `${fundingIntent.provider} ${fundingIntent.intent} is still pending credit for ${formatCurrency(
-          gross
-        )}. Venmo withdrawal fee applies when cashing out. Refresh in a moment.`,
+        detail: `Deposit is still pending credit for ${formatCurrency(gross)}. Venmo withdrawal fee applies when cashing out. Refresh in a moment${
+          fundingIntent.invoice_code ? ` · invoice ${fundingIntent.invoice_code}` : ""
+        }.`,
         showRefresh: true,
       };
     }
@@ -263,9 +262,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       <p className="create-kicker">Wallet</p>
       <h1 className="create-title">Balances + deposits</h1>
       <p className="create-copy">View wallet balances, deposit methods, and your most recent ledger entries.</p>
-      <p className="create-note">
-        Venmo and Coinbase deposits are credited at gross amount. Venmo processing fee is applied when you withdraw.
-      </p>
+      <p className="create-note">Venmo deposits are credited at gross amount. Venmo processing fee is applied when you withdraw.</p>
 
       <div className="create-actions account-actions-top">
         <Link className="create-submit create-submit-muted" href="/markets">
@@ -323,12 +320,6 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
           <LedgerTable entries={ledgerEntries} />
         )}
       </section>
-
-      {checkoutProvider ? (
-        <p className="create-note">
-          Provider: <code>{checkoutProvider}</code>
-        </p>
-      ) : null}
     </section>
   );
 }

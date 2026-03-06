@@ -61,10 +61,7 @@ export default function MarketingPage() {
 
             <section className="token-economy reveal-item" data-reveal-delay="2" aria-label="Payments and token economy">
               <h2 className="token-title">Payments &amp; Token Economy</h2>
-              <p className="token-copy">
-                Fund your account in USD and trade with wallet balance. Current funding methods are Venmo and Coinbase
-                Commerce.
-              </p>
+              <p className="token-copy">Fund your account in USD through Venmo and trade with wallet balance.</p>
 
               <div className="payment-grid">
                 <article className="payment-card">
@@ -91,16 +88,20 @@ export default function MarketingPage() {
                 </article>
 
                 <article className="payment-card">
-                  <h3 className="payment-title">Coinbase Commerce (USDC on Base)</h3>
-                  <p className="payment-note">Hosted checkout for fixed USD wallet topups.</p>
+                  <h3 className="payment-title">Wallet credit timing</h3>
+                  <p className="payment-note">Venmo payments are matched against your invoice code and posted into wallet.</p>
                   <ul className="plan-list">
                     <li>
-                      <span className="plan-name">USD funding</span>
-                      <span>Choose your amount and complete hosted payment.</span>
+                      <span className="plan-name">Auto match</span>
+                      <span>Exact note and amount matches are credited directly into your wallet.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Crediting</span>
-                      <span>Coinbase deposits are credited at gross amount.</span>
+                      <span className="plan-name">Manual review</span>
+                      <span>Missing or edited codes can send a payment into the admin review queue.</span>
+                    </li>
+                    <li>
+                      <span className="plan-name">Ledger visibility</span>
+                      <span>Gross deposits and withdrawal fees are visible in wallet and admin history.</span>
                     </li>
                   </ul>
                 </article>
