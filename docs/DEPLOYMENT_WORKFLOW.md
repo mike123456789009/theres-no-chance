@@ -8,6 +8,7 @@ Use this checklist for every feature deployment so releases stay isolated and de
 
 ## Before Push
 - Run local verification for the changed feature.
+- Use `npm run supabase:*` commands or `npm run supabase -- <args>` for Supabase CLI work so multiline app secrets never block the CLI parser.
 - Record a short deployment note in `docs/CHANGE_HISTORY.md`.
 - Use an explicit commit message including:
   - feature/fix shipped

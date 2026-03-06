@@ -27,13 +27,14 @@
 
 ### 1.4) Supabase Access + Edit Workflow
 - Supabase project ref for this app: `ynuyfchtajpmnbcpbagb` (`theres-no-chance`).
-- Link workspace to project: `supabase link --project-ref ynuyfchtajpmnbcpbagb`.
-- Check local vs remote migration state: `supabase migration list`.
-- Apply schema changes to remote: `supabase db push --linked --yes`.
+- Preferred wrapper: `npm run supabase -- <args>` or `bash scripts/supabase-safe.sh <args>`.
+- Link workspace to project: `npm run supabase:link`.
+- Check local vs remote migration state: `npm run supabase:migration:list`.
+- Apply schema changes to remote: `npm run supabase:db:push`.
 - If migration history drifts, repair explicitly:
-  - `supabase migration repair --linked --status reverted <version> --yes`
-  - `supabase migration repair --linked --status applied <version> --yes`
-- If Supabase CLI fails parsing `.env` (for example due to multiline key material), temporarily move `.env`, run CLI commands, then restore `.env` immediately.
+  - `npm run supabase -- migration repair --linked --status reverted <version> --yes`
+  - `npm run supabase -- migration repair --linked --status applied <version> --yes`
+- Keep multiline secrets out of `.env.supabase.local`; the wrapper temporarily swaps that CLI-safe file in as `.env` while Supabase runs.
 
 ### 1.5) Vercel Access + Deploy Workflow
 - Main branch pushes are production deploy triggers; treat every `git push origin main` as a live deploy.

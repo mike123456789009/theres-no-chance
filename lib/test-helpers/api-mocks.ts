@@ -1,5 +1,5 @@
 import type { TradeExecuteRpcResult, TradeQuoteRpcResult } from "@/lib/markets/trade-engine";
-import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets/types";
+import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets";
 
 export function createMarketDetailFixture(overrides: Partial<MarketDetailDTO> = {}): MarketDetailDTO {
   return {

@@ -1,5 +1,33 @@
 # Change History
 
+## 2026-03-06 - Public Barrel Guardrails + Product Positioning Refresh
+Status: completed
+
+Short description:
+- Removed the stale `lib/markets/read-markets.ts` shadow file so the app resolves the canonical `lib/markets/read-markets/index.ts` barrel again.
+- Added a compile-time public barrel contract and CI step that exercise only the barrel imports the app actually uses.
+- Enforced barrel-only imports for the `read-markets`, `page-sections`, and create-market step domains.
+- Added a CLI-safe Supabase wrapper workflow plus updated product/docs positioning for the live prediction-market platform.
+
+Files/areas touched:
+- Public surface cleanup and guardrails:
+  - `lib/test-helpers/api-mocks.ts`
+  - `contracts/public-barrels.contract.ts`
+  - `tsconfig.public-barrels.json`
+  - `eslint.config.mjs`
+  - `.github/workflows/ci.yml`
+  - `package.json`
+  - removed `lib/markets/read-markets.ts`
+- Workflow/docs:
+  - `scripts/supabase-safe.sh`
+  - `.env.supabase.local.example`
+  - `README.md`
+  - `docs/DEPLOYMENT_WORKFLOW.md`
+  - `AGENTS.md`
+
+User-visible change:
+- No direct product UX change; local builds, CI, and contributor workflow now reflect the current app architecture and catch public-surface regressions earlier.
+
 ## 2026-02-21 - Refactor Program Release 15 (Framework Cleanup + Final Hardening)
 Status: completed
 

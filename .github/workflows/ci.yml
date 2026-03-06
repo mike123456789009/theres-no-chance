@@ -25,6 +25,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Verify public barrels
+        run: npm run verify:public-barrels
+
       - name: Type check
         run: npm run typecheck
 
