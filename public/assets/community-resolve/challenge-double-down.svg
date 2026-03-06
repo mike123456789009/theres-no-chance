@@ -6,7 +6,7 @@
   <circle cx="520" cy="350" r="54" fill="#F9A89E" stroke="#101010" stroke-width="6"/>
   <circle cx="690" cy="350" r="54" fill="#F9A89E" stroke="#101010" stroke-width="6"/>
   <path d="M830 310L930 310L930 260L1020 350L930 440L930 390L830 390V310Z" fill="#101010"/>
-  <text x="185" y="155" font-size="42" font-family="Space Mono, monospace" fill="#101010">Challenge: Exact Double-Down</text>
-  <text x="220" y="450" font-size="32" font-family="Space Mono, monospace" fill="#101010">Only out-voted resolvers can challenge</text>
-  <text x="220" y="500" font-size="32" font-family="Space Mono, monospace" fill="#101010">Additional stake must exactly match original stake</text>
+  <text x="185" y="155" font-size="38" font-family="Space Mono, monospace" fill="#101010">Challenge: Exact Double-Down</text>
+  <text x="220" y="442" font-size="28" font-family="Space Mono, monospace" fill="#101010" textLength="640" lengthAdjust="spacingAndGlyphs">Only out-voted resolvers can challenge</text>
+  <text x="220" y="486" font-size="28" font-family="Space Mono, monospace" fill="#101010" textLength="760" lengthAdjust="spacingAndGlyphs">Additional stake must exactly match original stake</text>
 </svg>

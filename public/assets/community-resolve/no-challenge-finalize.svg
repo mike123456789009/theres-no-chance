@@ -4,8 +4,8 @@
   <rect x="180" y="190" width="840" height="120" rx="14" fill="#E3F5EA" stroke="#101010" stroke-width="6"/>
   <rect x="180" y="340" width="840" height="120" rx="14" fill="#F6F6F6" stroke="#101010" stroke-width="6"/>
   <rect x="180" y="490" width="840" height="100" rx="14" fill="#FFF1CD" stroke="#101010" stroke-width="6"/>
-  <text x="220" y="265" font-size="36" font-family="Space Mono, monospace" fill="#101010">No challenge submitted</text>
-  <text x="220" y="415" font-size="36" font-family="Space Mono, monospace" fill="#101010">Challenge window ended</text>
-  <text x="220" y="555" font-size="36" font-family="Space Mono, monospace" fill="#101010">Auto-finalized to provisional outcome</text>
-  <text x="190" y="160" font-size="44" font-family="Space Mono, monospace" fill="#101010">No-Challenge Path</text>
+  <text x="220" y="262" font-size="32" font-family="Space Mono, monospace" fill="#101010" textLength="420" lengthAdjust="spacingAndGlyphs">No challenge submitted</text>
+  <text x="220" y="412" font-size="32" font-family="Space Mono, monospace" fill="#101010" textLength="420" lengthAdjust="spacingAndGlyphs">Challenge window ended</text>
+  <text x="220" y="552" font-size="30" font-family="Space Mono, monospace" fill="#101010" textLength="760" lengthAdjust="spacingAndGlyphs">Auto-finalized to provisional outcome</text>
+  <text x="190" y="158" font-size="38" font-family="Space Mono, monospace" fill="#101010">No-Challenge Path</text>
 </svg>

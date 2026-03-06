@@ -4,10 +4,10 @@
   <rect x="160" y="220" width="360" height="300" rx="16" fill="#DDF5E7" stroke="#101010" stroke-width="6"/>
   <rect x="680" y="220" width="360" height="300" rx="16" fill="#FDE0DC" stroke="#101010" stroke-width="6"/>
   <rect x="550" y="180" width="120" height="380" rx="14" fill="#FFF7E2" stroke="#101010" stroke-width="6"/>
-  <text x="230" y="300" font-size="40" font-family="Space Mono, monospace" fill="#101010">YES</text>
-  <text x="770" y="300" font-size="40" font-family="Space Mono, monospace" fill="#101010">NO</text>
-  <text x="220" y="380" font-size="56" font-family="Space Mono, monospace" fill="#101010">$412</text>
-  <text x="760" y="380" font-size="56" font-family="Space Mono, monospace" fill="#101010">$281</text>
-  <text x="140" y="165" font-size="44" font-family="Space Mono, monospace" fill="#101010">Provisional Outcome Computed</text>
-  <text x="500" y="430" font-size="36" font-family="Space Mono, monospace" fill="#101010">YES</text>
+  <text x="340" y="300" font-size="38" font-family="Space Mono, monospace" fill="#101010" text-anchor="middle">YES</text>
+  <text x="860" y="300" font-size="38" font-family="Space Mono, monospace" fill="#101010" text-anchor="middle">NO</text>
+  <text x="340" y="380" font-size="52" font-family="Space Mono, monospace" fill="#101010" text-anchor="middle">$412</text>
+  <text x="860" y="380" font-size="52" font-family="Space Mono, monospace" fill="#101010" text-anchor="middle">$281</text>
+  <text x="140" y="165" font-size="40" font-family="Space Mono, monospace" fill="#101010" textLength="920" lengthAdjust="spacingAndGlyphs">Provisional Outcome Computed</text>
+  <text x="610" y="430" font-size="34" font-family="Space Mono, monospace" fill="#101010" text-anchor="middle">YES</text>
 </svg>
