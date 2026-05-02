@@ -1,4 +1,5 @@
 import { PIXEL_AVATAR_OPTIONS } from "@/components/account/avatar-options";
+import { formatMarketLifecycleLabel } from "@/lib/markets/lifecycle";
 import { MARKET_CARD_SHADOW_COLORS, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import type { MarketCardDTO } from "@/lib/markets/read-markets";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
@@ -67,6 +68,10 @@ export function formatCurrency(value: number): string {
 
 export function formatMarketStatus(value: string): string {
   return value.replace(/_/g, " ");
+}
+
+export function formatDiscoveryLifecycleLabel(market: MarketCardDTO): string {
+  return formatMarketLifecycleLabel(market);
 }
 
 export function toneToColor(tone: MarketCardShadowTone): string {

@@ -1,9 +1,11 @@
 import type { CSSProperties } from "react";
 
 import { AdminAccessPanel } from "@/components/admin/admin-access-panel";
+import { AdminMarketOperationsHealth } from "@/components/admin/admin-market-operations-health";
 import { AdminResearchRunControls } from "@/components/admin/admin-research-run-controls";
 import { AdminReviewQueue } from "@/components/admin/admin-review-queue";
 import { guardAdminPageAccess } from "@/lib/admin/access";
+import { loadMarketOperationsHealth } from "@/lib/admin/market-operations-health";
 import { loadResearchRuns } from "@/lib/admin/research";
 import { loadAdminQueueMarkets, loadProposedMarketPreviews } from "@/lib/admin/review-queue";
 
@@ -53,10 +55,11 @@ export default async function AdminMarketMakerPage() {
     return <AdminAccessPanel access={access} />;
   }
 
-  const [queue, runs, previews] = await Promise.all([
+  const [queue, runs, previews, health] = await Promise.all([
     loadAdminQueueMarkets(),
     loadResearchRuns(20),
     loadProposedMarketPreviews(50),
+    loadMarketOperationsHealth(),
   ]);
 
   return (
@@ -69,6 +72,8 @@ export default async function AdminMarketMakerPage() {
       <p className="create-note">
         Authenticated admin: <code>{access.adminUser.email ?? "unknown"}</code> • id <code>{access.adminUser.id}</code>
       </p>
+
+      <AdminMarketOperationsHealth health={health} />
 
       <AdminResearchRunControls />
 

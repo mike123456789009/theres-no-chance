@@ -6,7 +6,12 @@ import { MarketLiveOverview } from "@/components/markets/market-live-overview";
 import { ResolverPrizeBoostCard } from "@/components/markets/resolver-prize-boost-card";
 import { TradeInterface } from "@/components/markets/trade-interface";
 import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets";
-import { deriveDetailCapabilities, formatDetailDate, formatDetailStatus } from "@/lib/markets/view-models/detail";
+import {
+  deriveDetailCapabilities,
+  formatDetailDate,
+  formatDetailLifecycleLabel,
+  formatDetailStatus,
+} from "@/lib/markets/view-models/detail";
 
 import { MarketDetailContextSection } from "./market-detail-context-section";
 import { MarketDetailPositionPanel } from "./market-detail-position-panel";
@@ -38,7 +43,7 @@ export function MarketDetailMainSection(props: Readonly<MarketDetailMainSectionP
       <h1 className="market-detail-title">{market.question}</h1>
       <div className="market-detail-header-row">
         <p className="market-detail-copy">
-          Status: <strong>{formatDetailStatus(market.status)}</strong>
+          Status: <strong>{formatDetailLifecycleLabel(market)}</strong>
         </p>
         <p className="market-detail-copy market-detail-copy-muted">
           Closes {formatDetailDate(market.closeTime)} • Fee {(market.feeBps / 100).toFixed(2)}% • Resolution{" "}

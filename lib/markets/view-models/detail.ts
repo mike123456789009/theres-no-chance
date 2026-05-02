@@ -1,4 +1,5 @@
 import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets";
+import { formatMarketLifecycleLabel } from "@/lib/markets/lifecycle";
 
 const EVIDENCE_VISIBLE_STATUSES = new Set(["closed", "pending_resolution", "resolved", "finalized"]);
 
@@ -20,6 +21,12 @@ export function formatPercent(value: number, maximumFractionDigits = 1): string 
 
 export function formatDetailStatus(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function formatDetailLifecycleLabel(
+  market: Pick<MarketDetailDTO, "status" | "resolutionOutcome" | "finalizedAt" | "voidReason">
+): string {
+  return formatMarketLifecycleLabel(market);
 }
 
 export function formatShares(value: number): string {

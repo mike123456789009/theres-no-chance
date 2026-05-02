@@ -6,11 +6,19 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { DiscoveryMarketCardsResult } from "@/lib/markets/pages/discovery";
-import type { MarketViewerContext } from "@/lib/markets/read-markets";
+import type { MarketDiscoveryQuery, MarketViewerContext } from "@/lib/markets/read-markets";
 
 import { MarketsDiscoveryResultsSection } from "./markets-discovery-results-section";
 
 describe("MarketsDiscoveryResultsSection", () => {
+  const query: MarketDiscoveryQuery = {
+    search: "",
+    category: "trending",
+    status: "all",
+    access: "all",
+    sort: "volume",
+  };
+
   it("renders market cards for successful discovery results", () => {
     const viewer: MarketViewerContext = {
       userId: "user-1",
@@ -27,6 +35,9 @@ describe("MarketsDiscoveryResultsSection", () => {
           question: "Will this smoke test render?",
           status: "open",
           resolutionMode: "community",
+          resolutionOutcome: null,
+          finalizedAt: null,
+          voidReason: null,
           closeTime: "2026-06-01T00:00:00.000Z",
           createdAt: "2026-01-01T00:00:00.000Z",
           tags: ["testing"],
@@ -41,10 +52,101 @@ describe("MarketsDiscoveryResultsSection", () => {
       ],
     };
 
-    render(<MarketsDiscoveryResultsSection viewer={viewer} result={result} loadError={null} />);
+    render(
+      <MarketsDiscoveryResultsSection
+        viewer={viewer}
+        result={result}
+        loadError={null}
+        query={query}
+        viewerIsAdmin={false}
+      />
+    );
 
     expect(screen.getByText("Will this smoke test render?")).toBeInTheDocument();
+    expect(screen.getByText("Open for trading")).toBeInTheDocument();
     expect(screen.getByText("Pool 2.5K")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open" })).toBeInTheDocument();
+  });
+
+  it("renders retired no-action lifecycle labels", () => {
+    const viewer: MarketViewerContext = {
+      userId: "user-1",
+      isAuthenticated: true,
+      activeOrganizationId: "org-1",
+      hasActiveInstitution: true,
+    };
+    const result: DiscoveryMarketCardsResult = {
+      schemaMissing: false,
+      error: null,
+      markets: [
+        {
+          id: "market-void",
+          question: "Will this retired market label render?",
+          status: "finalized",
+          resolutionMode: "community",
+          resolutionOutcome: "void",
+          finalizedAt: "2026-01-02T00:00:00.000Z",
+          voidReason: "no_activity_at_close",
+          closeTime: "2026-01-01T00:00:00.000Z",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          tags: [],
+          accessBadge: "Public",
+          accessRequiresLogin: false,
+          priceYes: 0.5,
+          priceNo: 0.5,
+          poolShares: 0,
+          cardShadowTone: "mint",
+          actionRequired: "account_ready",
+        },
+      ],
+    };
+
+    render(
+      <MarketsDiscoveryResultsSection
+        viewer={viewer}
+        result={result}
+        loadError={null}
+        query={query}
+        viewerIsAdmin={false}
+      />
+    );
+
+    expect(screen.getByText("Retired: no action")).toBeInTheDocument();
+  });
+
+  it("renders open-filter empty-state CTAs for admins", () => {
+    const viewer: MarketViewerContext = {
+      userId: "admin-1",
+      isAuthenticated: true,
+      activeOrganizationId: null,
+      hasActiveInstitution: false,
+    };
+    const result: DiscoveryMarketCardsResult = {
+      schemaMissing: false,
+      error: null,
+      markets: [],
+    };
+
+    render(
+      <MarketsDiscoveryResultsSection
+        viewer={viewer}
+        result={result}
+        loadError={null}
+        query={{ ...query, status: "open" }}
+        viewerIsAdmin
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: "No open markets right now" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View all markets" })).toHaveAttribute("href", "/markets");
+    expect(screen.getByRole("link", { name: "Browse finalized markets" })).toHaveAttribute(
+      "href",
+      "/markets?status=finalized&access=all&sort=volume"
+    );
+    expect(screen.getByRole("link", { name: "Create market" })).toHaveAttribute("href", "/create");
+    expect(screen.getByRole("link", { name: "Open market maker" })).toHaveAttribute(
+      "href",
+      "/account/admin/market-maker"
+    );
   });
 });

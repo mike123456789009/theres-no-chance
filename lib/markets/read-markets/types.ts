@@ -31,6 +31,9 @@ export type MarketCardDTO = {
   question: string;
   status: string;
   resolutionMode: string;
+  resolutionOutcome: string | null;
+  finalizedAt: string | null;
+  voidReason: string | null;
   closeTime: string;
   createdAt: string;
   tags: string[];
@@ -189,6 +192,9 @@ export type MarketDiscoveryRow = {
   question: string;
   status: string;
   resolution_mode: string;
+  resolution_outcome: string | null;
+  finalized_at: string | null;
+  void_reason: string | null;
   visibility: string;
   access_rules: unknown;
   creator_id: string;

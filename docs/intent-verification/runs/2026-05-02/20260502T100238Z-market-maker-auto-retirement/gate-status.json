@@ -1,0 +1,27 @@
+{
+  "artifactsRoot": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification",
+  "createdAt": "2026-05-02T10:02:38.253551Z",
+  "deployVerification": false,
+  "events": [
+    {
+      "at": "2026-05-02T10:02:38.253569Z",
+      "status": "initialized"
+    }
+  ],
+  "mode": "strict",
+  "profile": "web-app",
+  "repoRoot": "/Users/michaelcallow/Desktop/theres-no-chance",
+  "requiredChecks": [
+    "lint",
+    "typecheck",
+    "test",
+    "build"
+  ],
+  "reviewMode": "blind-intent",
+  "runDir": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T100238Z-market-maker-auto-retirement",
+  "schemaVersion": 1,
+  "staleReviewDetection": true,
+  "status": "initialized",
+  "updatedAt": "2026-05-02T10:02:38.253561Z",
+  "visualQa": true
+}

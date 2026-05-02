@@ -34,7 +34,13 @@ export default async function MarketsPage({
         viewer={pageData.viewer}
         accountSummary={pageData.accountSummary}
       />
-      <MarketsDiscoveryResultsSection viewer={pageData.viewer} result={pageData.result} loadError={pageData.loadError} />
+      <MarketsDiscoveryResultsSection
+        viewer={pageData.viewer}
+        result={pageData.result}
+        loadError={pageData.loadError}
+        query={pageData.query}
+        viewerIsAdmin={pageData.accountSummary.isAdmin}
+      />
     </main>
   );
 }

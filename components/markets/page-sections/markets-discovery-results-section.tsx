@@ -2,10 +2,10 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import type { DiscoveryMarketCardsResult } from "@/lib/markets/pages/discovery";
-import type { MarketViewerContext } from "@/lib/markets/read-markets";
+import type { MarketDiscoveryQuery, MarketViewerContext } from "@/lib/markets/read-markets";
 import {
   formatDiscoveryDate,
-  formatMarketStatus,
+  formatDiscoveryLifecycleLabel,
   formatPoolShares,
   formatProbabilityPercent,
   shouldWarnAccess,
@@ -16,10 +16,13 @@ type MarketsDiscoveryResultsSectionProps = {
   viewer: MarketViewerContext;
   result: DiscoveryMarketCardsResult;
   loadError: string | null;
+  query: MarketDiscoveryQuery;
+  viewerIsAdmin: boolean;
 };
 
 export function MarketsDiscoveryResultsSection(props: Readonly<MarketsDiscoveryResultsSectionProps>) {
-  const { viewer, result, loadError } = props;
+  const { viewer, result, loadError, query, viewerIsAdmin } = props;
+  const showOpenEmptyState = query.status === "open";
 
   return (
     <div className="markets-product-wrap">
@@ -56,7 +59,19 @@ export function MarketsDiscoveryResultsSection(props: Readonly<MarketsDiscoveryR
       ) : null}
 
       {!loadError && !result.schemaMissing && !result.error && result.markets.length === 0 ? (
-        <p className="markets-empty-state">No markets found for this filter set.</p>
+        <section className="markets-empty-state markets-empty-state-panel" aria-label="No matching markets">
+          <h2>{showOpenEmptyState ? "No open markets right now" : "No markets found for this filter set"}</h2>
+          <p>
+            Markets are generated through the market maker pipeline and may be retired automatically if nobody trades
+            or resolves them before close.
+          </p>
+          <div className="markets-empty-actions">
+            <Link href="/markets">View all markets</Link>
+            <Link href="/markets?status=finalized&access=all&sort=volume">Browse finalized markets</Link>
+            {viewer.isAuthenticated ? <Link href="/create">Create market</Link> : <Link href="/signup">Create account</Link>}
+            {viewerIsAdmin ? <Link href="/account/admin/market-maker">Open market maker</Link> : null}
+          </div>
+        </section>
       ) : null}
 
       {!loadError && !result.schemaMissing && !result.error && result.markets.length > 0 ? (
@@ -74,7 +89,7 @@ export function MarketsDiscoveryResultsSection(props: Readonly<MarketsDiscoveryR
             >
               <div className="market-tile-head">
                 <p className="market-tile-access">{market.accessBadge}</p>
-                <p className="market-tile-status">{formatMarketStatus(market.status)}</p>
+                <p className="market-tile-status">{formatDiscoveryLifecycleLabel(market)}</p>
               </div>
 
               <h2 className="market-tile-question">

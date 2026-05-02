@@ -38,20 +38,28 @@ export async function GET(request: Request) {
   try {
     const service = createServiceClient();
 
-    const [closeSync, resolutionSync, finalizationSync] = await Promise.all([
-      service.rpc("sync_market_close_state", { p_market_id: null }),
-      service.rpc("sync_due_community_resolutions", {
-        p_resolution_window_hours: FIXED_RESOLUTION_WINDOW_HOURS,
-      }),
-      service.rpc("sync_due_community_finalizations", { p_actor_user_id: null }),
-    ]);
+    const closeSync = await service.rpc("sync_market_close_state", { p_market_id: null });
+    const retirementSync = closeSync.error
+      ? { data: 0, error: null }
+      : await service.rpc("retire_no_action_closed_markets", { p_actor_user_id: null });
+    const resolutionSync =
+      closeSync.error || retirementSync.error
+        ? { data: 0, error: null }
+        : await service.rpc("sync_due_community_resolutions", {
+            p_resolution_window_hours: FIXED_RESOLUTION_WINDOW_HOURS,
+          });
+    const finalizationSync =
+      closeSync.error || retirementSync.error || resolutionSync.error
+        ? { data: 0, error: null }
+        : await service.rpc("sync_due_community_finalizations", { p_actor_user_id: null });
 
-    if (closeSync.error || resolutionSync.error || finalizationSync.error) {
+    if (closeSync.error || retirementSync.error || resolutionSync.error || finalizationSync.error) {
       return NextResponse.json(
         {
           error: "Community resolution sync failed.",
           detail:
             closeSync.error?.message ||
+            retirementSync.error?.message ||
             resolutionSync.error?.message ||
             finalizationSync.error?.message ||
             "Unknown RPC error.",
@@ -64,6 +72,7 @@ export async function GET(request: Request) {
       {
         summary: {
           closedMarketsUpdated: toNumber(closeSync.data),
+          noActionMarketsRetired: toNumber(retirementSync.data),
           resolutionStatesProcessed: toNumber(resolutionSync.data),
           autoFinalizedMarkets: toNumber(finalizationSync.data),
         },

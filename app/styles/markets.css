@@ -2,6 +2,53 @@
   flex-shrink: 0;
 }
 
+html[data-ui-style="retro"] .markets-empty-state-panel,
+html:not([data-ui-style="modern"]) .markets-empty-state-panel {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 46rem;
+}
+
+html[data-ui-style="retro"] .markets-empty-state-panel h2,
+html[data-ui-style="retro"] .markets-empty-state-panel p,
+html:not([data-ui-style="modern"]) .markets-empty-state-panel h2,
+html:not([data-ui-style="modern"]) .markets-empty-state-panel p {
+  margin: 0;
+}
+
+html[data-ui-style="retro"] .markets-empty-state-panel h2,
+html:not([data-ui-style="modern"]) .markets-empty-state-panel h2 {
+  font-family: var(--font-retro-ui);
+  font-size: 0.96rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+html[data-ui-style="retro"] .markets-empty-actions,
+html:not([data-ui-style="modern"]) .markets-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.44rem;
+}
+
+html[data-ui-style="retro"] .markets-empty-actions a,
+html:not([data-ui-style="modern"]) .markets-empty-actions a {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: #fff;
+  color: #111;
+  padding: 0.28rem 0.5rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+html[data-ui-style="retro"] .markets-empty-actions a:hover,
+html:not([data-ui-style="modern"]) .markets-empty-actions a:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
 html[data-ui-style="modern"] .markets-product-page {
   background:
     radial-gradient(120% 100% at 100% 0%, rgba(185, 122, 75, 0.08), transparent 54%),
@@ -27,6 +74,7 @@ html[data-ui-style="modern"] .markets-deposit-button,
 html[data-ui-style="modern"] .markets-select-field select,
 html[data-ui-style="modern"] .markets-toolbar-apply,
 html[data-ui-style="modern"] .markets-account-avatar-trigger,
+html[data-ui-style="modern"] .markets-empty-actions a,
 html[data-ui-style="modern"] .market-tile-open {
   border-width: 1px;
   border-color: var(--border-strong);
@@ -184,6 +232,21 @@ html[data-ui-style="modern"] .markets-error-state {
   border-left-width: 2px;
   border-left-color: var(--border-strong);
   color: var(--text-muted);
+}
+
+html[data-ui-style="modern"] .markets-empty-state-panel h2 {
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+html[data-ui-style="modern"] .markets-empty-actions a {
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-elevated);
+  font-family: var(--font-modern-ui);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 html[data-ui-style="modern"] .markets-error-state {

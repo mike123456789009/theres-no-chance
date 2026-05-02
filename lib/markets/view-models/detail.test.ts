@@ -6,6 +6,7 @@ import {
   deriveDetailCapabilities,
   formatCurrency,
   formatDetailDate,
+  formatDetailLifecycleLabel,
   formatDetailStatus,
   formatPercent,
   formatShares,
@@ -22,6 +23,14 @@ describe("detail view-models", () => {
     expect(formatCurrency(15)).toBe("$15.00");
     expect(formatSignedCurrency(-42)).toBe("-$42.00");
     expect(formatSignedCurrency(42)).toBe("+$42.00");
+    expect(
+      formatDetailLifecycleLabel({
+        status: "finalized",
+        resolutionOutcome: "void",
+        finalizedAt: "2026-01-01T00:00:00.000Z",
+        voidReason: "no_activity_at_close",
+      } as MarketDetailDTO)
+    ).toBe("Retired: no action");
   });
 
   it("derives evidence and contribution capabilities from viewer and market state", () => {

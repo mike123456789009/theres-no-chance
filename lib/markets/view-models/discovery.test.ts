@@ -6,6 +6,7 @@ import {
   cleanText,
   formatCurrency,
   formatDiscoveryDate,
+  formatDiscoveryLifecycleLabel,
   formatPoolShares,
   formatProbabilityPercent,
   formatMarketStatus,
@@ -20,6 +21,13 @@ describe("discovery view-models", () => {
     expect(formatPoolShares(1_250_000)).toBe("1.3M");
     expect(formatCurrency(1250.45)).toBe("$1,250.45");
     expect(formatMarketStatus("pending_resolution")).toBe("pending resolution");
+    expect(
+      formatDiscoveryLifecycleLabel({
+        status: "finalized",
+        resolutionOutcome: "void",
+        voidReason: "no_activity_at_close",
+      } as MarketCardDTO)
+    ).toBe("Retired: no action");
   });
 
   it("handles invalid date and string cleaning fallbacks", () => {
