@@ -46,6 +46,11 @@ const ADMIN_NAV_ITEMS: AccountNavItem[] = [
     description: "Proposals and run controls",
   },
   {
+    label: "System check",
+    href: "/account/admin/system-check",
+    description: "Production smoke signals",
+  },
+  {
     label: "Users",
     href: "/account/admin/users",
     description: "Full account histories",

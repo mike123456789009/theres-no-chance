@@ -114,7 +114,7 @@ export async function listDiscoveryMarketCards(options: {
   let request = supabase
     .from("markets")
     .select(
-      "id, question, status, resolution_mode, resolution_outcome, finalized_at, void_reason, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
+      "id, question, status, resolution_mode, resolution_outcome, finalized_at, void_reason, adjudication_required, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
     )
     .in("status", [...DISCOVERABLE_MARKET_STATUSES])
     .limit(MARKET_DISCOVERY_LIMIT);
@@ -160,7 +160,7 @@ export async function listDiscoveryMarketCards(options: {
       let serviceRequest = service
         .from("markets")
         .select(
-          "id, question, status, resolution_mode, resolution_outcome, finalized_at, void_reason, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
+          "id, question, status, resolution_mode, resolution_outcome, finalized_at, void_reason, adjudication_required, visibility, access_rules, creator_id, close_time, created_at, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares)"
         )
         .in("status", [...DISCOVERABLE_MARKET_STATUSES])
         .limit(MARKET_DISCOVERY_LIMIT);
@@ -240,6 +240,8 @@ export async function listDiscoveryMarketCards(options: {
         resolutionOutcome: row.resolution_outcome,
         finalizedAt: row.finalized_at,
         voidReason: row.void_reason,
+        adjudicationRequired: row.adjudication_required === true,
+        openChallengeCount: 0,
         closeTime: row.close_time,
         createdAt: row.created_at,
         tags: normalizeTags(row.tags),

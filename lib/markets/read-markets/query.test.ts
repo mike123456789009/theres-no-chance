@@ -12,6 +12,8 @@ function makeMarket(overrides: Partial<MarketCardDTO> = {}): MarketCardDTO {
     resolutionOutcome: null,
     finalizedAt: null,
     voidReason: null,
+    adjudicationRequired: false,
+    openChallengeCount: 0,
     closeTime: "2026-12-31T00:00:00.000Z",
     createdAt: "2026-02-01T00:00:00.000Z",
     tags: ["crypto", "ethereum"],

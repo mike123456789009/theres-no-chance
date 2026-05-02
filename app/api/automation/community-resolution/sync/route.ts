@@ -20,6 +20,21 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+async function logCommunityResolutionSyncRun(
+  service: ReturnType<typeof createServiceClient>,
+  input: { status: "completed" | "failed"; summary?: Record<string, number>; errorMessage?: string | null }
+) {
+  try {
+    await service.from("community_resolution_sync_runs").insert({
+      status: input.status,
+      summary: input.summary ?? {},
+      error_message: input.errorMessage ?? null,
+    });
+  } catch {
+    // Cron health logging should not make the actual sync fail.
+  }
+}
+
 export async function GET(request: Request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
@@ -53,29 +68,40 @@ export async function GET(request: Request) {
         ? { data: 0, error: null }
         : await service.rpc("sync_due_community_finalizations", { p_actor_user_id: null });
 
+    const summary = {
+      closedMarketsUpdated: toNumber(closeSync.data),
+      noActionMarketsRetired: toNumber(retirementSync.data),
+      resolutionStatesProcessed: toNumber(resolutionSync.data),
+      autoFinalizedMarkets: toNumber(finalizationSync.data),
+    };
+
     if (closeSync.error || retirementSync.error || resolutionSync.error || finalizationSync.error) {
+      const detail =
+        closeSync.error?.message ||
+        retirementSync.error?.message ||
+        resolutionSync.error?.message ||
+        finalizationSync.error?.message ||
+        "Unknown RPC error.";
+      await logCommunityResolutionSyncRun(service, {
+        status: "failed",
+        summary,
+        errorMessage: detail,
+      });
+
       return NextResponse.json(
         {
           error: "Community resolution sync failed.",
-          detail:
-            closeSync.error?.message ||
-            retirementSync.error?.message ||
-            resolutionSync.error?.message ||
-            finalizationSync.error?.message ||
-            "Unknown RPC error.",
+          detail,
         },
         { status: 500 }
       );
     }
 
+    await logCommunityResolutionSyncRun(service, { status: "completed", summary });
+
     return NextResponse.json(
       {
-        summary: {
-          closedMarketsUpdated: toNumber(closeSync.data),
-          noActionMarketsRetired: toNumber(retirementSync.data),
-          resolutionStatesProcessed: toNumber(resolutionSync.data),
-          autoFinalizedMarkets: toNumber(finalizationSync.data),
-        },
+        summary,
       },
       { status: 200 }
     );

@@ -19,6 +19,19 @@ function summarizeRun(run: MarketOperationsHealth["latestPublicRun"]): string {
   return `${run.status} · submitted ${run.proposalCounts.submitted_review} · failed ${run.proposalCounts.submit_failed} · ${formatDate(run.startedAt)}`;
 }
 
+function summarizeAction(action: MarketOperationsHealth["latestProposalApproved"]): string {
+  if (!action) return "No action recorded";
+  const question = action.marketQuestion ? ` · ${action.marketQuestion}` : "";
+  return `${action.action} · ${formatDate(action.createdAt)}${question}`;
+}
+
+function summarizeCommunitySync(sync: MarketOperationsHealth["latestCommunityResolutionSync"]): string {
+  if (!sync) return "No sync recorded";
+  const retired = sync.summary.noActionMarketsRetired;
+  const retiredText = typeof retired === "number" ? ` · retired ${retired}` : "";
+  return `${sync.status} · ${formatDate(sync.ranAt)}${retiredText}`;
+}
+
 export function AdminMarketOperationsHealth(props: Readonly<AdminMarketOperationsHealthProps>) {
   const { health } = props;
   const lifecycleSummary = [
@@ -64,9 +77,19 @@ export function AdminMarketOperationsHealth(props: Readonly<AdminMarketOperation
           Open markets
         </p>
         <p>
-          <strong>{health.closedUnresolvedCount}</strong>
+          <strong>{health.finalizedCount}</strong>
           <br />
-          Closed / unresolved
+          Finalized markets
+        </p>
+        <p>
+          <strong>{health.marketsPendingReview}</strong>
+          <br />
+          Markets pending review
+        </p>
+        <p>
+          <strong>{health.marketsNeedingResolution}</strong>
+          <br />
+          Markets needing resolution
         </p>
         <p>
           <strong>{health.noActionRetirementCandidates}</strong>
@@ -93,30 +116,44 @@ export function AdminMarketOperationsHealth(props: Readonly<AdminMarketOperation
         <div>
           <h3>Automation freshness</h3>
           <p className="create-note">
-            Latest scan: {health.automationFreshness.latestStatus ?? "not recorded"} · started{" "}
-            {formatDate(health.automationFreshness.latestStartedAt)} · completed{" "}
-            {formatDate(health.automationFreshness.latestCompletedAt)}
+            Last market scout run: {health.automationFreshness.latestStatus ?? "not recorded"} · started{" "}
+            {formatDate(health.automationFreshness.latestStartedAt)}
           </p>
           <p className="create-note">Public scan: {summarizeRun(health.latestPublicRun)}</p>
           <p className="create-note">Institution scan: {summarizeRun(health.latestInstitutionRun)}</p>
-          <p className="create-note">Latest cron summary: {health.latestCronSummary ?? "Not persisted yet"}</p>
+          <p className="create-note">Last proposal approved: {summarizeAction(health.latestProposalApproved)}</p>
+          <p className="create-note">Last proposal rejected: {summarizeAction(health.latestProposalRejected)}</p>
+          <p className="create-note">
+            Last community resolution sync: {summarizeCommunitySync(health.latestCommunityResolutionSync)}
+          </p>
         </div>
 
         <div>
-          <h3>Latest failures</h3>
-          {health.latestFailures.length === 0 ? (
-            <p className="create-note">No recent automation failures.</p>
-          ) : (
-            <ul className="admin-health-failure-list">
-              {health.latestFailures.map((failure) => (
-                <li key={failure.id}>
-                  <strong>{failure.scope}</strong> · {failure.status} · {formatDate(failure.startedAt)}
-                  {failure.errorMessage ? <span>{failure.errorMessage}</span> : null}
-                </li>
-              ))}
-            </ul>
-          )}
+          <h3>System check</h3>
+          <p className="create-note">Supabase reachable: {health.readHealth === "ok" ? "yes" : "no"}</p>
+          <p className="create-note">Auth config present: {health.authConfigPresent ? "yes" : "no"}</p>
+          <p className="create-note">
+            Deployment: {health.deployment.commitSha ? health.deployment.commitSha.slice(0, 7) : "hash unavailable"} ·{" "}
+            {health.deployment.commitRef ?? health.deployment.environment ?? "environment unavailable"} · checked{" "}
+            {formatDate(health.checkedAt)}
+          </p>
         </div>
+      </div>
+
+      <div>
+        <h3>Automation failures</h3>
+        {health.latestFailures.length === 0 ? (
+          <p className="create-note">No recent automation failures.</p>
+        ) : (
+          <ul className="admin-health-failure-list">
+            {health.latestFailures.map((failure) => (
+              <li key={failure.id}>
+                <strong>{failure.scope}</strong> · {failure.status} · {formatDate(failure.startedAt)}
+                {failure.errorMessage ? <span>{failure.errorMessage}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

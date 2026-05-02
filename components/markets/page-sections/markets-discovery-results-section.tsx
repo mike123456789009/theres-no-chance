@@ -66,9 +66,9 @@ export function MarketsDiscoveryResultsSection(props: Readonly<MarketsDiscoveryR
             or resolves them before close.
           </p>
           <div className="markets-empty-actions">
-            <Link href="/markets">View all markets</Link>
             <Link href="/markets?status=finalized&access=all&sort=volume">Browse finalized markets</Link>
-            {viewer.isAuthenticated ? <Link href="/create">Create market</Link> : <Link href="/signup">Create account</Link>}
+            {viewer.isAuthenticated ? <Link href="/create">Create a market</Link> : <Link href="/login">Log in to submit a proposal</Link>}
+            <Link href="/markets">Check back after the next market scan</Link>
             {viewerIsAdmin ? <Link href="/account/admin/market-maker">Open market maker</Link> : null}
           </div>
         </section>

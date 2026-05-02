@@ -34,6 +34,8 @@ export type MarketCardDTO = {
   resolutionOutcome: string | null;
   finalizedAt: string | null;
   voidReason: string | null;
+  adjudicationRequired: boolean;
+  openChallengeCount: number;
   closeTime: string;
   createdAt: string;
   tags: string[];
@@ -195,6 +197,7 @@ export type MarketDiscoveryRow = {
   resolution_outcome: string | null;
   finalized_at: string | null;
   void_reason: string | null;
+  adjudication_required: boolean | null;
   visibility: string;
   access_rules: unknown;
   creator_id: string;

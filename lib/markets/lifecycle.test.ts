@@ -9,6 +9,8 @@ describe("market lifecycle labels", () => {
     expect(formatMarketLifecycleLabel({ status: "closed" })).toBe("Closed, awaiting resolution");
     expect(formatMarketLifecycleLabel({ status: "pending_resolution" })).toBe("In community vote");
     expect(formatMarketLifecycleLabel({ status: "resolved" })).toBe("Resolved, awaiting finalization");
+    expect(formatMarketLifecycleLabel({ status: "resolved", adjudicationRequired: true })).toBe("Challenged");
+    expect(formatMarketLifecycleLabel({ status: "pending_resolution", openChallengeCount: 1 })).toBe("Challenged");
   });
 
   it("formats finalized outcomes and no-action retirement distinctly", () => {

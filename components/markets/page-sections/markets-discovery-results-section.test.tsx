@@ -38,6 +38,8 @@ describe("MarketsDiscoveryResultsSection", () => {
           resolutionOutcome: null,
           finalizedAt: null,
           voidReason: null,
+          adjudicationRequired: false,
+          openChallengeCount: 0,
           closeTime: "2026-06-01T00:00:00.000Z",
           createdAt: "2026-01-01T00:00:00.000Z",
           tags: ["testing"],
@@ -87,6 +89,8 @@ describe("MarketsDiscoveryResultsSection", () => {
           resolutionOutcome: "void",
           finalizedAt: "2026-01-02T00:00:00.000Z",
           voidReason: "no_activity_at_close",
+          adjudicationRequired: false,
+          openChallengeCount: 0,
           closeTime: "2026-01-01T00:00:00.000Z",
           createdAt: "2026-01-01T00:00:00.000Z",
           tags: [],
@@ -138,15 +142,39 @@ describe("MarketsDiscoveryResultsSection", () => {
     );
 
     expect(screen.getByRole("heading", { name: "No open markets right now" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View all markets" })).toHaveAttribute("href", "/markets");
     expect(screen.getByRole("link", { name: "Browse finalized markets" })).toHaveAttribute(
       "href",
       "/markets?status=finalized&access=all&sort=volume"
     );
-    expect(screen.getByRole("link", { name: "Create market" })).toHaveAttribute("href", "/create");
+    expect(screen.getByRole("link", { name: "Create a market" })).toHaveAttribute("href", "/create");
+    expect(screen.getByRole("link", { name: "Check back after the next market scan" })).toHaveAttribute(
+      "href",
+      "/markets"
+    );
     expect(screen.getByRole("link", { name: "Open market maker" })).toHaveAttribute(
       "href",
       "/account/admin/market-maker"
     );
+  });
+
+  it("renders proposal login CTA for guests with no open markets", () => {
+    const viewer: MarketViewerContext = {
+      userId: null,
+      isAuthenticated: false,
+      activeOrganizationId: null,
+      hasActiveInstitution: false,
+    };
+
+    render(
+      <MarketsDiscoveryResultsSection
+        viewer={viewer}
+        result={{ schemaMissing: false, error: null, markets: [] }}
+        loadError={null}
+        query={{ ...query, status: "open" }}
+        viewerIsAdmin={false}
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Log in to submit a proposal" })).toHaveAttribute("href", "/login");
   });
 });

@@ -3,6 +3,8 @@ export type MarketLifecycleInput = {
   resolutionOutcome?: string | null;
   finalizedAt?: string | null;
   voidReason?: string | null;
+  adjudicationRequired?: boolean | null;
+  openChallengeCount?: number | null;
 };
 
 function normalize(value: string | null | undefined): string {
@@ -30,6 +32,10 @@ export function formatMarketLifecycleLabel(market: MarketLifecycleInput): string
     if (outcome === "no") return "Finalized: NO";
     if (outcome === "void") return "Finalized: VOID";
     return "Finalized";
+  }
+
+  if (market.adjudicationRequired === true || (market.openChallengeCount ?? 0) > 0) {
+    return "Challenged";
   }
 
   if (status === "open") return "Open for trading";

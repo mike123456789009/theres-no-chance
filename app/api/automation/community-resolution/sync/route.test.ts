@@ -32,7 +32,9 @@ describe("Routes: /api/automation/community-resolution/sync", () => {
       .mockResolvedValueOnce({ data: 3, error: null })
       .mockResolvedValueOnce({ data: 4, error: null })
       .mockResolvedValueOnce({ data: 5, error: null });
-    vi.mocked(createServiceClient).mockReturnValue({ rpc } as unknown as ReturnType<typeof createServiceClient>);
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn(() => ({ insert }));
+    vi.mocked(createServiceClient).mockReturnValue({ rpc, from } as unknown as ReturnType<typeof createServiceClient>);
 
     const response = await GET(
       new Request("http://localhost/api/automation/community-resolution/sync", {
@@ -53,6 +55,12 @@ describe("Routes: /api/automation/community-resolution/sync", () => {
       noActionMarketsRetired: 3,
       resolutionStatesProcessed: 4,
       autoFinalizedMarkets: 5,
+    });
+    expect(from).toHaveBeenCalledWith("community_resolution_sync_runs");
+    expect(insert).toHaveBeenCalledWith({
+      status: "completed",
+      summary: json.summary,
+      error_message: null,
     });
   });
 });
