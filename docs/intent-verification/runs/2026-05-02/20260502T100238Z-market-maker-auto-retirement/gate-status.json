@@ -1,13 +1,37 @@
 {
   "artifactsRoot": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification",
   "createdAt": "2026-05-02T10:02:38.253551Z",
-  "deployVerification": false,
+  "deployVerification": true,
   "events": [
     {
       "at": "2026-05-02T10:02:38.253569Z",
       "status": "initialized"
+    },
+    {
+      "at": "2026-05-02T10:21:31.329262Z",
+      "status": "reviewing"
+    },
+    {
+      "at": "2026-05-02T10:22:27.664129Z",
+      "status": "failed"
+    },
+    {
+      "at": "2026-05-02T10:22:41.504193Z",
+      "status": "stale"
+    },
+    {
+      "at": "2026-05-02T10:22:57.647259Z",
+      "status": "passed"
+    },
+    {
+      "at": "2026-05-02T10:23:21.194593Z",
+      "status": "passed"
     }
   ],
+  "issues": [],
+  "latestReview": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T100238Z-market-maker-auto-retirement/review-01.md",
+  "latestReviewCreatedAt": "2026-05-02T10:21:31.328473Z",
+  "latestReviewHash": "5c8104b3800c5dade4d3813123994300be4024462505f36eef7ce24198b75f4b",
   "mode": "strict",
   "profile": "web-app",
   "repoRoot": "/Users/michaelcallow/Desktop/theres-no-chance",
@@ -20,8 +44,18 @@
   "reviewMode": "blind-intent",
   "runDir": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T100238Z-market-maker-auto-retirement",
   "schemaVersion": 1,
+  "scores": {
+    "Alignment": 94,
+    "Completeness": 93,
+    "Constraint Obedience": 94,
+    "Intent Comparison": 96,
+    "Intent Extraction": 96,
+    "Main intent accuracy": 96,
+    "Scope Discipline": 95
+  },
   "staleReviewDetection": true,
-  "status": "initialized",
-  "updatedAt": "2026-05-02T10:02:38.253561Z",
-  "visualQa": true
+  "status": "passed",
+  "updatedAt": "2026-05-02T10:23:21.194593Z",
+  "visualQa": true,
+  "warnings": []
 }

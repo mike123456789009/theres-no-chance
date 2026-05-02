@@ -8,6 +8,7 @@ Changed:
 5. Added an admin-only market operations health panel to `/account/admin/market-maker`.
 6. Updated `/api/automation/community-resolution/sync` to run close sync, no-action retirement, resolution sync, and finalization sync sequentially and return `noActionMarketsRetired`.
 7. Added a Supabase RPC migration for `retire_no_action_closed_markets(p_actor_user_id uuid default null)`.
+8. Followed live Browser Use QA feedback by tightening empty-state/admin-health CSS so the new controls render correctly in both retro and modern UI modes.
 
 Removed:
 1. Removed the stale local shadow file `lib/markets/read-markets.ts`.
@@ -65,3 +66,4 @@ Files changed:
 Evidence summary:
 1. Local gates passed: lint, public barrel verification, typecheck, full test suite, and production build.
 2. Supabase access was verified and the no-action retirement migration was pushed to the linked production project.
+3. Production deployments for commits `4af2a9f` and `b4a35b0` reached Vercel `Ready`; the latest production alias is `https://theres-no-chance.com`.
