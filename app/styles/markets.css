@@ -2,37 +2,31 @@
   flex-shrink: 0;
 }
 
-html[data-ui-style="retro"] .markets-empty-state-panel,
-html:not([data-ui-style="modern"]) .markets-empty-state-panel {
+.markets-empty-state-panel {
   display: grid;
   gap: 0.5rem;
   max-width: 46rem;
 }
 
-html[data-ui-style="retro"] .markets-empty-state-panel h2,
-html[data-ui-style="retro"] .markets-empty-state-panel p,
-html:not([data-ui-style="modern"]) .markets-empty-state-panel h2,
-html:not([data-ui-style="modern"]) .markets-empty-state-panel p {
+.markets-empty-state-panel h2,
+.markets-empty-state-panel p {
   margin: 0;
 }
 
-html[data-ui-style="retro"] .markets-empty-state-panel h2,
-html:not([data-ui-style="modern"]) .markets-empty-state-panel h2 {
+.markets-empty-state-panel h2 {
   font-family: var(--font-retro-ui);
   font-size: 0.96rem;
   line-height: 1.2;
   text-transform: uppercase;
 }
 
-html[data-ui-style="retro"] .markets-empty-actions,
-html:not([data-ui-style="modern"]) .markets-empty-actions {
+.markets-empty-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.44rem;
 }
 
-html[data-ui-style="retro"] .markets-empty-actions a,
-html:not([data-ui-style="modern"]) .markets-empty-actions a {
+.markets-empty-actions a {
   border: 2px solid var(--ink);
   box-shadow: 3px 3px 0 var(--ink);
   background: #fff;
@@ -43,8 +37,7 @@ html:not([data-ui-style="modern"]) .markets-empty-actions a {
   font-weight: 700;
 }
 
-html[data-ui-style="retro"] .markets-empty-actions a:hover,
-html:not([data-ui-style="modern"]) .markets-empty-actions a:hover {
+.markets-empty-actions a:hover {
   transform: translate(1px, 1px);
   box-shadow: 2px 2px 0 var(--ink);
 }
