@@ -14,12 +14,24 @@
     {
       "at": "2026-05-02T10:33:43.192262Z",
       "status": "passed"
+    },
+    {
+      "at": "2026-05-02T10:36:36.247373Z",
+      "status": "stale"
+    },
+    {
+      "at": "2026-05-02T10:36:40.215728Z",
+      "status": "reviewing"
+    },
+    {
+      "at": "2026-05-02T10:37:03.923622Z",
+      "status": "passed"
     }
   ],
   "issues": [],
-  "latestReview": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T102458Z-admin-market-health-and-status/review-01.md",
-  "latestReviewCreatedAt": "2026-05-02T10:33:11.198592Z",
-  "latestReviewHash": "f5cc19f200eaa673556903596c9fea32bb3575ecc1db34fa197223a61cb1c705",
+  "latestReview": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T102458Z-admin-market-health-and-status/review-02.md",
+  "latestReviewCreatedAt": "2026-05-02T10:36:40.214959Z",
+  "latestReviewHash": "f5a5ac70b3e32e3e23148ebbdce8dec9ceb595028c4f9174c7157358593d02ad",
   "mode": "strict",
   "profile": "web-app",
   "repoRoot": "/Users/michaelcallow/Desktop/theres-no-chance",
@@ -33,17 +45,17 @@
   "runDir": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T102458Z-admin-market-health-and-status",
   "schemaVersion": 1,
   "scores": {
-    "Alignment": 95,
-    "Completeness": 93,
-    "Constraint Obedience": 94,
-    "Intent Comparison": 96,
-    "Intent Extraction": 96,
-    "Main intent accuracy": 96,
-    "Scope Discipline": 95
+    "Alignment": 96,
+    "Completeness": 94,
+    "Constraint Obedience": 95,
+    "Intent Comparison": 97,
+    "Intent Extraction": 97,
+    "Main intent accuracy": 97,
+    "Scope Discipline": 96
   },
   "staleReviewDetection": true,
   "status": "passed",
-  "updatedAt": "2026-05-02T10:33:43.192262Z",
+  "updatedAt": "2026-05-02T10:37:03.923622Z",
   "visualQa": true,
   "warnings": []
 }

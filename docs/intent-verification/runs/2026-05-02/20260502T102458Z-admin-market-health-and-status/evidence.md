@@ -60,14 +60,17 @@
 
 ## Visual QA
 
-1. Pre-deploy browser verification is pending until the committed release is live on production.
-2. Post-deploy browser verification will cover `/markets?status=open`, `/markets`, `/account/admin/market-maker`, `/account/admin/system-check`, and unauthorized cron access.
+1. Browser Use verified `https://theres-no-chance.com/markets?status=open` in the in-app browser. The guest empty state showed `No open markets right now`, `Browse finalized markets`, `Log in to submit a proposal`, and `Check back after the next market scan`.
+2. Browser Use verified `https://theres-no-chance.com/markets` in the in-app browser. Market cards showed the richer lifecycle label `FINALIZED: VOID`.
+3. Browser Use verified `https://theres-no-chance.com/account/admin/system-check` in the in-app browser. The current guest session saw the admin login gate, confirming the system check route is not public.
+4. Browser Use screenshots were captured for the open-market empty state, market card lifecycle labels, and admin system-check access gate.
 
 ## Deployment Verification
 
 1. Pre-deploy local build passed.
 2. Supabase production migration applied before code deployment.
-3. Vercel production deployment readiness will be checked after `git push origin main`.
+3. `git push origin main` deployed commit `e2529e0`.
+4. Vercel production deployment `https://theres-no-chance-r12i6nkeu-mike123456789009s-projects.vercel.app` reached `Ready`.
 
 ## Behavior Evidence
 
@@ -75,12 +78,16 @@
 2. `status=open` empty state now includes `Browse finalized markets`, account-aware proposal/create action, next-scan recovery copy, and admin market maker action when applicable.
 3. Admin health loader can report latest community-resolution sync from persisted run summaries.
 4. Admin system check route is protected by the same admin guard used by other admin pages.
+5. Browser Use verified `/api/automation/community-resolution/sync` still returns `Unauthorized cron request.` without the cron secret.
+6. Browser Use verified `/api/markets?status=all` includes `adjudicationRequired`, `openChallengeCount`, and `voidReason`.
 
 ## Known Limitations
 
 1. The system check shows deployment commit/ref/environment and current check time, not the exact Vercel deployment creation timestamp.
 2. Latest community-resolution sync will show no recorded sync until the automation endpoint runs after this migration.
+3. Authenticated admin-panel content was not visually inspected because the current in-app browser session is a guest session; the admin access gate was verified instead.
 
 ## Intentionally Not Checked
 
 1. Unrelated dirty worktree files under landing, payments, webhooks, and institution/account helper areas were not changed or staged.
+2. Separate desktop and mobile browser widths were not both resized in the in-app browser runtime; the visible responsive viewport was checked with Browser Use screenshots.
