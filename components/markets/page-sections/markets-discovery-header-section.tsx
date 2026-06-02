@@ -52,9 +52,9 @@ export function MarketsDiscoveryHeaderSection(props: Readonly<MarketsDiscoveryHe
     <header className="markets-product-header" aria-label="Markets navigation">
       <div className="markets-header-inner">
         <div className="markets-brand-row">
-          <a className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
+          <Link className="markets-brand-logo" href="/" aria-label="There&apos;s No Chance landing">
             <TncLogo size="compact" decorative />
-          </a>
+          </Link>
 
           <MarketsSearchForm className="markets-search-row markets-search-row-desktop" query={query} />
 
