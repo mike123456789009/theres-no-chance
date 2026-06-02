@@ -13,11 +13,28 @@ import {
 import { resolveInitialUiPalette, resolveInitialUiStyle } from "@/lib/theme/server";
 import { resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
 
+const SITE_URL = "https://theres-no-chance.com";
+const SITE_NAME = "Theres No Chance";
+const SITE_DESCRIPTION = "A local-first prediction market.";
+
 export const metadata: Metadata = {
-  title: "Theres No Chance",
-  description: "A local-first prediction market.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
   alternates: {
-    canonical: "https://theres-no-chance.com/",
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
   },
 };
 

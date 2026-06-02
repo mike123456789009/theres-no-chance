@@ -35,7 +35,7 @@ export function MarketDetailMainSection(props: Readonly<MarketDetailMainSectionP
     <section className="market-detail-shell" aria-label="Market detail">
       <div className="market-detail-top-links">
         <Link href="/markets">← Back to markets</Link>
-        <a href="/">Landing</a>
+        <Link href="/">Landing</Link>
         {viewer.isAuthenticated ? <Link href="/create">Create market</Link> : <Link href="/signup">Create account</Link>}
       </div>
 
