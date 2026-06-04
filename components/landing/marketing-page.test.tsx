@@ -23,5 +23,6 @@ describe("MarketingPage", () => {
     const displayOptions = screen.getByRole("complementary", { name: /display options/i });
     expect(displayOptions).toHaveClass("style-toggle-floating");
     expect(within(displayOptions).getByTestId("style-toggle")).toBeInTheDocument();
+    expect(document.querySelector('script[src="/script.js"]')).toHaveAttribute("crossorigin", "anonymous");
   });
 });

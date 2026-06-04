@@ -183,7 +183,7 @@ export default function MarketingPage() {
         </section>
       </main>
 
-      <Script type="module" src="/script.js" strategy="afterInteractive" />
+      <Script type="module" src="/script.js" strategy="afterInteractive" crossOrigin="anonymous" />
     </>
   );
 }
