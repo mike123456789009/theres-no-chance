@@ -1,6 +1,9 @@
 import Link from "next/link";
+import Script from "next/script";
 
 import { LandingAuthRow } from "@/components/landing/auth-row";
+import { EngineeringProof } from "@/components/landing/engineering-proof";
+import { HeroBootFallback } from "@/components/landing/hero-boot-fallback";
 import { TncLogo } from "@/components/branding/tnc-logo";
 import { StyleToggle } from "@/components/theme/style-toggle";
 
@@ -28,6 +31,7 @@ export default function MarketingPage() {
             <h1 className="sr-only">There&apos;s No Chance</h1>
 
             <div className="hero-3d-wrap" id="hero3d">
+              <HeroBootFallback />
               <canvas id="hero-canvas" aria-hidden="true"></canvas>
             </div>
 
@@ -40,7 +44,7 @@ export default function MarketingPage() {
         <section className="after-scroll">
           <div className="after-content">
             <p className="after-box after-box-secondary reveal-item" data-reveal-delay="0">
-              A local-first prediction market
+              Campus-gated prediction markets for communities that need real settlement rules
             </p>
 
             <div className="feature-columns reveal-item" data-reveal-delay="1" aria-label="Platform features">
@@ -113,11 +117,13 @@ export default function MarketingPage() {
               </p>
             </section>
 
-            <section className="auth-row-wrap reveal-item" data-reveal-delay="3" aria-label="Login and signup">
+            <EngineeringProof />
+
+            <section className="auth-row-wrap reveal-item" data-reveal-delay="4" aria-label="Login and signup">
               <LandingAuthRow />
             </section>
 
-            <section className="faq-wrap reveal-item" data-reveal-delay="4" aria-label="Frequently asked questions">
+            <section className="faq-wrap reveal-item" data-reveal-delay="5" aria-label="Frequently asked questions">
               <details className="faq-expander">
                 <summary className="faq-trigger" aria-controls="faq-content">
                   <span className="faq-plus" aria-hidden="true">
@@ -177,7 +183,7 @@ export default function MarketingPage() {
         </section>
       </main>
 
-      <script type="module" src="/script.js"></script>
+      <Script type="module" src="/script.js" strategy="afterInteractive" />
     </>
   );
 }

@@ -1,0 +1,42 @@
+{
+  "artifactsRoot": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification",
+  "blockerPath": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T093910Z-project-goals-browser-audit/blocker-report.md",
+  "createdAt": "2026-05-02T09:39:10.106958Z",
+  "deployVerification": false,
+  "events": [
+    {
+      "at": "2026-05-02T09:39:10.106975Z",
+      "status": "initialized"
+    },
+    {
+      "at": "2026-05-02T09:48:42.724947Z",
+      "status": "blocked"
+    },
+    {
+      "at": "2026-05-02T09:49:14.919897Z",
+      "status": "failed"
+    },
+    {
+      "at": "2026-05-02T09:49:54.322261Z",
+      "status": "blocked"
+    }
+  ],
+  "issues": [],
+  "mode": "strict",
+  "profile": "web-app",
+  "repoRoot": "/Users/michaelcallow/Desktop/theres-no-chance",
+  "requiredChecks": [
+    "lint",
+    "typecheck",
+    "test",
+    "build"
+  ],
+  "reviewMode": "blind-intent",
+  "runDir": "/Users/michaelcallow/Desktop/theres-no-chance/docs/intent-verification/runs/2026-05-02/20260502T093910Z-project-goals-browser-audit",
+  "schemaVersion": 1,
+  "staleReviewDetection": true,
+  "status": "blocked",
+  "updatedAt": "2026-05-02T09:49:54.322261Z",
+  "visualQa": true,
+  "warnings": []
+}

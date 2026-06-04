@@ -1,0 +1,683 @@
+import { listRecentResearchRunsForAdmin, type AdminResearchRunCard } from "@/lib/automation/market-research/db";
+import { checkUserAdminAccess, getAdminAllowlistEmails } from "@/lib/auth/admin";
+import { marketAccessBadge, normalizeAccessRules } from "@/lib/markets/view-access";
+import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { createServiceClient, getMissingSupabaseServiceEnv } from "@/lib/supabase/service";
+
+export type AdminPageAccessResult =
+  | {
+      ok: true;
+      adminUser: {
+        id: string;
+        email: string | null;
+      };
+      allowlist: string[];
+    }
+  | {
+      ok: false;
+      reason: "missing_server_env" | "unauthenticated" | "forbidden" | "missing_service_env";
+      email?: string | null;
+      allowlist?: string[];
+      missingEnv?: string[];
+    };
+
+export type AdminQueueMarket = {
+  id: string;
+  question: string;
+  status: "review" | "open";
+  closeTime: string;
+  createdAt: string;
+  creatorId: string;
+  tags: string[];
+};
+
+export type ResolutionMarket = {
+  id: string;
+  question: string;
+  status: string;
+  resolutionMode: string;
+  closeTime: string;
+  resolvedAt: string | null;
+  resolutionOutcome: string | null;
+  provisionalOutcome: string | null;
+  resolutionWindowEndsAt: string | null;
+  challengeBonusRate: number;
+  challengeBondAmount: number;
+  listingFeeAmount: number;
+  finalOutcomeChangedByChallenge: boolean;
+  yesBondTotal: number;
+  noBondTotal: number;
+  challenges: ResolutionChallenge[];
+  poolPreview: ResolutionPoolPreview | null;
+  creatorId: string;
+  tags: string[];
+};
+
+export type ResolutionChallenge = {
+  id: string;
+  createdBy: string;
+  status: string;
+  proposedOutcome: string | null;
+  challengeBondAmount: number;
+  reason: string;
+  createdAt: string;
+  expiresAt: string;
+  adjudicatedAt: string | null;
+  isSuccessful: boolean;
+  payoutBonusAmount: number;
+};
+
+export type ResolutionPoolPreview = {
+  P: number;
+  R: number;
+  B: number;
+  RPrime: number;
+  SC: number;
+  SW: number;
+  CW: number;
+};
+
+export type ProposedMarketPreview = {
+  id: string;
+  question: string;
+  description: string;
+  resolvesYesIf: string;
+  resolvesNoIf: string;
+  status: string;
+  visibility: string;
+  accessBadge: string;
+  closeTime: string;
+  createdAt: string;
+  feeBps: number;
+  creatorId: string;
+  tags: string[];
+  priceYes: number;
+  priceNo: number;
+  yesShares: number;
+  noShares: number;
+  poolShares: number;
+  sources: Array<{
+    label: string;
+    url: string;
+    type: string;
+  }>;
+};
+
+type MarketRow = {
+  id: string;
+  question: string;
+  status: "review" | "open";
+  close_time: string;
+  created_at: string;
+  creator_id: string;
+  tags: string[] | null;
+};
+
+type ResolutionMarketRow = {
+  id: string;
+  question: string;
+  status: string;
+  resolution_mode: string;
+  close_time: string;
+  resolved_at: string | null;
+  resolution_outcome: string | null;
+  provisional_outcome: string | null;
+  resolution_window_ends_at: string | null;
+  challenge_bonus_rate: number | string | null;
+  challenge_bond_amount: number | string | null;
+  listing_fee_amount: number | string | null;
+  final_outcome_changed_by_challenge: boolean | null;
+  creator_id: string;
+  tags: string[] | null;
+};
+
+type ResolverBondRow = {
+  id: string;
+  market_id: string;
+  user_id: string;
+  outcome: string;
+  bond_amount: number | string | null;
+};
+
+type ChallengeRow = {
+  id: string;
+  market_id: string;
+  created_by: string;
+  status: string;
+  proposed_outcome: string | null;
+  challenge_bond_amount: number | string | null;
+  reason: string;
+  created_at: string;
+  expires_at: string;
+  adjudicated_at: string | null;
+  is_successful: boolean | null;
+  payout_bonus_amount: number | string | null;
+};
+
+type PositionPreviewRow = {
+  market_id: string;
+  yes_shares: number | string | null;
+  no_shares: number | string | null;
+};
+
+type ProposedMarketRow = {
+  id: string;
+  question: string;
+  description: string;
+  resolves_yes_if: string;
+  resolves_no_if: string;
+  status: string;
+  visibility: string;
+  access_rules: Record<string, unknown> | null;
+  close_time: string;
+  created_at: string;
+  fee_bps: number;
+  creator_id: string;
+  tags: string[] | null;
+  market_amm_state:
+    | {
+        last_price_yes: number | string | null;
+        last_price_no: number | string | null;
+        yes_shares: number | string | null;
+        no_shares: number | string | null;
+      }
+    | Array<{
+        last_price_yes: number | string | null;
+        last_price_no: number | string | null;
+        yes_shares: number | string | null;
+        no_shares: number | string | null;
+      }>
+    | null;
+  market_sources:
+    | Array<{
+        source_label: string;
+        source_url: string;
+        source_type: string;
+      }>
+    | null;
+};
+
+export type AdminResearchRunsResult = {
+  runs: AdminResearchRunCard[];
+  errorMessage: string;
+};
+
+export type AdminVenmoReviewQueueRow = {
+  id: string;
+  createdAt: string;
+  gmailMessageId: string;
+  providerPaymentId: string;
+  grossAmountUsd: number;
+  computedFeeUsd: number;
+  computedNetUsd: number;
+  payerDisplayName: string;
+  payerHandle: string;
+  note: string;
+  extractedInvoiceCode: string;
+  errorMessage: string;
+};
+
+export const DEFAULT_DISPUTE_WINDOW_HOURS = 48;
+export const DEFAULT_RESOLUTION_WINDOW_HOURS = 24;
+
+function toNumber(value: number | string | null | undefined, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+function normalizeAmmState(raw: ProposedMarketRow["market_amm_state"]): {
+  last_price_yes: number | string | null;
+  last_price_no: number | string | null;
+  yes_shares: number | string | null;
+  no_shares: number | string | null;
+} | null {
+  if (!raw) return null;
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  return raw;
+}
+
+export async function guardAdminPageAccess(): Promise<AdminPageAccessResult> {
+  if (!isSupabaseServerEnvConfigured()) {
+    return {
+      ok: false,
+      reason: "missing_server_env",
+      missingEnv: getMissingSupabaseServerEnv(),
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      ok: false,
+      reason: "unauthenticated",
+    };
+  }
+
+  const email = user.email?.toLowerCase() ?? null;
+  const allowlist = getAdminAllowlistEmails();
+  const adminAccess = await checkUserAdminAccess({
+    userId: user.id,
+    email: user.email,
+  });
+
+  if (adminAccess.roleCheckUnavailable && !adminAccess.isAdmin) {
+    return {
+      ok: false,
+      reason: "missing_service_env",
+      email,
+      allowlist,
+      missingEnv: getMissingSupabaseServiceEnv(),
+    };
+  }
+
+  if (!adminAccess.isAdmin) {
+    return {
+      ok: false,
+      reason: "forbidden",
+      email,
+      allowlist,
+    };
+  }
+
+  return {
+    ok: true,
+    adminUser: {
+      id: user.id,
+      email: user.email ?? null,
+    },
+    allowlist,
+  };
+}
+
+export async function loadAdminQueueMarkets(): Promise<{
+  reviewMarkets: AdminQueueMarket[];
+  openMarkets: AdminQueueMarket[];
+  errorMessage: string;
+}> {
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("markets")
+    .select("id, question, status, close_time, created_at, creator_id, tags")
+    .in("status", ["review", "open"])
+    .order("created_at", { ascending: true })
+    .limit(120);
+
+  if (error) {
+    return {
+      reviewMarkets: [],
+      openMarkets: [],
+      errorMessage: error.message,
+    };
+  }
+
+  const rows = (data ?? []) as MarketRow[];
+  const mapped = rows.map((market) => ({
+    id: market.id,
+    question: market.question,
+    status: market.status,
+    closeTime: market.close_time,
+    createdAt: market.created_at,
+    creatorId: market.creator_id,
+    tags: market.tags ?? [],
+  }));
+
+  return {
+    reviewMarkets: mapped.filter((market) => market.status === "review"),
+    openMarkets: mapped.filter((market) => market.status === "open"),
+    errorMessage: "",
+  };
+}
+
+export function getDisputeWindowHours(): number {
+  const parsed = Number(process.env.MARKET_DISPUTE_WINDOW_HOURS);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.max(1, Math.floor(parsed));
+  }
+  return DEFAULT_DISPUTE_WINDOW_HOURS;
+}
+
+export function getResolutionWindowHours(): number {
+  const parsed = Number(process.env.MARKET_RESOLUTION_WINDOW_HOURS);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.max(1, Math.floor(parsed));
+  }
+  return DEFAULT_RESOLUTION_WINDOW_HOURS;
+}
+
+export async function loadResolutionMarkets(): Promise<{
+  readyToResolve: ResolutionMarket[];
+  resolvedMarkets: ResolutionMarket[];
+  errorMessage: string;
+}> {
+  const service = createServiceClient();
+  const nowIso = new Date().toISOString();
+  const resolutionWindowHours = getResolutionWindowHours();
+
+  await service.rpc("sync_market_close_state", { p_market_id: null });
+  await service.rpc("sync_due_community_resolutions", {
+    p_resolution_window_hours: resolutionWindowHours,
+  });
+
+  const { data: readyData, error: readyError } = await service
+    .from("markets")
+    .select(
+      "id, question, status, resolution_mode, close_time, resolved_at, resolution_outcome, provisional_outcome, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, creator_id, tags"
+    )
+    .in("status", ["closed", "open", "trading_halted", "pending_resolution"])
+    .lte("close_time", nowIso)
+    .order("close_time", { ascending: true })
+    .limit(120);
+
+  if (readyError) {
+    return {
+      readyToResolve: [],
+      resolvedMarkets: [],
+      errorMessage: readyError.message,
+    };
+  }
+
+  const { data: resolvedData, error: resolvedError } = await service
+    .from("markets")
+    .select(
+      "id, question, status, resolution_mode, close_time, resolved_at, resolution_outcome, provisional_outcome, resolution_window_ends_at, challenge_bonus_rate, challenge_bond_amount, listing_fee_amount, final_outcome_changed_by_challenge, creator_id, tags"
+    )
+    .eq("status", "resolved")
+    .order("resolved_at", { ascending: false })
+    .limit(120);
+
+  if (resolvedError) {
+    return {
+      readyToResolve: [],
+      resolvedMarkets: [],
+      errorMessage: resolvedError.message,
+    };
+  }
+
+  const rows = [...((readyData ?? []) as ResolutionMarketRow[]), ...((resolvedData ?? []) as ResolutionMarketRow[])];
+  const marketIds = Array.from(new Set(rows.map((row) => row.id)));
+
+  const [bondResult, challengeResult, positionResult] = await Promise.all([
+    marketIds.length
+      ? service
+          .from("market_resolver_bonds")
+          .select("id, market_id, user_id, outcome, bond_amount")
+          .in("market_id", marketIds)
+      : Promise.resolve({ data: [] as ResolverBondRow[], error: null }),
+    marketIds.length
+      ? service
+          .from("market_disputes")
+          .select(
+            "id, market_id, created_by, status, proposed_outcome, challenge_bond_amount, reason, created_at, expires_at, adjudicated_at, is_successful, payout_bonus_amount"
+          )
+          .in("market_id", marketIds)
+      : Promise.resolve({ data: [] as ChallengeRow[], error: null }),
+    marketIds.length
+      ? service.from("positions").select("market_id, yes_shares, no_shares").in("market_id", marketIds)
+      : Promise.resolve({ data: [] as PositionPreviewRow[], error: null }),
+  ]);
+
+  if (bondResult.error) {
+    return {
+      readyToResolve: [],
+      resolvedMarkets: [],
+      errorMessage: bondResult.error.message,
+    };
+  }
+
+  if (challengeResult.error) {
+    return {
+      readyToResolve: [],
+      resolvedMarkets: [],
+      errorMessage: challengeResult.error.message,
+    };
+  }
+
+  if (positionResult.error) {
+    return {
+      readyToResolve: [],
+      resolvedMarkets: [],
+      errorMessage: positionResult.error.message,
+    };
+  }
+
+  const bondsByMarket = new Map<string, ResolverBondRow[]>();
+  const challengesByMarket = new Map<string, ChallengeRow[]>();
+  const positionsByMarket = new Map<string, PositionPreviewRow[]>();
+
+  ((bondResult.data ?? []) as ResolverBondRow[]).forEach((row) => {
+    const existing = bondsByMarket.get(row.market_id) ?? [];
+    existing.push(row);
+    bondsByMarket.set(row.market_id, existing);
+  });
+
+  ((challengeResult.data ?? []) as ChallengeRow[]).forEach((row) => {
+    const existing = challengesByMarket.get(row.market_id) ?? [];
+    existing.push(row);
+    challengesByMarket.set(row.market_id, existing);
+  });
+
+  ((positionResult.data ?? []) as PositionPreviewRow[]).forEach((row) => {
+    const existing = positionsByMarket.get(row.market_id) ?? [];
+    existing.push(row);
+    positionsByMarket.set(row.market_id, existing);
+  });
+
+  const buildPoolPreview = (row: ResolutionMarketRow): ResolutionPoolPreview | null => {
+    if (row.resolution_outcome !== "yes" && row.resolution_outcome !== "no") return null;
+
+    const positionRows = positionsByMarket.get(row.id) ?? [];
+    const bonds = bondsByMarket.get(row.id) ?? [];
+    const challenges = challengesByMarket.get(row.id) ?? [];
+
+    const P = positionRows.reduce((total, position) => {
+      const shares = row.resolution_outcome === "yes" ? position.yes_shares : position.no_shares;
+      return total + Math.max(0, toNumber(shares, 0));
+    }, 0);
+
+    const SC = bonds
+      .filter((bond) => bond.outcome === row.resolution_outcome)
+      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+    const SW = bonds
+      .filter((bond) => bond.outcome !== row.resolution_outcome)
+      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+    const CW = challenges
+      .filter((challenge) => challenge.status === "rejected")
+      .reduce((total, challenge) => total + Math.max(0, toNumber(challenge.challenge_bond_amount, 0)), 0);
+
+    const resolutionFee = Math.max(0, Number((P * 0.005).toFixed(6)));
+    const listingFee = Math.max(0, toNumber(row.listing_fee_amount, 0.5));
+    const R = Math.max(0, Number((resolutionFee + listingFee + SW + CW).toFixed(6)));
+    const hasUpheld = challenges.some((challenge) => challenge.status === "upheld");
+    const bonusRate = Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1)));
+    const B = hasUpheld ? Number((R * bonusRate).toFixed(6)) : 0;
+    const RPrime = Math.max(0, Number((R - B).toFixed(6)));
+
+    return {
+      P: Number(P.toFixed(6)),
+      R,
+      B,
+      RPrime,
+      SC: Number(SC.toFixed(6)),
+      SW: Number(SW.toFixed(6)),
+      CW: Number(CW.toFixed(6)),
+    };
+  };
+
+  const mapRow = (row: ResolutionMarketRow): ResolutionMarket => {
+    const marketBonds = bondsByMarket.get(row.id) ?? [];
+    const marketChallenges = challengesByMarket.get(row.id) ?? [];
+    const yesBondTotal = marketBonds
+      .filter((bond) => bond.outcome === "yes")
+      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+    const noBondTotal = marketBonds
+      .filter((bond) => bond.outcome === "no")
+      .reduce((total, bond) => total + Math.max(0, toNumber(bond.bond_amount, 0)), 0);
+
+    return {
+      id: row.id,
+      question: row.question,
+      status: row.status,
+      resolutionMode: row.resolution_mode,
+      closeTime: row.close_time,
+      resolvedAt: row.resolved_at,
+      resolutionOutcome: row.resolution_outcome,
+      provisionalOutcome: row.provisional_outcome,
+      resolutionWindowEndsAt: row.resolution_window_ends_at,
+      challengeBonusRate: Math.max(0, Math.min(1, toNumber(row.challenge_bonus_rate, 0.1))),
+      challengeBondAmount: Math.max(0, toNumber(row.challenge_bond_amount, 1)),
+      listingFeeAmount: Math.max(0, toNumber(row.listing_fee_amount, 0.5)),
+      finalOutcomeChangedByChallenge: row.final_outcome_changed_by_challenge === true,
+      yesBondTotal: Number(yesBondTotal.toFixed(6)),
+      noBondTotal: Number(noBondTotal.toFixed(6)),
+      challenges: marketChallenges.map((challenge) => ({
+        id: challenge.id,
+        createdBy: challenge.created_by,
+        status: challenge.status,
+        proposedOutcome: challenge.proposed_outcome,
+        challengeBondAmount: Math.max(0, toNumber(challenge.challenge_bond_amount, 0)),
+        reason: challenge.reason,
+        createdAt: challenge.created_at,
+        expiresAt: challenge.expires_at,
+        adjudicatedAt: challenge.adjudicated_at,
+        isSuccessful: challenge.is_successful === true,
+        payoutBonusAmount: toNumber(challenge.payout_bonus_amount, 0),
+      })),
+      poolPreview: buildPoolPreview(row),
+      creatorId: row.creator_id,
+      tags: row.tags ?? [],
+    };
+  };
+
+  return {
+    readyToResolve: ((readyData ?? []) as ResolutionMarketRow[]).map(mapRow),
+    resolvedMarkets: ((resolvedData ?? []) as ResolutionMarketRow[]).map(mapRow),
+    errorMessage: "",
+  };
+}
+
+export async function loadResearchRuns(limit = 20): Promise<AdminResearchRunsResult> {
+  try {
+    const runs = await listRecentResearchRunsForAdmin(limit);
+    return {
+      runs,
+      errorMessage: "",
+    };
+  } catch (error) {
+    return {
+      runs: [],
+      errorMessage: error instanceof Error ? error.message : "Unable to load research runs.",
+    };
+  }
+}
+
+export async function loadProposedMarketPreviews(limit = 60): Promise<{
+  proposals: ProposedMarketPreview[];
+  errorMessage: string;
+}> {
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("markets")
+    .select(
+      "id, question, description, resolves_yes_if, resolves_no_if, status, visibility, access_rules, close_time, created_at, fee_bps, creator_id, tags, market_amm_state(last_price_yes, last_price_no, yes_shares, no_shares), market_sources(source_label, source_url, source_type)"
+    )
+    .eq("status", "review")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return {
+      proposals: [],
+      errorMessage: error.message,
+    };
+  }
+
+  const rows = (data ?? []) as ProposedMarketRow[];
+
+  return {
+    proposals: rows.map((row) => {
+      const amm = normalizeAmmState(row.market_amm_state);
+      const priceYes = Math.max(0, Math.min(1, toNumber(amm?.last_price_yes, 0.5)));
+      const priceNo = Math.max(0, Math.min(1, toNumber(amm?.last_price_no, 1 - priceYes)));
+      const yesShares = Math.max(0, toNumber(amm?.yes_shares, 0));
+      const noShares = Math.max(0, toNumber(amm?.no_shares, 0));
+      const accessRules = normalizeAccessRules(row.access_rules);
+      return {
+        id: row.id,
+        question: row.question,
+        description: row.description,
+        resolvesYesIf: row.resolves_yes_if,
+        resolvesNoIf: row.resolves_no_if,
+        status: row.status,
+        visibility: row.visibility,
+        accessBadge: marketAccessBadge(row.visibility, accessRules),
+        closeTime: row.close_time,
+        createdAt: row.created_at,
+        feeBps: row.fee_bps,
+        creatorId: row.creator_id,
+        tags: row.tags ?? [],
+        priceYes,
+        priceNo,
+        yesShares,
+        noShares,
+        poolShares: yesShares + noShares,
+        sources: (row.market_sources ?? []).map((source) => ({
+          label: source.source_label,
+          url: source.source_url,
+          type: source.source_type,
+        })),
+      };
+    }),
+    errorMessage: "",
+  };
+}
+
+export async function loadAdminVenmoReviewQueue(limit = 200): Promise<{
+  rows: AdminVenmoReviewQueueRow[];
+  errorMessage: string;
+}> {
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("venmo_incoming_payments")
+    .select(
+      "id, created_at, gmail_message_id, provider_payment_id, gross_amount_usd, computed_fee_usd, computed_net_usd, payer_display_name, payer_handle, note, extracted_invoice_code, error_message"
+    )
+    .eq("match_status", "review_required")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return {
+      rows: [],
+      errorMessage: error.message,
+    };
+  }
+
+  const rows = ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id ?? ""),
+    createdAt: String(row.created_at ?? ""),
+    gmailMessageId: String(row.gmail_message_id ?? ""),
+    providerPaymentId: String(row.provider_payment_id ?? ""),
+    grossAmountUsd: toNumber(row.gross_amount_usd as number | string | null, 0),
+    computedFeeUsd: toNumber(row.computed_fee_usd as number | string | null, 0),
+    computedNetUsd: toNumber(row.computed_net_usd as number | string | null, 0),
+    payerDisplayName: String(row.payer_display_name ?? ""),
+    payerHandle: String(row.payer_handle ?? ""),
+    note: String(row.note ?? ""),
+    extractedInvoiceCode: String(row.extracted_invoice_code ?? ""),
+    errorMessage: String(row.error_message ?? ""),
+  }));
+
+  return {
+    rows,
+    errorMessage: "",
+  };
+}

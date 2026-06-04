@@ -2,7 +2,7 @@ html[data-ui-style="retro"] {
   --bg: #ececec;
   --ink: #101010;
 
-  --red-face: #bc595e;
+  --red-face: #ad464d;
   --red-side: #955158;
   --gold-face: #c6a727;
   --gold-side: #c6a727;
@@ -24,7 +24,7 @@ html[data-ui-style="retro"] {
   --text-soft: #686868;
   --text-inverse: #fff;
 
-  --accent-primary: #bc595e;
+  --accent-primary: #ad464d;
   --accent-secondary: #c6a727;
   --accent-tertiary: #8db8e8;
 

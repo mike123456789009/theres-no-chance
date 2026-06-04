@@ -15,7 +15,8 @@ import { resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
   title: "Theres No Chance",
-  description: "A local-first prediction market.",
+  description:
+    "Campus-gated prediction markets with institution access, wallet flows, AI-assisted market research, and community resolution.",
   alternates: {
     canonical: "https://theres-no-chance.com/",
   },
