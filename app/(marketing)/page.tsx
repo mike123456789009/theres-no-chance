@@ -16,9 +16,9 @@ export default function MarketingPage() {
 
       <TncLogo className="tnc-logo" decorative />
 
-      <div className="style-toggle-floating style-toggle-floating-marketing">
+      <aside className="style-toggle-floating style-toggle-floating-marketing" aria-label="Display options">
         <StyleToggle />
-      </div>
+      </aside>
 
       <div className="scroll-cue" aria-hidden="true">
         <span className="scroll-cue-text">SCROLL</span>
