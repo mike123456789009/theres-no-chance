@@ -1,5 +1,6 @@
-import type { TradeExecuteRpcResult, TradeQuoteRpcResult } from "@/lib/markets/trade-engine";
+import type { TradeExecution, TradeQuote } from "@/lib/markets/trade-contract";
 import type { MarketDetailDTO, MarketViewerContext } from "@/lib/markets/read-markets";
+import type { InstitutionAccessSnapshot } from "@/lib/institutions/contracts";
 
 export function createMarketDetailFixture(overrides: Partial<MarketDetailDTO> = {}): MarketDetailDTO {
   return {
@@ -74,7 +75,7 @@ export function createOkMarketDetailResult(overrides: Partial<MarketDetailDTO> =
   };
 }
 
-export function createTradeQuoteFixture(overrides: Partial<TradeQuoteRpcResult> = {}): TradeQuoteRpcResult {
+export function createTradeQuoteFixture(overrides: Partial<TradeQuote> = {}): TradeQuote {
   return {
     marketId: "test-market-123",
     side: "yes",
@@ -94,7 +95,7 @@ export function createTradeQuoteFixture(overrides: Partial<TradeQuoteRpcResult> 
   };
 }
 
-export function createTradeExecutionFixture(overrides: Partial<TradeExecuteRpcResult> = {}): TradeExecuteRpcResult {
+export function createTradeExecutionFixture(overrides: Partial<TradeExecution> = {}): TradeExecution {
   return {
     ...createTradeQuoteFixture(),
     reused: false,
@@ -115,6 +116,86 @@ export function createViewerContextFixture(overrides: Partial<MarketViewerContex
     userId: "user-123",
     activeOrganizationId: null,
     hasActiveInstitution: false,
+    ...overrides,
+  };
+}
+
+export function createRouteRequest(
+  url: string,
+  options: {
+    method?: string;
+    body?: unknown;
+    headers?: HeadersInit;
+  } = {}
+): Request {
+  const headers = new Headers(options.headers);
+  if (options.body !== undefined && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
+  return new Request(url, {
+    method: options.method ?? (options.body === undefined ? "GET" : "POST"),
+    headers,
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+}
+
+export function createMockSupabaseAuthUser(overrides: { id?: string; email?: string | null } = {}) {
+  return {
+    id: overrides.id ?? "user-123",
+    email: overrides.email ?? "user@example.edu",
+  };
+}
+
+export function createMockSupabaseAuth(overrides: { id?: string; email?: string | null; error?: unknown } = {}) {
+  return {
+    getUser: async () => ({
+      data: {
+        user: overrides.error ? null : createMockSupabaseAuthUser(overrides),
+      },
+      error: overrides.error ?? null,
+    }),
+  };
+}
+
+export function createInstitutionAccessSnapshotFixture(
+  overrides: Partial<InstitutionAccessSnapshot> = {}
+): InstitutionAccessSnapshot {
+  return {
+    activeMembership: {
+      organizationId: "org-123",
+      organizationName: "Alpha University",
+      organizationSlug: "alpha-university",
+      verifiedAt: "2026-01-01T00:00:00.000Z",
+    },
+    verifiedInstitutionEmails: [],
+    pendingChallenge: null,
+    canCreateInstitutionMarkets: true,
+    ...overrides,
+  };
+}
+
+export function createVenmoPaymentFixture(
+  overrides: Partial<{
+    id: string;
+    paymentId: string;
+    gmailMessageId: string;
+    venmoTransactionId: string;
+    payerHandle: string;
+    amountUsd: number;
+    note: string;
+    paidAt: string;
+  }> = {}
+) {
+  return {
+    id: "venmo-payment-123",
+    paymentId: "payment-123",
+    gmailMessageId: "msg-123",
+    venmoTransactionId: "tx-123",
+    payerHandle: "@example",
+    amountUsd: 25,
+    note: "Payment note VC-ABCD23",
+    paidAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }

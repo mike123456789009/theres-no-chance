@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { parseAdminJsonBody, requireInstitutionAdminService, requireUuid } from "@/lib/admin/institution-route-helpers";
 import { isUniqueViolation, isUuidLike, normalizeInstitutionDomain } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { jsonError } from "@/lib/api/http-errors";
+import { cleanText, parseOptionalBoolean } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,67 +20,39 @@ type RouteContext = {
   }>;
 };
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function parseBoolean(value: unknown): boolean | null {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-  }
-  return null;
-}
-
 export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution domain edits are unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const admin = await requireInstitutionAdminService("Institution domain edits are unavailable: missing service role configuration.");
+  if (!admin.ok) return admin.response;
 
   const { domainId } = await context.params;
-  if (!isUuidLike(domainId)) {
-    return NextResponse.json({ error: "Invalid domain id." }, { status: 400 });
-  }
+  const domainUuid = requireUuid(domainId, "domain id");
+  if (!domainUuid.ok) return domainUuid.response;
 
-  let body: DomainUpdateBody;
-  try {
-    body = (await request.json()) as DomainUpdateBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseAdminJsonBody<DomainUpdateBody>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
 
   const normalizedDomain = body.domain === undefined ? undefined : normalizeInstitutionDomain(body.domain);
   if (body.domain !== undefined && !normalizedDomain) {
-    return NextResponse.json({ error: "Domain must be a valid .edu domain." }, { status: 400 });
+    return jsonError(400, "Domain must be a valid .edu domain.");
   }
 
-  const allowSubdomains = body.allowSubdomains === undefined ? null : parseBoolean(body.allowSubdomains);
+  const allowSubdomains = body.allowSubdomains === undefined ? null : parseOptionalBoolean(body.allowSubdomains);
   if (body.allowSubdomains !== undefined && allowSubdomains === null) {
-    return NextResponse.json({ error: "allowSubdomains must be a boolean." }, { status: 400 });
+    return jsonError(400, "allowSubdomains must be a boolean.");
   }
 
-  const organizationId = body.organizationId === undefined ? undefined : clean(body.organizationId);
+  const organizationId = body.organizationId === undefined ? undefined : cleanText(body.organizationId);
   if (organizationId !== undefined && !isUuidLike(organizationId)) {
-    return NextResponse.json({ error: "organizationId must be a valid UUID." }, { status: 400 });
+    return jsonError(400, "organizationId must be a valid UUID.");
   }
 
   if (normalizedDomain === undefined && allowSubdomains === null && organizationId === undefined) {
-    return NextResponse.json({ error: "At least one domain field must be updated." }, { status: 400 });
+    return jsonError(400, "At least one domain field must be updated.");
   }
 
   try {
-    const service = createServiceClient();
+    const { service, adminUser } = admin.value;
     const { data: existing, error: existingError } = await service
       .from("organization_domains")
       .select("id, organization_id, domain, allow_subdomains")
@@ -145,7 +118,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     await service.from("admin_action_log").insert({
-      admin_user_id: auth.adminUser.id,
+      admin_user_id: adminUser.id,
       action: "edit_institution_domain",
       target_type: "organization_domain",
       target_id: domainId,

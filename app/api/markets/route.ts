@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 
 import { getServerEnvReadiness, getServiceEnvReadiness } from "@/lib/api/env-guards";
 import { jsonEnvUnavailable, jsonError, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
-import { serializeMarketAccessRules, withEnforcedOrganizationId } from "@/lib/markets/access-rules";
+import { parseJsonBody } from "@/lib/api/route-primitives";
+import { withEnforcedOrganizationId } from "@/lib/markets/access-rules";
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
+import { createMarketWithSourcesAndFee } from "@/lib/markets/create-market-service";
 import { extractRequiredOrganizationId, hasInstitutionAccessRule } from "@/lib/markets/view-access";
 import {
   getMarketViewerContext,
@@ -60,14 +62,10 @@ export async function POST(request: Request) {
     return jsonEnvUnavailable("Market creation is unavailable: missing Supabase environment variables.", serverEnv.missingEnv);
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    return jsonError(400, "Request body must be valid JSON.");
-  }
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) return parsed.response;
 
-  const validation = validateCreateMarketPayload(payload);
+  const validation = validateCreateMarketPayload(parsed.value);
   if (!validation.ok) {
     return jsonError(400, "Validation failed.", { details: validation.errors });
   }
@@ -122,88 +120,47 @@ export async function POST(request: Request) {
     }
 
     const marketStatus = validation.data.submissionMode === "review" ? "review" : "draft";
-
-    const { data: market, error: marketError } = await supabase
-      .from("markets")
-      .insert({
-        question: validation.data.question,
-        description: validation.data.description,
-        resolves_yes_if: validation.data.resolvesYesIf,
-        resolves_no_if: validation.data.resolvesNoIf,
-        close_time: validation.data.closeTime,
-        expected_resolution_time: validation.data.expectedResolutionTime,
-        evidence_rules: validation.data.evidenceRules,
-        dispute_rules: validation.data.disputeRules,
-        fee_bps: validation.data.feeBps,
-        status: marketStatus,
-        visibility: validation.data.visibility,
-        resolution_mode: validation.data.resolutionMode,
-        access_rules: serializeMarketAccessRules(enforcedAccessRules),
-        tags: validation.data.tags,
-        risk_flags: validation.data.riskFlags,
-        creator_id: user.id,
-      })
-      .select("id, status")
-      .single();
-
-    if (marketError || !market) {
-      return jsonError(500, "Unable to create market.", {
-        detail: marketError?.message ?? "Unknown insert failure.",
-      });
-    }
-
-    if (validation.data.sources.length > 0) {
-      const sourceRows = validation.data.sources.map((source) => ({
-        market_id: market.id,
-        source_label: source.label,
-        source_url: source.url,
-        source_type: source.type,
-      }));
-
-      const { error: sourceError } = await supabase.from("market_sources").insert(sourceRows);
-      if (sourceError) {
-        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
-
-        return jsonError(500, "Unable to save market sources.", { detail: sourceError.message });
-      }
-    }
-
+    let listingFeeClient = null;
+    let listingFeeAmount: number | null = null;
     if (validation.data.submissionMode === "review") {
       const serviceEnv = getServiceEnvReadiness();
       if (!serviceEnv.isConfigured) {
-        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
         return jsonEnvUnavailable(
           "Market submission is unavailable: missing service role configuration for listing fees.",
           serviceEnv.missingEnv
         );
       }
 
-      const service = createServiceClient();
-      const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {
-        p_market_id: market.id,
-        p_user_id: user.id,
-        p_amount: 0.5,
-      });
+      listingFeeClient = createServiceClient();
+      listingFeeAmount = 0.5;
+    }
 
-      if (listingFeeError) {
-        await supabase.from("market_sources").delete().eq("market_id", market.id);
-        await supabase.from("markets").delete().eq("id", market.id).eq("creator_id", user.id);
+    const created = await createMarketWithSourcesAndFee({
+      db: supabase,
+      listingFeeClient,
+      creatorId: user.id,
+      payload: {
+        ...validation.data,
+        accessRules: enforcedAccessRules,
+      },
+      status: marketStatus,
+      listingFeeAmount,
+      messages: {
+        marketInsert: "Unable to create market.",
+        sourceInsert: "Unable to save market sources.",
+        listingFee: "Unable to charge market listing fee.",
+        insufficientFunds: "Insufficient wallet balance for listing fee.",
+      },
+    });
 
-        const normalizedMessage = listingFeeError.message.toLowerCase();
-        if (normalizedMessage.includes("[listing_funds]")) {
-          return jsonError(409, "Insufficient wallet balance for listing fee.", {
-            detail: listingFeeError.message,
-          });
-        }
-
-        return jsonError(500, "Unable to charge market listing fee.", { detail: listingFeeError.message });
-      }
+    if (!created.ok) {
+      return jsonError(created.status, created.error, { detail: created.detail });
     }
 
     return NextResponse.json(
       {
-        marketId: market.id,
-        status: market.status,
+        marketId: created.market.id,
+        status: created.market.status,
         submissionMode: validation.data.submissionMode,
         resolutionMode: validation.data.resolutionMode,
         message:

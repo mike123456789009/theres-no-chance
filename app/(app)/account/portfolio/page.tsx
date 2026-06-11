@@ -1,87 +1,40 @@
 import Link from "next/link";
 
+import { AccountLoginRequiredPanel, AccountUnavailablePanel } from "@/components/account/account-state-panels";
+import { formatCurrency, formatDate, formatLabel, formatPercent, formatSignedCurrency } from "@/lib/account/formatters";
+import { loadAccountPageContext } from "@/lib/account/page-context";
 import { getPortfolioSnapshot } from "@/lib/markets/portfolio";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatSignedCurrency(value: number): string {
-  if (value === 0) return formatCurrency(0);
-  const absolute = formatCurrency(Math.abs(value));
-  return value > 0 ? `+${absolute}` : `-${absolute}`;
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatStatus(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 export default async function PortfolioPage() {
-  if (!isSupabaseServerEnvConfigured()) {
-    const missingEnv = getMissingSupabaseServerEnv();
-
+  const context = await loadAccountPageContext();
+  if (!context.ok && context.reason === "env") {
     return (
-      <section className="account-panel account-panel-warning" aria-label="Portfolio configuration error">
-        <p className="create-kicker">Portfolio</p>
-        <h1 className="create-title">Portfolio Unavailable</h1>
-        <p className="create-copy">Configure Supabase server environment values before loading portfolio data.</p>
-        <p className="create-copy">
-          Missing env vars: <code>{missingEnv.join(", ")}</code>
-        </p>
-        <p className="create-copy">
-          Continue to <Link href="/markets">markets</Link>
-        </p>
-      </section>
+      <AccountUnavailablePanel
+        kicker="Portfolio"
+        title="Portfolio Unavailable"
+        copy="Configure Supabase server environment values before loading portfolio data."
+        missingEnv={context.missingEnv}
+        continueHref="/markets"
+        continueLabel="markets"
+        ariaLabel="Portfolio configuration error"
+      />
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!context.ok) {
     return (
-      <section className="account-panel" aria-label="Portfolio login required">
-        <p className="create-kicker">Portfolio</p>
-        <h1 className="create-title">Log in to view portfolio</h1>
-        <p className="create-copy">Portfolio holdings, P&amp;L, and trade history require an authenticated account.</p>
-        <div className="create-actions account-actions-top">
-          <Link className="create-submit create-submit-muted" href="/login">
-            Log in
-          </Link>
-          <Link className="create-submit" href="/signup">
-            Create account
-          </Link>
-          <Link className="create-submit create-submit-muted" href="/markets">
-            Back to markets
-          </Link>
-        </div>
-      </section>
+      <AccountLoginRequiredPanel
+        kicker="Portfolio"
+        title="Log in to view portfolio"
+        copy="Portfolio holdings, P&amp;L, and trade history require an authenticated account."
+        ariaLabel="Portfolio login required"
+      />
     );
   }
 
+  const { supabase, user } = context;
   let snapshot: Awaited<ReturnType<typeof getPortfolioSnapshot>> | null = null;
   let loadError: string | null = null;
 
@@ -195,7 +148,7 @@ export default async function PortfolioPage() {
                     <td>
                       <Link href={`/markets/${position.marketId}`}>{position.question}</Link>
                     </td>
-                    <td>{formatStatus(position.status)}</td>
+                    <td>{formatLabel(position.status)}</td>
                     <td className="is-right">
                       {position.yesShares.toLocaleString("en-US", { maximumFractionDigits: 2 })} @{" "}
                       {position.averageEntryPriceYes === null ? "N/A" : formatPercent(position.averageEntryPriceYes)}

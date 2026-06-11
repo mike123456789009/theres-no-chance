@@ -1,7 +1,10 @@
 import Link from "next/link";
 
+import { AccountLoginRequiredPanel, AccountUnavailablePanel } from "@/components/account/account-state-panels";
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { displayNameFallback, formatCurrency, toNumber } from "@/lib/account/formatters";
+import { loadAccountPageContext } from "@/lib/account/page-context";
+import { cleanText } from "@/lib/shared/primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -16,77 +19,32 @@ type WalletRow = {
   reserved_balance: number | string | null;
 } | null;
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toNumber(value: number | string | null | undefined, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function displayNameFallback(email: string | null | undefined): string {
-  const normalized = clean(email);
-  if (!normalized.includes("@")) return "Trader";
-  const [name] = normalized.split("@");
-  return clean(name) || "Trader";
-}
-
 export default async function AccountOverviewPage() {
-  if (!isSupabaseServerEnvConfigured()) {
-    const missingEnv = getMissingSupabaseServerEnv();
-
+  const context = await loadAccountPageContext();
+  if (!context.ok && context.reason === "env") {
     return (
-      <section className="account-panel account-panel-warning" aria-label="Account configuration error">
-        <p className="create-kicker">Account</p>
-        <h1 className="create-title">Account Unavailable</h1>
-        <p className="create-copy">Configure Supabase server environment values before loading account details.</p>
-        <p className="create-copy">
-          Missing env vars: <code>{missingEnv.join(", ")}</code>
-        </p>
-      </section>
+      <AccountUnavailablePanel
+        kicker="Account"
+        title="Account Unavailable"
+        copy="Configure Supabase server environment values before loading account details."
+        missingEnv={context.missingEnv}
+        ariaLabel="Account configuration error"
+      />
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!context.ok) {
     return (
-      <section className="account-panel" aria-label="Account login required">
-        <p className="create-kicker">Account</p>
-        <h1 className="create-title">Log in to open account center</h1>
-        <p className="create-copy">Manage wallet, holdings, and profile settings from a single view after authentication.</p>
-        <div className="create-actions account-actions-top">
-          <Link className="create-submit create-submit-muted" href="/login">
-            Log in
-          </Link>
-          <Link className="create-submit" href="/signup">
-            Create account
-          </Link>
-          <Link className="create-submit create-submit-muted" href="/markets">
-            Back to markets
-          </Link>
-        </div>
-      </section>
+      <AccountLoginRequiredPanel
+        kicker="Account"
+        title="Log in to open account center"
+        copy="Manage wallet, holdings, and profile settings from a single view after authentication."
+        ariaLabel="Account login required"
+      />
     );
   }
 
+  const { supabase, user } = context;
   const [walletResult, profileResult] = await Promise.all([
     supabase.from("wallet_accounts").select("available_balance, reserved_balance").eq("user_id", user.id).maybeSingle(),
     supabase.from("profiles").select("display_name, avatar_url, ui_style").eq("id", user.id).maybeSingle(),
@@ -99,11 +57,11 @@ export default async function AccountOverviewPage() {
   const reservedUsd = Math.max(0, toNumber(wallet?.reserved_balance, 0));
   const totalUsd = cashUsd + reservedUsd;
 
-  const metadataDisplayName = clean((user.user_metadata as Record<string, unknown> | undefined)?.display_name);
-  const metadataFullName = clean((user.user_metadata as Record<string, unknown> | undefined)?.full_name);
-  const displayName = clean(profile?.display_name) || metadataDisplayName || metadataFullName || displayNameFallback(user.email);
+  const metadataDisplayName = cleanText((user.user_metadata as Record<string, unknown> | undefined)?.display_name);
+  const metadataFullName = cleanText((user.user_metadata as Record<string, unknown> | undefined)?.full_name);
+  const displayName = cleanText(profile?.display_name) || metadataDisplayName || metadataFullName || displayNameFallback(user.email);
 
-  const avatarCandidate = clean(profile?.avatar_url) || clean((user.user_metadata as Record<string, unknown> | undefined)?.avatar_url);
+  const avatarCandidate = cleanText(profile?.avatar_url) || cleanText((user.user_metadata as Record<string, unknown> | undefined)?.avatar_url);
   const avatarUrl = isPixelAvatarUrl(avatarCandidate) ? avatarCandidate : PIXEL_AVATAR_OPTIONS[0].url;
 
   return (

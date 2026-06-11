@@ -1,5 +1,6 @@
 @import "./styles/base.css";
 @import "./styles/tokens.css";
+@import "./styles/controls.css";
 @import "./styles/theme-retro.css";
 @import "./styles/theme-modern.css";
 @import "./styles/landing.css";

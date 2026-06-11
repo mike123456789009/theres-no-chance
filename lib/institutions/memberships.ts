@@ -2,8 +2,27 @@ import {
   INSTITUTION_CHALLENGE_MAX_ATTEMPTS,
   INSTITUTION_CHALLENGE_RESEND_COOLDOWN_SECONDS,
 } from "@/lib/institutions/access";
+import type { InstitutionAccessSnapshot } from "@/lib/institutions/contracts";
 import { asArray, extractOrganization, getOrganizationById } from "@/lib/institutions/domain-resolution";
 import { createServiceClient } from "@/lib/supabase/service";
+
+export type { InstitutionAccessSnapshot } from "@/lib/institutions/contracts";
+
+const ORGANIZATION_SELECT = "organizations(id, name, slug)";
+const USER_INSTITUTION_EMAIL_SELECT = `id, user_id, email, domain, organization_id, status, verified_at, ${ORGANIZATION_SELECT}`;
+
+type OrganizationRelation =
+  | {
+      id?: string;
+      name?: string;
+      slug?: string;
+    }
+  | Array<{
+      id?: string;
+      name?: string;
+      slug?: string;
+    }>
+  | null;
 
 type UserInstitutionEmailRow = {
   id: string;
@@ -13,36 +32,14 @@ type UserInstitutionEmailRow = {
   organization_id: string;
   status: string;
   verified_at: string | null;
-  organizations:
-    | {
-        id?: string;
-        name?: string;
-        slug?: string;
-      }
-    | Array<{
-        id?: string;
-        name?: string;
-        slug?: string;
-      }>
-    | null;
+  organizations: OrganizationRelation;
 };
 
 type MembershipRow = {
   organization_id: string;
   status: string;
   verified_at: string | null;
-  organizations:
-    | {
-        id?: string;
-        name?: string;
-        slug?: string;
-      }
-    | Array<{
-        id?: string;
-        name?: string;
-        slug?: string;
-      }>
-    | null;
+  organizations: OrganizationRelation;
 };
 
 type ChallengeRow = {
@@ -54,69 +51,7 @@ type ChallengeRow = {
   attempt_count: number;
   last_sent_at: string;
   created_at: string;
-  user_institution_emails:
-    | (UserInstitutionEmailRow & {
-        organizations:
-          | {
-              id?: string;
-              name?: string;
-              slug?: string;
-            }
-          | Array<{
-              id?: string;
-              name?: string;
-              slug?: string;
-            }>
-          | null;
-      })
-    | Array<
-        UserInstitutionEmailRow & {
-          organizations:
-            | {
-                id?: string;
-                name?: string;
-                slug?: string;
-              }
-            | Array<{
-                id?: string;
-                name?: string;
-                slug?: string;
-              }>
-            | null;
-        }
-      >
-    | null;
-};
-
-export type InstitutionAccessSnapshot = {
-  activeMembership: {
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    verifiedAt: string | null;
-  } | null;
-  verifiedInstitutionEmails: Array<{
-    id: string;
-    email: string;
-    domain: string;
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    verifiedAt: string | null;
-  }>;
-  pendingChallenge: {
-    challengeId: string;
-    institutionEmailId: string;
-    email: string;
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    expiresAt: string;
-    attemptCount: number;
-    maxAttempts: number;
-    resendAvailableAt: string;
-  } | null;
-  canCreateInstitutionMarkets: boolean;
+  user_institution_emails: UserInstitutionEmailRow | UserInstitutionEmailRow[] | null;
 };
 
 function normalizePendingChallenge(
@@ -152,7 +87,7 @@ export async function getInstitutionAccessSnapshot(userId: string): Promise<Inst
   const [membershipResult, verifiedEmailsResult, pendingChallengeResult] = await Promise.all([
     service
       .from("organization_memberships")
-      .select("organization_id, status, verified_at, organizations(id, name, slug)")
+      .select(`organization_id, status, verified_at, ${ORGANIZATION_SELECT}`)
       .eq("user_id", userId)
       .eq("status", "active")
       .order("verified_at", { ascending: false })
@@ -160,7 +95,7 @@ export async function getInstitutionAccessSnapshot(userId: string): Promise<Inst
       .maybeSingle(),
     service
       .from("user_institution_emails")
-      .select("id, user_id, email, domain, organization_id, status, verified_at, organizations(id, name, slug)")
+      .select(USER_INSTITUTION_EMAIL_SELECT)
       .eq("user_id", userId)
       .eq("status", "verified")
       .order("verified_at", { ascending: false })
@@ -168,7 +103,7 @@ export async function getInstitutionAccessSnapshot(userId: string): Promise<Inst
     service
       .from("institution_email_challenges")
       .select(
-        "id, user_id, institution_email_id, expires_at, consumed_at, attempt_count, last_sent_at, created_at, user_institution_emails(id, user_id, email, domain, organization_id, status, verified_at, organizations(id, name, slug))"
+        `id, user_id, institution_email_id, expires_at, consumed_at, attempt_count, last_sent_at, created_at, user_institution_emails(${USER_INSTITUTION_EMAIL_SELECT})`
       )
       .eq("user_id", userId)
       .is("consumed_at", null)

@@ -8,14 +8,7 @@ export type SourceDraft = {
   type: MarketSourceType;
 };
 
-export type InstitutionAccessSnapshot = {
-  activeMembership: {
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    verifiedAt: string | null;
-  } | null;
-};
+export type { InstitutionAccessSnapshot } from "@/lib/institutions/contracts";
 
 export type WizardStep = CreateMarketWizardStep;
 

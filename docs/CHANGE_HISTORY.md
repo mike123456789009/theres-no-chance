@@ -1,5 +1,47 @@
 # Change History
 
+## 2026-06-11 - Refactor Cleanup + Runtime Surface Consolidation
+Status: completed
+
+Short description:
+- Removed stale compatibility modules, retired Stripe/Coinbase runtime surfaces, duplicate root static landing files, duplicate root assets, and unused create-market wizard steps.
+- Consolidated shared API route primitives, trade/institution contracts, market read mappers, market creation insertion/rollback, OpenAI Responses handling, account page loading, and search-param helpers.
+- Moved reusable table controls into `app/styles/controls.css` and merged trade-interface styling into `app/styles/market-detail.css`.
+- Added guardrails for removed modules and a duplicate-code report script.
+- Added `docs/CURRENT_ARCHITECTURE.md` as the current source of truth while preserving `docs/BUILD_PLAN.md` as historical context.
+
+Files/areas touched:
+- Removed stale runtime/static files:
+  - `lib/admin/account-dashboard.ts`
+  - `lib/institutions/service.ts`
+  - `app/api/payments/stripe/checkout/route.ts`
+  - `app/api/payments/coinbase/charge/route.ts`
+  - `app/api/webhooks/stripe/route.ts`
+  - `app/api/webhooks/coinbase/route.ts`
+  - `lib/payments/stripe.ts`
+  - `lib/payments/stripe-webhook.ts`
+  - `lib/payments/coinbase.ts`
+  - `lib/payments/coinbase-webhook.ts`
+  - `index.html`, `script.js`, `styles.css`, `assets/*`, `app/trade-interface.css`
+- Shared contracts/helpers:
+  - `lib/api/route-primitives.ts`
+  - `lib/api/rpc-errors.ts`
+  - `lib/ai/openai-responses.ts`
+  - `lib/account/*`
+  - `lib/institutions/contracts.ts`
+  - `lib/markets/trade-contract.ts`
+  - `lib/markets/create-market-service.ts`
+  - `lib/markets/read-markets/mappers.ts`
+  - `lib/shared/*`
+- Guardrails/docs:
+  - `eslint.config.mjs`
+  - `package.json`
+  - `docs/CURRENT_ARCHITECTURE.md`
+  - `docs/BUILD_PLAN.md`
+
+User-visible change:
+- No intentional product behavior change; the active app remains Venmo-funded, community-resolved, and Next.js-rendered, with stale/dead surfaces removed from the runtime.
+
 ## 2026-03-06 - Venmo-Only Funding Cutover
 Status: completed
 

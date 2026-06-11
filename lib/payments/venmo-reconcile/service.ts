@@ -1,5 +1,5 @@
 import { extractInvoiceCodeFromNote } from "@/lib/payments/venmo";
-import { getRpcErrorDetail } from "@/lib/payments/rpc-errors";
+import { getRpcErrorDetail } from "@/lib/api/rpc-errors";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 type ReconcilePaymentInput = {
@@ -242,6 +242,58 @@ async function insertOrUpdateDepositReceipt(options: {
   return clean((data as { id?: string }).id);
 }
 
+function buildIncomingPaymentPayload(options: {
+  gmailMessageId: string;
+  venmoTransactionId: string;
+  providerPaymentId: string;
+  feeBreakdown: {
+    grossAmountUsd: number;
+    feeAmountUsd: number;
+    netAmountUsd: number;
+  };
+  paidAt: string | null;
+  payerDisplayName: string;
+  payerHandle: string;
+  note: string;
+  invoiceCode: string | null;
+  matchStatus: "review_required" | "credited";
+  rawPayload: Record<string, unknown>;
+  errorMessage: string | null;
+  matchedFundingIntentId?: string;
+  depositReceiptId?: string;
+  ledgerEntryId?: string;
+}): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    gmail_message_id: options.gmailMessageId,
+    venmo_transaction_id: options.venmoTransactionId || null,
+    provider_payment_id: options.providerPaymentId,
+    gross_amount_usd: options.feeBreakdown.grossAmountUsd,
+    computed_fee_usd: options.feeBreakdown.feeAmountUsd,
+    computed_net_usd: options.feeBreakdown.netAmountUsd,
+    currency: "USD",
+    paid_at: options.paidAt,
+    payer_display_name: options.payerDisplayName || null,
+    payer_handle: options.payerHandle || null,
+    note: options.note || null,
+    extracted_invoice_code: options.invoiceCode,
+    match_status: options.matchStatus,
+    raw_payload: options.rawPayload,
+    error_message: options.errorMessage,
+  };
+
+  if (options.matchedFundingIntentId) {
+    payload.matched_funding_intent_id = options.matchedFundingIntentId;
+  }
+  if (options.depositReceiptId) {
+    payload.deposit_receipt_id = options.depositReceiptId;
+  }
+  if (options.ledgerEntryId) {
+    payload.ledger_entry_id = options.ledgerEntryId;
+  }
+
+  return payload;
+}
+
 export async function handleVenmoReconcileRequest(request: Request): Promise<VenmoReconcileResponse> {
   if (!isSupabaseServiceEnvConfigured() || !clean(process.env.VENMO_RECONCILE_BEARER_SECRET)) {
     return {
@@ -327,23 +379,20 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
         await upsertIncoming({
           service,
           existing,
-          payload: {
-            gmail_message_id: gmailMessageId,
-            venmo_transaction_id: venmoTransactionId || null,
-            provider_payment_id: providerPaymentId,
-            gross_amount_usd: feeBreakdown.grossAmountUsd,
-            computed_fee_usd: feeBreakdown.feeAmountUsd,
-            computed_net_usd: feeBreakdown.netAmountUsd,
-            currency: "USD",
-            paid_at: paidAt,
-            payer_display_name: payerDisplayName || null,
-            payer_handle: payerHandle || null,
-            note: note || null,
-            extracted_invoice_code: invoiceCode,
-            match_status: "review_required",
-            raw_payload: rawPayload,
-            error_message: "Missing required invoice code in payment note.",
-          },
+          payload: buildIncomingPaymentPayload({
+            gmailMessageId,
+            venmoTransactionId,
+            providerPaymentId,
+            feeBreakdown,
+            paidAt,
+            payerDisplayName,
+            payerHandle,
+            note,
+            invoiceCode,
+            matchStatus: "review_required",
+            rawPayload,
+            errorMessage: "Missing required invoice code in payment note.",
+          }),
         });
         reviewRequired += 1;
         continue;
@@ -359,26 +408,23 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
         await upsertIncoming({
           service,
           existing,
-          payload: {
-            gmail_message_id: gmailMessageId,
-            venmo_transaction_id: venmoTransactionId || null,
-            provider_payment_id: providerPaymentId,
-            gross_amount_usd: feeBreakdown.grossAmountUsd,
-            computed_fee_usd: feeBreakdown.feeAmountUsd,
-            computed_net_usd: feeBreakdown.netAmountUsd,
-            currency: "USD",
-            paid_at: paidAt,
-            payer_display_name: payerDisplayName || null,
-            payer_handle: payerHandle || null,
-            note: note || null,
-            extracted_invoice_code: invoiceCode,
-            match_status: "review_required",
-            raw_payload: rawPayload,
-            error_message:
+          payload: buildIncomingPaymentPayload({
+            gmailMessageId,
+            venmoTransactionId,
+            providerPaymentId,
+            feeBreakdown,
+            paidAt,
+            payerDisplayName,
+            payerHandle,
+            note,
+            invoiceCode,
+            matchStatus: "review_required",
+            rawPayload,
+            errorMessage:
               candidates.length === 0
                 ? "No funding intent matched invoice code and gross amount."
                 : "Multiple funding intents matched invoice code and gross amount.",
-          },
+          }),
         });
         reviewRequired += 1;
         continue;
@@ -403,22 +449,22 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
       const creditResult = await applyNetWalletCredit({
         service,
         userId: matchedIntent.user_id,
-          netAmountUsd: feeBreakdown.netAmountUsd,
-          providerPaymentId,
-          depositReceiptId,
+        netAmountUsd: feeBreakdown.netAmountUsd,
+        providerPaymentId,
+        depositReceiptId,
         metadata: {
           provider: "venmo",
           providerPaymentId,
           invoiceCode,
           gmailMessageId,
           venmoTransactionId: venmoTransactionId || null,
-            grossAmountUsd: feeBreakdown.grossAmountUsd,
-            feeAmountUsd: feeBreakdown.feeAmountUsd,
-            netAmountUsd: feeBreakdown.netAmountUsd,
-            withdrawalFeeApplied: true,
-            payerDisplayName: payerDisplayName || null,
-            payerHandle: payerHandle || null,
-          },
+          grossAmountUsd: feeBreakdown.grossAmountUsd,
+          feeAmountUsd: feeBreakdown.feeAmountUsd,
+          netAmountUsd: feeBreakdown.netAmountUsd,
+          withdrawalFeeApplied: true,
+          payerDisplayName: payerDisplayName || null,
+          payerHandle: payerHandle || null,
+        },
       });
 
       const { error: receiptLedgerError } = await service
@@ -449,26 +495,23 @@ export async function handleVenmoReconcileRequest(request: Request): Promise<Ven
       await upsertIncoming({
         service,
         existing,
-        payload: {
-          gmail_message_id: gmailMessageId,
-          venmo_transaction_id: venmoTransactionId || null,
-          provider_payment_id: providerPaymentId,
-          gross_amount_usd: feeBreakdown.grossAmountUsd,
-          computed_fee_usd: feeBreakdown.feeAmountUsd,
-          computed_net_usd: feeBreakdown.netAmountUsd,
-          currency: "USD",
-          paid_at: paidAt,
-          payer_display_name: payerDisplayName || null,
-          payer_handle: payerHandle || null,
-          note: note || null,
-          extracted_invoice_code: invoiceCode,
-          match_status: "credited",
-          matched_funding_intent_id: matchedIntent.id,
-          deposit_receipt_id: depositReceiptId,
-          ledger_entry_id: creditResult.ledgerEntryId,
-          raw_payload: rawPayload,
-          error_message: null,
-        },
+        payload: buildIncomingPaymentPayload({
+          gmailMessageId,
+          venmoTransactionId,
+          providerPaymentId,
+          feeBreakdown,
+          paidAt,
+          payerDisplayName,
+          payerHandle,
+          note,
+          invoiceCode,
+          matchStatus: "credited",
+          rawPayload,
+          errorMessage: null,
+          matchedFundingIntentId: matchedIntent.id,
+          depositReceiptId,
+          ledgerEntryId: creditResult.ledgerEntryId,
+        }),
       });
 
       credited += 1;

@@ -24,21 +24,6 @@ html[data-ui-style="modern"] .auth-home-link:hover {
   border-bottom-color: color-mix(in srgb, var(--accent-primary) 58%, white);
 }
 
-html[data-ui-style="modern"] .auth-card,
-html[data-ui-style="modern"] .onboarding-card {
-  border-width: 1px;
-  border-color: var(--border-strong);
-  border-radius: 18px;
-  box-shadow: var(--shadow-card);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-elevated) 65%, white) 0%,
-      var(--surface-elevated) 100%
-    ),
-    var(--surface-elevated);
-}
-
 html[data-ui-style="modern"] .auth-title,
 html[data-ui-style="modern"] .onboarding-title,
 html[data-ui-style="modern"] .auth-section-title {
@@ -74,26 +59,6 @@ html[data-ui-style="modern"] .onboarding-interests legend {
   text-transform: none;
   letter-spacing: 0;
   color: var(--text-muted);
-}
-
-html[data-ui-style="modern"] .auth-field input,
-html[data-ui-style="modern"] .onboarding-field input,
-html[data-ui-style="modern"] .auth-password-toggle {
-  border-width: 1px;
-  border-color: var(--border-soft);
-  border-radius: 10px;
-  box-shadow: none;
-  background: var(--field-bg);
-  color: var(--text-primary);
-  font-family: var(--font-modern-ui);
-}
-
-html[data-ui-style="modern"] .auth-field input:focus-visible,
-html[data-ui-style="modern"] .onboarding-field input:focus-visible,
-html[data-ui-style="modern"] .auth-password-toggle:focus-visible,
-html[data-ui-style="modern"] .interest-chip:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
 }
 
 html[data-ui-style="modern"] .auth-password-toggle {

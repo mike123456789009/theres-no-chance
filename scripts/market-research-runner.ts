@@ -3,23 +3,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-type ResearchRunSummary = {
-  scope: "public" | "institution";
-  runId: string;
-  status: "completed" | "partial" | "failed" | "skipped";
-  modelName: string;
-  scoutModelName?: string;
-  startedAt: string;
-  completedAt?: string;
-  generated: number;
-  submitted: number;
-  skippedDuplicate: number;
-  skippedQuality: number;
-  skippedInvalid: number;
-  submitFailed: number;
-  topSubmittedQuestions: string[];
-  failuresByInstitution?: Array<{ organizationId: string; organizationName: string; error: string }>;
-};
+import type { ResearchRunSummary } from "../lib/automation/market-research/types";
 
 type RunnerArgs = {
   scope: "public" | "institution";

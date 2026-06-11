@@ -1,5 +1,6 @@
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
-import { parseBracketedRpcError } from "@/lib/payments/rpc-errors";
+import { parseBracketedRpcError } from "@/lib/api/rpc-errors";
+import { cleanText, isRecord, parseBoolean, parseNumber, parsePositiveInt } from "@/lib/shared/primitives";
 
 export const WITHDRAWAL_NETWORKS = ["base", "ethereum", "solana"] as const;
 
@@ -55,39 +56,10 @@ type ServiceCallError = {
 
 type ServiceCallResult<T> = { ok: true; data: T } | ({ ok: false } & ServiceCallError);
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function cleanText(value: unknown, maxLength: number): string {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
-}
-
-function parseNumber(value: unknown): number | null {
-  const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isFinite(numeric)) return null;
-  return numeric;
-}
-
 function parsePositiveNumber(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
   return parsed;
-}
-
-function parsePositiveInteger(value: string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return Math.floor(parsed);
-}
-
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined) return fallback;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on") return true;
-  if (normalized === "0" || normalized === "false" || normalized === "no" || normalized === "off") return false;
-  return fallback;
 }
 
 function isOneOf<T extends readonly string[]>(value: string, allowed: T): value is T[number] {
@@ -95,9 +67,9 @@ function isOneOf<T extends readonly string[]>(value: string, allowed: T): value 
 }
 
 function parseRpcError(message: string): ServiceCallError {
-  const parsed = parseBracketedRpcError({
+  return parseBracketedRpcError(
     message,
-    mapping: {
+    {
       WITHDRAW_VALIDATION: {
         status: 400,
         error: "Withdrawal validation failed.",
@@ -115,17 +87,11 @@ function parseRpcError(message: string): ServiceCallError {
         error: "Withdrawal cannot be processed.",
       },
     },
-    fallback: {
+    {
       status: 500,
       error: "Withdrawal operation failed.",
-    },
-  });
-
-  return {
-    status: parsed.status,
-    error: parsed.error,
-    detail: parsed.detail,
-  };
+    }
+  );
 }
 
 function normalizeRequestResult(raw: unknown): WithdrawalRequestRpcResult | null {
@@ -198,7 +164,7 @@ export function getWithdrawalConfig(): WithdrawalConfig {
   const minAmountUsd = parsePositiveNumber(process.env.WITHDRAWAL_MIN_USD, 10);
   const maxAmountUsd = parsePositiveNumber(process.env.WITHDRAWAL_MAX_USD, 2_500);
   const dailyLimitUsd = parsePositiveNumber(process.env.WITHDRAWAL_DAILY_LIMIT_USD, 5_000);
-  const maxPendingRequests = parsePositiveInteger(process.env.WITHDRAWAL_MAX_PENDING, 2);
+  const maxPendingRequests = parsePositiveInt(process.env.WITHDRAWAL_MAX_PENDING, 2) ?? 2;
   const autoPayoutEnabled = parseBoolean(process.env.WITHDRAWAL_AUTO_PAYOUT_ENABLED, true);
 
   return {

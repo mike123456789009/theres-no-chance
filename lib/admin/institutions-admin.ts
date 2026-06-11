@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { parseBracketedRpcError } from "@/lib/api/rpc-errors";
+import { cleanText } from "@/lib/shared/primitives";
+
 export type AdminInstitutionDomainSummary = {
   id: string;
   organizationId: string;
@@ -72,7 +75,7 @@ type InstitutionEmailRow = {
 };
 
 function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  return cleanText(value);
 }
 
 export function isUuidLike(value: string): boolean {
@@ -97,48 +100,23 @@ export function isUniqueViolation(error: { code?: string; message?: string } | n
 }
 
 export function mapInstitutionAdminRpcError(message: string): { status: number; error: string; detail: string } {
-  const trimmed = clean(message);
-  const match = trimmed.match(/^\[(INST_[A-Z_]+)\]\s*(.*)$/);
-
-  if (!match) {
-    return {
+  const mapped = parseBracketedRpcError(
+    message,
+    {
+      INST_VALIDATION: { status: 400, error: "Institution admin validation failed." },
+      INST_FORBIDDEN: { status: 403, error: "Institution admin action forbidden." },
+      INST_NOT_FOUND: { status: 404, error: "Institution not found." },
+    },
+    {
       status: 500,
       error: "Institution admin action failed.",
-      detail: trimmed || "Unknown institution admin error.",
-    };
-  }
-
-  const code = match[1];
-  const detail = clean(match[2]) || "Institution admin action failed.";
-
-  if (code === "INST_VALIDATION") {
-    return {
-      status: 400,
-      error: "Institution admin validation failed.",
-      detail,
-    };
-  }
-
-  if (code === "INST_FORBIDDEN") {
-    return {
-      status: 403,
-      error: "Institution admin action forbidden.",
-      detail,
-    };
-  }
-
-  if (code === "INST_NOT_FOUND") {
-    return {
-      status: 404,
-      error: "Institution not found.",
-      detail,
-    };
-  }
+    }
+  );
 
   return {
-    status: 500,
-    error: "Institution admin action failed.",
-    detail,
+    status: mapped.status,
+    error: mapped.error,
+    detail: mapped.detail || "Unknown institution admin error.",
   };
 }
 

@@ -41,6 +41,7 @@ npm run lint
 npm run verify:public-barrels
 npm run typecheck
 npm test
+npm run duplicates
 npm run build
 ```
 

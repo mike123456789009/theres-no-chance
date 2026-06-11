@@ -1,7 +1,7 @@
 import { requiredEnv } from "@/lib/env";
-import { serializeMarketAccessRules } from "@/lib/markets/access-rules";
 import type { MarketCardShadowTone } from "@/lib/markets/presentation";
 import { validateCreateMarketPayload } from "@/lib/markets/create-market";
+import { createMarketWithSourcesAndFee } from "@/lib/markets/create-market-service";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 export type ResearchRunScope = "public" | "institution";
@@ -148,73 +148,27 @@ export async function submitAutomationMarketProposal(
   }
 
   const service = createServiceClient();
-
-  const { data: market, error: marketInsertError } = await service
-    .from("markets")
-    .insert({
-      question: validation.data.question,
-      description: validation.data.description,
-      resolves_yes_if: validation.data.resolvesYesIf,
-      resolves_no_if: validation.data.resolvesNoIf,
-      close_time: validation.data.closeTime,
-      expected_resolution_time: validation.data.expectedResolutionTime,
-      evidence_rules: validation.data.evidenceRules,
-      dispute_rules: validation.data.disputeRules,
-      fee_bps: validation.data.feeBps,
-      status: "review",
-      visibility: validation.data.visibility,
-      resolution_mode: validation.data.resolutionMode,
-      access_rules: serializeMarketAccessRules(validation.data.accessRules),
-      tags: validation.data.tags,
-      risk_flags: validation.data.riskFlags,
-      creator_id: botUserId,
-    })
-    .select("id, status")
-    .single();
-
-  if (marketInsertError || !market) {
-    return {
-      ok: false,
-      status: 500,
-      error: "Unable to insert automation market proposal.",
-      detail: marketInsertError?.message ?? "Unknown market insert failure.",
-    };
-  }
-
-  if (validation.data.sources.length > 0) {
-    const sourceRows = validation.data.sources.map((source) => ({
-      market_id: market.id,
-      source_label: source.label,
-      source_url: source.url,
-      source_type: source.type,
-    }));
-
-    const { error: sourceInsertError } = await service.from("market_sources").insert(sourceRows);
-    if (sourceInsertError) {
-      await service.from("markets").delete().eq("id", market.id).eq("creator_id", botUserId);
-      return {
-        ok: false,
-        status: 500,
-        error: "Unable to insert automation market sources.",
-        detail: sourceInsertError.message,
-      };
-    }
-  }
-
-  const { error: listingFeeError } = await service.rpc("apply_market_listing_fee", {
-    p_market_id: market.id,
-    p_user_id: botUserId,
-    p_amount: 0,
+  const created = await createMarketWithSourcesAndFee({
+    db: service,
+    listingFeeClient: service,
+    creatorId: botUserId,
+    payload: validation.data,
+    status: "review",
+    listingFeeAmount: 0,
+    messages: {
+      marketInsert: "Unable to insert automation market proposal.",
+      sourceInsert: "Unable to insert automation market sources.",
+      listingFee: "Unable to apply listing fee for automation market proposal.",
+      insufficientFunds: "Unable to apply listing fee for automation market proposal.",
+    },
   });
 
-  if (listingFeeError) {
-    await service.from("market_sources").delete().eq("market_id", market.id);
-    await service.from("markets").delete().eq("id", market.id).eq("creator_id", botUserId);
+  if (!created.ok) {
     return {
       ok: false,
-      status: listingFeeError.message.toLowerCase().includes("[listing_funds]") ? 409 : 500,
-      error: "Unable to apply listing fee for automation market proposal.",
-      detail: listingFeeError.message,
+      status: created.status,
+      error: created.error,
+      detail: created.detail,
     };
   }
 
@@ -222,7 +176,7 @@ export async function submitAutomationMarketProposal(
     admin_user_id: botUserId,
     action: "market_ai_submit_review",
     target_type: "market",
-    target_id: market.id,
+    target_id: created.market.id,
     details: {
       runId: input.runId,
       eventFingerprint: cleanFingerprint(input.eventFingerprint),
@@ -246,7 +200,7 @@ export async function submitAutomationMarketProposal(
 
   return {
     ok: true,
-    marketId: market.id,
+    marketId: created.market.id,
     status: "review",
   };
 }

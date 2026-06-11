@@ -1,29 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { requireInstitutionAdminService } from "@/lib/admin/institution-route-helpers";
 import { loadAdminInstitutionSummaries } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution admin is unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const context = await requireInstitutionAdminService("Institution admin is unavailable: missing service role configuration.");
+  if (!context.ok) return context.response;
 
   try {
-    const service = createServiceClient();
-    const institutions = await loadAdminInstitutionSummaries(service);
+    const institutions = await loadAdminInstitutionSummaries(context.value.service);
     return NextResponse.json({ institutions });
   } catch (error) {
     return NextResponse.json(

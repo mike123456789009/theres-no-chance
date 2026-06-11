@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { isUuidLike, loadAdminInstitutionEmailIdentities } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { requireInstitutionAdminService, requireUuid } from "@/lib/admin/institution-route-helpers";
+import { loadAdminInstitutionEmailIdentities } from "@/lib/admin/institutions-admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,30 +19,20 @@ function parseLimit(input: string | null): number {
 }
 
 export async function GET(request: Request, context: RouteContext) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution email identities are unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const admin = await requireInstitutionAdminService(
+    "Institution email identities are unavailable: missing service role configuration."
+  );
+  if (!admin.ok) return admin.response;
 
   const { institutionId } = await context.params;
-  if (!isUuidLike(institutionId)) {
-    return NextResponse.json({ error: "Invalid institution id." }, { status: 400 });
-  }
+  const institutionUuid = requireUuid(institutionId, "institution id");
+  if (!institutionUuid.ok) return institutionUuid.response;
 
   const limit = parseLimit(new URL(request.url).searchParams.get("limit"));
 
   try {
-    const service = createServiceClient();
     const identities = await loadAdminInstitutionEmailIdentities({
-      service,
+      service: admin.value.service,
       organizationId: institutionId,
       limit,
     });

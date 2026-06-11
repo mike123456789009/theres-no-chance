@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { isUuidLike } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { parseAdminJsonBody, requireInstitutionAdminService, requireUuid } from "@/lib/admin/institution-route-helpers";
+import { jsonError } from "@/lib/api/http-errors";
+import { cleanText } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,43 +17,24 @@ type RouteContext = {
   }>;
 };
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution edit is unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const admin = await requireInstitutionAdminService("Institution edit is unavailable: missing service role configuration.");
+  if (!admin.ok) return admin.response;
 
   const { institutionId } = await context.params;
-  if (!isUuidLike(institutionId)) {
-    return NextResponse.json({ error: "Invalid institution id." }, { status: 400 });
-  }
+  const institutionUuid = requireUuid(institutionId, "institution id");
+  if (!institutionUuid.ok) return institutionUuid.response;
 
-  let body: RenameBody;
-  try {
-    body = (await request.json()) as RenameBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseAdminJsonBody<RenameBody>(request);
+  if (!parsed.ok) return parsed.response;
 
-  const name = clean(body.name).replace(/\s+/g, " ").slice(0, 120);
+  const name = cleanText(parsed.value.name).replace(/\s+/g, " ").slice(0, 120);
   if (name.length < 2) {
-    return NextResponse.json({ error: "Institution name must be at least 2 characters." }, { status: 400 });
+    return jsonError(400, "Institution name must be at least 2 characters.");
   }
 
   try {
-    const service = createServiceClient();
+    const { service, adminUser } = admin.value;
     const { data, error } = await service
       .from("organizations")
       .update({
@@ -78,7 +59,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     await service.from("admin_action_log").insert({
-      admin_user_id: auth.adminUser.id,
+      admin_user_id: adminUser.id,
       action: "rename_institution",
       target_type: "organization",
       target_id: institutionId,

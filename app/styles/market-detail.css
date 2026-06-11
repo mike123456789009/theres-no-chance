@@ -73,23 +73,6 @@ html[data-ui-style="modern"] .market-detail-order-grid span {
   letter-spacing: 0;
 }
 
-html[data-ui-style="modern"] .market-detail-strip-panel,
-html[data-ui-style="modern"] .market-detail-chart-panel,
-html[data-ui-style="modern"] .market-detail-action-panel,
-html[data-ui-style="modern"] .market-detail-position-panel,
-html[data-ui-style="modern"] .market-detail-section,
-html[data-ui-style="modern"] .market-detail-position-grid p,
-html[data-ui-style="modern"] .trade-success-banner,
-html[data-ui-style="modern"] .trade-error-banner,
-html[data-ui-style="modern"] .trade-auth-required,
-html[data-ui-style="modern"] .trade-market-closed {
-  border-width: 1px;
-  border-color: var(--border-strong);
-  border-radius: 14px;
-  box-shadow: var(--shadow-soft);
-  background: var(--surface-elevated);
-}
-
 html[data-ui-style="modern"] .market-detail-stat {
   border-width: 1px;
   border-color: var(--border-soft);
@@ -142,19 +125,6 @@ html[data-ui-style="modern"] .market-detail-chart-line {
 html[data-ui-style="modern"] .market-detail-chart-marker {
   fill: var(--accent-secondary);
   stroke: var(--surface-elevated);
-}
-
-html[data-ui-style="modern"] .market-detail-order-tabs button,
-html[data-ui-style="modern"] .market-detail-action-links a,
-html[data-ui-style="modern"] .market-detail-login-links a,
-html[data-ui-style="modern"] .trade-dismiss-button,
-html[data-ui-style="modern"] .market-detail-action-button {
-  border-width: 1px;
-  border-radius: 10px;
-  box-shadow: var(--shadow-soft);
-  font-family: var(--font-modern-ui);
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 html[data-ui-style="modern"] .market-detail-order-tabs button {
@@ -323,4 +293,491 @@ html[data-ui-style="modern"] .market-detail-source-list a {
   html[data-ui-style="modern"] .trade-market-closed {
     border-radius: 12px;
   }
+}
+
+
+
+.trade-success-banner {
+  background-color: color-mix(in srgb, var(--positive) 18%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--positive) 36%, var(--border-soft));
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: var(--positive);
+}
+
+.trade-success-banner h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.trade-success-details {
+  margin-bottom: 12px;
+}
+
+.trade-success-details p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.trade-reused-notice {
+  margin-top: 8px;
+  font-size: 13px;
+  font-style: italic;
+  color: color-mix(in srgb, var(--accent-secondary) 70%, var(--text-primary));
+}
+
+.trade-error-banner {
+  background-color: color-mix(in srgb, var(--negative) 16%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--negative) 32%, var(--border-soft));
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: var(--negative);
+}
+
+.trade-error-banner p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+}
+
+.trade-dismiss-button {
+  background-color: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trade-dismiss-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.market-detail-order-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.market-detail-order-tabs button {
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background-color: var(--surface-elevated);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.market-detail-order-tabs button:hover:not(:disabled) {
+  background-color: var(--surface-muted);
+  border-color: var(--text-soft);
+}
+
+.market-detail-order-tabs button.active {
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
+}
+
+.market-detail-order-tabs button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trade-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.trade-input-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.trade-input-section input[type="number"] {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+
+.trade-input-section input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.trade-input-section input[type="number"]:disabled {
+  background-color: var(--surface-muted);
+  cursor: not-allowed;
+}
+
+.market-detail-order-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--surface-muted);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.market-detail-order-grid p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  font-size: 14px;
+}
+
+.market-detail-order-grid span {
+  color: var(--text-soft);
+}
+
+.market-detail-order-grid strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.trade-quote-loading strong {
+  color: var(--text-soft);
+  font-style: italic;
+}
+
+.trade-quote-error {
+  grid-column: 1 / -1;
+}
+
+.trade-quote-error strong {
+  color: var(--negative);
+  font-size: 13px;
+}
+
+.trade-auth-required {
+  padding: 16px;
+  background-color: color-mix(in srgb, var(--accent-secondary) 22%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-secondary) 42%, var(--border-soft));
+  border-radius: 4px;
+  text-align: center;
+}
+
+.trade-auth-required p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: color-mix(in srgb, var(--accent-secondary) 70%, var(--text-primary));
+}
+
+.trade-market-closed {
+  padding: 16px;
+  background-color: color-mix(in srgb, var(--negative) 16%, var(--surface-elevated));
+  border: 1px solid color-mix(in srgb, var(--negative) 32%, var(--border-soft));
+  border-radius: 4px;
+  text-align: center;
+}
+
+.trade-market-closed p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--negative);
+}
+
+.market-detail-action-button {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-inverse);
+  background-color: var(--accent-primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.market-detail-action-button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--accent-primary) 80%, var(--border-strong));
+}
+
+.market-detail-action-button:disabled {
+  background-color: var(--text-soft);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.market-detail-action-links {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.market-detail-action-links a {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  text-decoration: none;
+  border: 1px solid var(--accent-primary);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.market-detail-action-links a:hover {
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="retro"] .trade-success-banner {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  border-radius: 0;
+  padding: 0.62rem;
+  margin-bottom: 0.72rem;
+  background: rgba(112, 188, 144, 0.24);
+  color: var(--positive);
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html[data-ui-style="retro"] .trade-success-banner h3 {
+  margin: 0 0 0.45rem;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+html[data-ui-style="retro"] .trade-success-details {
+  display: grid;
+  gap: 0.24rem;
+}
+
+html[data-ui-style="retro"] .trade-success-details p {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+html[data-ui-style="retro"] .trade-reused-notice {
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--positive);
+}
+
+html[data-ui-style="retro"] .trade-error-banner {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  border-radius: 0;
+  padding: 0.62rem;
+  margin-bottom: 0.72rem;
+  background: rgba(188, 89, 94, 0.18);
+  color: var(--negative);
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html[data-ui-style="retro"] .trade-error-banner p {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+}
+
+html[data-ui-style="retro"] .trade-dismiss-button {
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  border-radius: 0;
+  padding: 0.28rem 0.56rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs {
+  margin-top: 0.62rem;
+  margin-bottom: 0;
+  gap: 0.42rem;
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  border-radius: 0;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.42rem 0.45rem;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab-buy {
+  background: rgba(112, 188, 144, 0.26);
+  color: var(--positive);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab-sell {
+  background: rgba(188, 89, 94, 0.22);
+  color: var(--negative);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab-buy.active {
+  background: var(--positive);
+  border-color: var(--positive);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab-sell.active {
+  background: var(--negative);
+  border-color: var(--negative);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="retro"] .market-detail-order-tabs .trade-order-tab:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  filter: saturate(0.82) brightness(0.95);
+}
+
+html[data-ui-style="retro"] .trade-input-section {
+  gap: 0.56rem;
+  margin-top: 0.62rem;
+  margin-bottom: 0;
+}
+
+html[data-ui-style="retro"] .trade-input-section label {
+  gap: 0.28rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+html[data-ui-style="retro"] .trade-input-section input[type="number"] {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  border-radius: 0;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  padding: 0.4rem 0.46rem;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+html[data-ui-style="retro"] .trade-input-section input[type="number"]:focus {
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+html[data-ui-style="retro"] .trade-input-section input[type="number"]:disabled {
+  background: var(--surface-muted);
+  cursor: not-allowed;
+}
+
+html[data-ui-style="retro"] .market-detail-order-grid {
+  margin-top: 0.62rem;
+  margin-bottom: 0;
+  border: 2px dashed rgba(16, 16, 16, 0.35);
+  border-radius: 0;
+  background: var(--surface-elevated);
+  padding: 0.52rem;
+  gap: 0.4rem;
+}
+
+html[data-ui-style="retro"] .market-detail-order-grid p {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+html[data-ui-style="retro"] .market-detail-order-grid span {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-soft);
+}
+
+html[data-ui-style="retro"] .market-detail-order-grid strong {
+  font-weight: 700;
+}
+
+html[data-ui-style="retro"] .trade-auth-required,
+html[data-ui-style="retro"] .trade-market-closed {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  border-radius: 0;
+  text-align: left;
+  padding: 0.56rem;
+}
+
+html[data-ui-style="retro"] .trade-auth-required {
+  background: color-mix(in srgb, var(--accent-secondary) 22%, var(--surface-elevated));
+}
+
+html[data-ui-style="retro"] .trade-market-closed {
+  background: rgba(188, 89, 94, 0.18);
+}
+
+html[data-ui-style="retro"] .trade-auth-required p,
+html[data-ui-style="retro"] .trade-market-closed p {
+  margin: 0;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+html[data-ui-style="retro"] .market-detail-action-button {
+  width: 100%;
+  margin-top: 0.72rem;
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  border-radius: 0;
+  text-transform: uppercase;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.45rem 0.62rem;
+  transition: filter 0.16s ease, transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+html[data-ui-style="retro"] .market-detail-action-button.market-detail-action-button-buy {
+  background: var(--positive);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="retro"] .market-detail-action-button.market-detail-action-button-sell {
+  background: var(--negative);
+  color: var(--text-inverse);
+}
+
+html[data-ui-style="retro"] .market-detail-action-button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+html[data-ui-style="retro"] .market-detail-action-button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+html[data-ui-style="retro"] .market-detail-action-button:disabled {
+  background: var(--border-soft);
+  color: var(--text-primary);
+  cursor: not-allowed;
+  opacity: 0.96;
 }

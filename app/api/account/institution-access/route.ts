@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { getServerEnvReadiness } from "@/lib/api/env-guards";
-import { jsonEnvUnavailable, jsonInternalError, jsonUnauthorized } from "@/lib/api/http-errors";
+import { jsonEnvUnavailable, jsonInternalError } from "@/lib/api/http-errors";
+import { requireAuthenticatedUser } from "@/lib/api/route-primitives";
 import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const serverEnv = getServerEnvReadiness();
@@ -15,17 +15,12 @@ export async function GET() {
   }
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return jsonUnauthorized();
+    const user = await requireAuthenticatedUser();
+    if (!user.ok) {
+      return user.response;
     }
 
-    const snapshot = await getInstitutionAccessSnapshot(user.id);
+    const snapshot = await getInstitutionAccessSnapshot(user.value.id);
 
     return NextResponse.json({
       activeMembership: snapshot.activeMembership,

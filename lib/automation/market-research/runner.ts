@@ -48,6 +48,42 @@ function resolveRunTimeoutMs(value: number | undefined): number {
   return Math.max(30_000, Math.min(12 * 60 * 60 * 1000, Math.floor(value ?? RUN_TIMEOUT_MS)));
 }
 
+function createResearchSummary(input: {
+  scope: ResearchRunScope;
+  runId: string;
+  status: ResearchRunSummary["status"];
+  modelName: string;
+  scoutModelName?: string;
+  startedAt: string;
+  completedAt?: string;
+  generated?: number;
+  submitted?: number;
+  skippedDuplicate?: number;
+  skippedQuality?: number;
+  skippedInvalid?: number;
+  submitFailed?: number;
+  topSubmittedQuestions?: string[];
+  failuresByInstitution?: Array<{ organizationId: string; organizationName: string; error: string }>;
+}): ResearchRunSummary {
+  return {
+    scope: input.scope,
+    runId: input.runId,
+    status: input.status,
+    modelName: input.modelName,
+    scoutModelName: input.scoutModelName,
+    startedAt: input.startedAt,
+    completedAt: input.completedAt ?? nowIso(),
+    generated: input.generated ?? 0,
+    submitted: input.submitted ?? 0,
+    skippedDuplicate: input.skippedDuplicate ?? 0,
+    skippedQuality: input.skippedQuality ?? 0,
+    skippedInvalid: input.skippedInvalid ?? 0,
+    submitFailed: input.submitFailed ?? 0,
+    topSubmittedQuestions: input.topSubmittedQuestions?.slice(0, 8) ?? [],
+    ...(input.failuresByInstitution ? { failuresByInstitution: input.failuresByInstitution } : {}),
+  };
+}
+
 export async function runPublicResearch(input: RunPublicResearchInput): Promise<ResearchRunSummary> {
   requireMarketResearchEnabled();
   const modelName = input.modelName?.trim() || DEFAULT_RESEARCH_MODEL;
@@ -63,22 +99,14 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
   });
 
   if (runStart.kind === "locked") {
-    return {
+    return createResearchSummary({
       scope: "public",
       runId: runStart.runId,
       status: "skipped",
       modelName,
       scoutModelName,
       startedAt: runStart.startedAt,
-      completedAt: nowIso(),
-      generated: 0,
-      submitted: 0,
-      skippedDuplicate: 0,
-      skippedQuality: 0,
-      skippedInvalid: 0,
-      submitFailed: 0,
-      topSubmittedQuestions: [],
-    };
+    });
   }
 
   const deadline = createRunDeadline(resolveRunTimeoutMs(input.runTimeoutMs));
@@ -98,22 +126,21 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
       submitFailed: result.submitFailed,
     });
 
-    const summary = {
+    const summary = createResearchSummary({
       scope: "public",
       runId: runStart.runId,
       status,
       modelName,
       scoutModelName,
       startedAt,
-      completedAt: nowIso(),
       generated: result.generated,
       submitted: result.submitted,
       skippedDuplicate: result.skippedDuplicate,
       skippedQuality: result.skippedQuality,
       skippedInvalid: result.skippedInvalid,
       submitFailed: result.submitFailed,
-      topSubmittedQuestions: result.topSubmittedQuestions.slice(0, 8),
-    } satisfies ResearchRunSummary;
+      topSubmittedQuestions: result.topSubmittedQuestions,
+    });
 
     await completeResearchRun({
       runId: runStart.runId,
@@ -124,22 +151,14 @@ export async function runPublicResearch(input: RunPublicResearchInput): Promise<
     return summary;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown public scan failure.";
-    const summary = {
+    const summary = createResearchSummary({
       scope: "public",
       runId: runStart.runId,
       status: "failed",
       modelName,
       scoutModelName,
       startedAt,
-      completedAt: nowIso(),
-      generated: 0,
-      submitted: 0,
-      skippedDuplicate: 0,
-      skippedQuality: 0,
-      skippedInvalid: 0,
-      submitFailed: 0,
-      topSubmittedQuestions: [],
-    } satisfies ResearchRunSummary;
+    });
 
     await completeResearchRun({
       runId: runStart.runId,
@@ -167,23 +186,15 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
   });
 
   if (runStart.kind === "locked") {
-    return {
+    return createResearchSummary({
       scope: "institution",
       runId: runStart.runId,
       status: "skipped",
       modelName,
       scoutModelName,
       startedAt: runStart.startedAt,
-      completedAt: nowIso(),
-      generated: 0,
-      submitted: 0,
-      skippedDuplicate: 0,
-      skippedQuality: 0,
-      skippedInvalid: 0,
-      submitFailed: 0,
-      topSubmittedQuestions: [],
       failuresByInstitution: [],
-    };
+    });
   }
 
   const deadline = createRunDeadline(resolveRunTimeoutMs(input.runTimeoutMs));
@@ -205,23 +216,22 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
       failuresByInstitution: result.failuresByInstitution.length,
     });
 
-    const summary = {
+    const summary = createResearchSummary({
       scope: "institution",
       runId: runStart.runId,
       status,
       modelName,
       scoutModelName,
       startedAt,
-      completedAt: nowIso(),
       generated: result.generated,
       submitted: result.submitted,
       skippedDuplicate: result.skippedDuplicate,
       skippedQuality: result.skippedQuality,
       skippedInvalid: result.skippedInvalid,
       submitFailed: result.submitFailed,
-      topSubmittedQuestions: result.topSubmittedQuestions.slice(0, 8),
+      topSubmittedQuestions: result.topSubmittedQuestions,
       failuresByInstitution: result.failuresByInstitution,
-    } satisfies ResearchRunSummary;
+    });
 
     await completeResearchRun({
       runId: runStart.runId,
@@ -236,23 +246,15 @@ export async function runInstitutionResearch(input: RunInstitutionResearchInput)
     return summary;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown institution scan failure.";
-    const summary = {
+    const summary = createResearchSummary({
       scope: "institution",
       runId: runStart.runId,
       status: "failed",
       modelName,
       scoutModelName,
       startedAt,
-      completedAt: nowIso(),
-      generated: 0,
-      submitted: 0,
-      skippedDuplicate: 0,
-      skippedQuality: 0,
-      skippedInvalid: 0,
-      submitFailed: 0,
-      topSubmittedQuestions: [],
       failuresByInstitution: [],
-    } satisfies ResearchRunSummary;
+    });
 
     await completeResearchRun({
       runId: runStart.runId,

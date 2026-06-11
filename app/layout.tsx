@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "./trade-interface.css";
 
 import { UiStyleSync } from "@/components/theme/ui-style-sync";
 import {

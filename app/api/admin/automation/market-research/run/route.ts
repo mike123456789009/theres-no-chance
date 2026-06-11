@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { DEFAULT_RESEARCH_MODEL, DEFAULT_SCOUT_MODEL } from "@/lib/automation/market-research/constants";
+import { jsonError } from "@/lib/api/http-errors";
+import { parseJsonBody, requireServiceEnv } from "@/lib/api/route-primitives";
+import { marketResearchModelConfig, marketResearchRunTimeoutMs } from "@/lib/automation/market-research/route-helpers";
 import { runInstitutionResearch, runPublicResearch } from "@/lib/automation/market-research/runner";
 import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { cleanText, parseBoolean, parsePositiveInt } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 800;
-const ADMIN_RUN_TIMEOUT_BUFFER_MS = 90_000;
-const ADMIN_RUN_TIMEOUT_MS = Math.max(60_000, maxDuration * 1000 - ADMIN_RUN_TIMEOUT_BUFFER_MS);
+const ADMIN_RUN_TIMEOUT_MS = marketResearchRunTimeoutMs(maxDuration);
 
 type RunScope = "public" | "institution";
 
@@ -20,30 +21,10 @@ type RunRequestBody = {
   maxPerOrganization?: unknown;
 };
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function parseScope(value: unknown): RunScope | null {
-  const normalized = clean(value).toLowerCase();
+  const normalized = cleanText(value).toLowerCase();
   if (normalized === "public" || normalized === "institution") return normalized;
   return null;
-}
-
-function parseBoolean(value: unknown, fallback = true): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-  }
-  return fallback;
-}
-
-function parsePositiveInt(value: unknown): number | null {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-  return Math.floor(parsed);
 }
 
 export async function POST(request: Request) {
@@ -52,31 +33,20 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Market research automation unavailable: missing Supabase service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const env = requireServiceEnv("Market research automation unavailable: missing Supabase service role configuration.");
+  if (!env.ok) return env.response;
 
-  let body: RunRequestBody;
-  try {
-    body = (await request.json()) as RunRequestBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseJsonBody<RunRequestBody>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
 
   const scope = parseScope(body.scope);
   if (!scope) {
-    return NextResponse.json({ error: "scope must be one of: public, institution." }, { status: 400 });
+    return jsonError(400, "scope must be one of: public, institution.");
   }
 
   const submit = parseBoolean(body.submit, true);
-  const modelName = clean(process.env.MARKET_RESEARCH_MODEL) || DEFAULT_RESEARCH_MODEL;
-  const scoutModelName = clean(process.env.MARKET_RESEARCH_SCOUT_MODEL) || DEFAULT_SCOUT_MODEL;
+  const { modelName, scoutModelName } = marketResearchModelConfig();
 
   try {
     if (scope === "public") {

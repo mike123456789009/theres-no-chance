@@ -1,5 +1,6 @@
 import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_SEARCH_QUERY } from "@/lib/markets/taxonomy";
 import { DISCOVERABLE_MARKET_STATUSES } from "@/lib/markets/view-access";
+export { toUrlSearchParams } from "@/lib/shared/next-types";
 
 import {
   CATEGORY_MATCH_TERMS,
@@ -133,24 +134,4 @@ export function parseMarketDiscoveryQuery(searchParams: URLSearchParams): Market
     access: parseAccess(cleanText(searchParams.get("access")).toLowerCase()),
     sort: parseSort(cleanText(searchParams.get("sort")).toLowerCase()),
   };
-}
-
-export function toUrlSearchParams(
-  rawSearchParams: Record<string, string | string[] | undefined>
-): URLSearchParams {
-  const params = new URLSearchParams();
-
-  for (const [key, rawValue] of Object.entries(rawSearchParams)) {
-    if (Array.isArray(rawValue)) {
-      const first = rawValue.find((item) => typeof item === "string" && item.trim().length > 0);
-      if (first) params.set(key, first);
-      continue;
-    }
-
-    if (typeof rawValue === "string" && rawValue.trim().length > 0) {
-      params.set(key, rawValue);
-    }
-  }
-
-  return params;
 }

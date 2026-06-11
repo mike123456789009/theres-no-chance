@@ -1,5 +1,7 @@
 import { getWithdrawalConfig, processWithdrawalRequest, requestWithdrawal, validateWithdrawalPayload } from "@/lib/payments/withdrawals";
 import { computeVenmoFeeBreakdown, isNetCreditAtLeastOneCent } from "@/lib/payments/venmo-fees";
+import { mergeMissingEnv } from "@/lib/api/route-primitives";
+import { cleanText, isRecord, toNumber } from "@/lib/shared/primitives";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
@@ -16,24 +18,6 @@ export type WithdrawalRequestResponse = {
   body: Record<string, unknown>;
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function cleanText(value: unknown, maxLength: number): string {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
-}
-
-function toNumber(value: number | string | null | undefined): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
-
 function getUtcDayStartIso(now = new Date()): string {
   const start = new Date(now);
   start.setUTCHours(0, 0, 0, 0);
@@ -43,10 +27,6 @@ function getUtcDayStartIso(now = new Date()): string {
 function maskAddress(address: string): string {
   if (address.length <= 12) return address;
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-function mergeMissingEnv(serverMissing: string[], serviceMissing: string[]): string[] {
-  return Array.from(new Set([...serverMissing, ...serviceMissing]));
 }
 
 export async function handleWithdrawalRequest(request: Request): Promise<WithdrawalRequestResponse> {

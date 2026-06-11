@@ -2,45 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-type InstitutionCandidate = {
-  organizationId: string;
-  organizationName: string;
-  organizationSlug: string;
-  matchedDomain: string;
-  allowSubdomains: boolean;
-  matchType: "exact" | "suffix";
-};
-
-type InstitutionAccessSnapshot = {
-  activeMembership: {
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    verifiedAt: string | null;
-  } | null;
-  verifiedInstitutionEmails: Array<{
-    id: string;
-    email: string;
-    domain: string;
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    verifiedAt: string | null;
-  }>;
-  pendingChallenge: {
-    challengeId: string;
-    institutionEmailId: string;
-    email: string;
-    domain?: string;
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    expiresAt: string;
-    resendAvailableAt: string;
-    maxAttempts: number;
-  } | null;
-  canCreateInstitutionMarkets: boolean;
-};
+import type { InstitutionAccessSnapshot, InstitutionCandidate } from "@/lib/institutions/contracts";
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";

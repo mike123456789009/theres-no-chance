@@ -1,8 +1,13 @@
+import {
+  createOpenAiResponseWithRetry,
+  isOpenAiTimeoutLikeError,
+  parseOpenAiResponseJson,
+  type OpenAiResponse,
+} from "@/lib/ai/openai-responses";
 import { DEFAULT_SCOUT_MODEL, OPENAI_CALL_TIMEOUT_MS } from "@/lib/automation/market-research/constants";
 import { listExistingMarketsForResearch, type ExistingMarketContext } from "@/lib/automation/market-research/db";
 import type { GeneratedMarketProposal, ResearchOrganization, ResearchRunScope } from "@/lib/automation/market-research/types";
-import { sleep, type RunDeadline } from "@/lib/automation/market-research/utils";
-import { requiredEnv } from "@/lib/env";
+import type { RunDeadline } from "@/lib/automation/market-research/utils";
 import { MARKET_CARD_SHADOW_TONES } from "@/lib/markets/presentation";
 import { MARKET_CATEGORY_KEYS, MARKET_CATEGORY_LABELS, type MarketCategoryKey } from "@/lib/markets/taxonomy";
 
@@ -13,19 +18,6 @@ type GenerateProposalBatchInput = {
   maxCandidates: number;
   organization?: ResearchOrganization;
   deadline?: RunDeadline;
-};
-
-type OpenAiResponse = {
-  id: string;
-  status?: string;
-  output?: Array<{
-    type?: string;
-    content?: Array<{
-      type?: string;
-      text?: string;
-    }>;
-  }>;
-  output_text?: string;
 };
 
 type ScoutLead = {
@@ -178,103 +170,6 @@ function cleanBoolean(value: string | undefined): boolean {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
-}
-
-function getResponseText(response: OpenAiResponse): string {
-  if (typeof response.output_text === "string" && response.output_text.trim().length > 0) {
-    return response.output_text.trim();
-  }
-
-  const chunks: string[] = [];
-  for (const item of response.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (content.type === "output_text" && typeof content.text === "string") {
-        chunks.push(content.text);
-      }
-    }
-  }
-
-  return chunks.join("\n").trim();
-}
-
-async function createResponseWithRetry(
-  payload: Record<string, unknown>,
-  timeoutMs: number,
-  maxAttempts = 2
-): Promise<OpenAiResponse> {
-  const key = requiredEnv("OPENAI_API_KEY");
-  const attempts = Math.max(1, Math.min(4, Math.floor(maxAttempts)));
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const controller = new AbortController();
-    const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      const rawBody = await response.text();
-      if (!response.ok) {
-        throw new Error(`OpenAI response failed (${response.status}): ${rawBody.slice(0, 400)}`);
-      }
-
-      return JSON.parse(rawBody) as OpenAiResponse;
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.name === "AbortError" || error.message.toLowerCase().includes("aborted"))
-      ) {
-        lastError = new Error(`OpenAI request timed out after ${timeoutMs}ms (attempt ${attempt}/${attempts}).`);
-      } else {
-        lastError = error instanceof Error ? error : new Error("Unknown OpenAI request error.");
-      }
-      if (attempt >= attempts) {
-        throw lastError;
-      }
-      const backoffMs = 450 * 2 ** (attempt - 1);
-      await sleep(backoffMs);
-    } finally {
-      clearTimeout(timeoutHandle);
-    }
-  }
-
-  throw lastError ?? new Error("OpenAI call failed with no error details.");
-}
-
-function isTimeoutLikeError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const normalized = error.message.toLowerCase();
-  return (
-    normalized.includes("aborted") ||
-    normalized.includes("timeout") ||
-    normalized.includes("timed out") ||
-    normalized.includes("aborterror")
-  );
-}
-
-function parseResponseJson(response: OpenAiResponse, label: string): unknown {
-  const text = getResponseText(response);
-  if (!text) {
-    throw new Error(`OpenAI returned empty content for ${label} response ${response.id}.`);
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    throw new Error(
-      `Unable to parse ${label} structured output as JSON: ${
-        error instanceof Error ? error.message : "unknown parse error"
-      }. Raw: ${text.slice(0, 240)}.`
-    );
-  }
 }
 
 function resolveStageTimeoutMs(input: {
@@ -649,9 +544,9 @@ async function runScoutStage(
     ],
   } as const satisfies Record<string, unknown>;
 
-  const response = await createResponseWithRetry(payload, scoutTimeoutMs, 2);
+  const response = await createOpenAiResponseWithRetry(payload, scoutTimeoutMs, 2);
   input.deadline?.throwIfExpired("parsing scout stage output");
-  const parsed = parseResponseJson(response, "scout");
+  const parsed = parseOpenAiResponseJson(response, "scout");
   const leads = toScoutLeads(parsed);
   if (leads.length === 0) {
     throw new Error(`Scout stage returned zero leads. Parsed payload: ${jsonString(parsed).slice(0, 320)}.`);
@@ -693,9 +588,9 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
   } as const satisfies Record<string, unknown>;
 
   if (!useWebSearch) {
-    const directResponse = await createResponseWithRetry(payload, proposalTimeoutMs, 1);
+    const directResponse = await createOpenAiResponseWithRetry(payload, proposalTimeoutMs, 1);
     input.deadline?.throwIfExpired("parsing proposal stage output");
-    const parsed = parseResponseJson(directResponse, "proposal");
+    const parsed = parseOpenAiResponseJson(directResponse, "proposal");
     const proposals = toGeneratedProposals(parsed).slice(0, input.maxCandidates);
     if (proposals.length === 0) {
       throw new Error(`Proposal stage returned zero proposals. Parsed payload: ${jsonString(parsed).slice(0, 320)}.`);
@@ -705,7 +600,7 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
 
   let response: OpenAiResponse;
   try {
-    response = await createResponseWithRetry(
+    response = await createOpenAiResponseWithRetry(
       {
         ...payload,
         tools: buildResearchTools(input.scope),
@@ -714,11 +609,11 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
       1
     );
   } catch (error) {
-    if (!isTimeoutLikeError(error)) {
+    if (!isOpenAiTimeoutLikeError(error)) {
       throw error;
     }
 
-    response = await createResponseWithRetry(
+    response = await createOpenAiResponseWithRetry(
       payload,
       resolveStageTimeoutMs({
         stage: "proposal fallback call",
@@ -731,7 +626,7 @@ async function runProposalStage(input: GenerateProposalBatchInput, leads: ScoutL
   }
 
   input.deadline?.throwIfExpired("parsing proposal stage output");
-  const parsed = parseResponseJson(response, "proposal");
+  const parsed = parseOpenAiResponseJson(response, "proposal");
   const proposals = toGeneratedProposals(parsed).slice(0, input.maxCandidates);
   if (proposals.length === 0) {
     throw new Error(`Proposal stage returned zero proposals. Parsed payload: ${jsonString(parsed).slice(0, 320)}.`);

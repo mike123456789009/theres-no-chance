@@ -1,6 +1,8 @@
 import { jsonError, jsonInternalError } from "@/lib/api/http-errors";
+import { parseJsonBody } from "@/lib/api/route-primitives";
 import type { MarketDetailDTO } from "@/lib/markets/read-markets";
 import type { MarketDetailGuardConfig } from "@/lib/markets/request-context";
+import { isRecord } from "@/lib/shared/primitives";
 
 type TradeRouteKind = "quote" | "execution";
 
@@ -11,32 +13,16 @@ type TradeEngineFailure = {
   missingEnv?: string[];
 };
 
-type ParsedTradeJsonBody =
-  | { ok: true; payload: unknown }
-  | { ok: false; response: Response };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 export function tradeUnavailableMessage(kind: TradeRouteKind): string {
   return kind === "quote"
     ? "Trade quote is unavailable: missing Supabase environment variables."
     : "Trade execution is unavailable: missing Supabase environment variables.";
 }
 
-export async function parseTradeJsonBody(request: Request): Promise<ParsedTradeJsonBody> {
-  try {
-    return {
-      ok: true,
-      payload: await request.json(),
-    };
-  } catch {
-    return {
-      ok: false,
-      response: jsonError(400, "Request body must be valid JSON."),
-    };
-  }
+export async function parseTradeJsonBody(request: Request) {
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) return parsed;
+  return { ok: true as const, payload: parsed.value };
 }
 
 export function normalizeExecutePayloadWithIdempotencyKey(

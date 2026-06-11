@@ -1,0 +1,185 @@
+.tnc-table-wrap {
+  overflow-x: auto;
+}
+
+.tnc-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  font-family: var(--font-retro-ui);
+  font-size: 0.78rem;
+}
+
+.tnc-data-table--narrow {
+  min-width: 760px;
+}
+
+.tnc-data-table--wide {
+  min-width: 820px;
+}
+
+.tnc-data-table--ledger {
+  min-width: 860px;
+}
+
+.tnc-data-table th {
+  text-align: left;
+  border-bottom: 2px solid var(--border-strong);
+  padding: 0.4rem;
+}
+
+.tnc-data-table td {
+  border-bottom: 1px solid var(--border-soft);
+  padding: 0.45rem 0.4rem;
+}
+
+.tnc-data-table .is-right {
+  text-align: right;
+}
+
+.tnc-data-table .is-center {
+  text-align: center;
+}
+
+html[data-ui-style="modern"] .tnc-data-table {
+  font-family: var(--font-modern-mono);
+  font-size: 0.77rem;
+}
+
+html[data-ui-style="modern"] .tnc-data-table th {
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface-muted);
+}
+
+html[data-ui-style="modern"] .tnc-data-table td {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+html[data-ui-style="modern"] .tnc-data-table tr:last-child td {
+  border-bottom: 0;
+}
+
+html[data-ui-style="modern"] :is(.auth-card, .onboarding-card, .create-card, .admin-card) {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 65%, white) 0%,
+      var(--surface-elevated) 100%
+    ),
+    var(--surface-elevated);
+}
+
+html[data-ui-style="modern"]
+  :is(
+    .account-mode-pane,
+    .account-section-pane,
+    .account-nav-link,
+    .account-mode-link,
+    .account-panel,
+    .account-avatar-fieldset,
+    .account-profile-preview,
+    .create-section,
+    .create-source-item,
+    .create-wizard-progress,
+    .admin-queue-section,
+    .admin-ai-runs,
+    .admin-queue-card,
+    .admin-ai-run-card,
+    .admin-run-badge,
+    .admin-run-summary-grid p,
+    .admin-health-pill,
+    .admin-health-lifecycle p,
+    .admin-user-link,
+    .admin-grant-card,
+    .deposit-provider-card,
+    .deposit-status-banner,
+    .institution-focus-card,
+    .institution-merge-preview,
+    .market-detail-strip-panel,
+    .market-detail-chart-panel,
+    .market-detail-action-panel,
+    .market-detail-position-panel,
+    .market-detail-section,
+    .market-detail-position-grid p,
+    .trade-success-banner,
+    .trade-error-banner,
+    .trade-auth-required,
+    .trade-market-closed
+  ) {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-elevated);
+}
+
+html[data-ui-style="modern"]
+  :is(
+    .create-submit,
+    .create-source-add,
+    .create-source-remove,
+    .admin-queue-actions button,
+    .auth-submit,
+    .onboarding-submit,
+    .market-detail-order-tabs button,
+    .market-detail-action-links a,
+    .market-detail-login-links a,
+    .trade-dismiss-button,
+    .market-detail-action-button
+  ) {
+  border-width: 1px;
+  border-color: var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+  font-family: var(--font-modern-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html[data-ui-style="modern"]
+  :is(
+    .auth-field input,
+    .onboarding-field input,
+    .auth-password-toggle,
+    .create-field input,
+    .create-field textarea,
+    .create-field select,
+    .admin-queue-note textarea
+  ) {
+  border-width: 1px;
+  border-color: var(--border-soft);
+  border-radius: 10px;
+  box-shadow: none;
+  background: var(--field-bg);
+  color: var(--text-primary);
+  font-family: var(--font-modern-ui);
+}
+
+html[data-ui-style="modern"]
+  :is(
+    .auth-field input,
+    .onboarding-field input,
+    .auth-password-toggle,
+    .interest-chip,
+    .create-field input,
+    .create-field textarea,
+    .create-field select,
+    .admin-queue-note textarea
+  ):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 640px) {
+  .tnc-data-table {
+    min-width: 680px;
+    font-size: 0.72rem;
+  }
+}

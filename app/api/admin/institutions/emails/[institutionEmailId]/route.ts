@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { parseAdminJsonBody, requireInstitutionAdminService, requireUuid } from "@/lib/admin/institution-route-helpers";
 import { isUniqueViolation, isUuidLike } from "@/lib/admin/institutions-admin";
+import { jsonError } from "@/lib/api/http-errors";
 import { isEduDomain, normalizeInstitutionEmail } from "@/lib/institutions/access";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { cleanText } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,72 +23,49 @@ type RouteContext = {
 
 const ALLOWED_STATUSES = new Set(["pending_verification", "verified", "revoked"]);
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function normalizeStatus(value: unknown): "pending_verification" | "verified" | "revoked" | null {
-  const normalized = clean(value).toLowerCase();
+  const normalized = cleanText(value).toLowerCase();
   if (!ALLOWED_STATUSES.has(normalized)) return null;
   return normalized as "pending_verification" | "verified" | "revoked";
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution email edits are unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const admin = await requireInstitutionAdminService("Institution email edits are unavailable: missing service role configuration.");
+  if (!admin.ok) return admin.response;
 
   const { institutionEmailId } = await context.params;
-  if (!isUuidLike(institutionEmailId)) {
-    return NextResponse.json({ error: "Invalid institution email identity id." }, { status: 400 });
-  }
+  const institutionEmailUuid = requireUuid(institutionEmailId, "institution email identity id");
+  if (!institutionEmailUuid.ok) return institutionEmailUuid.response;
 
-  let body: EmailUpdateBody;
-  try {
-    body = (await request.json()) as EmailUpdateBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseAdminJsonBody<EmailUpdateBody>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
 
   const normalizedEmail = body.email === undefined ? undefined : normalizeInstitutionEmail(body.email);
   if (body.email !== undefined && !normalizedEmail) {
-    return NextResponse.json({ error: "Institution email must be a valid email address." }, { status: 400 });
+    return jsonError(400, "Institution email must be a valid email address.");
   }
 
   if (normalizedEmail && !isEduDomain(normalizedEmail.domain)) {
-    return NextResponse.json({ error: "Institution email must use a .edu domain." }, { status: 400 });
+    return jsonError(400, "Institution email must use a .edu domain.");
   }
 
-  const organizationId = body.organizationId === undefined ? undefined : clean(body.organizationId);
+  const organizationId = body.organizationId === undefined ? undefined : cleanText(body.organizationId);
   if (organizationId !== undefined && !isUuidLike(organizationId)) {
-    return NextResponse.json({ error: "organizationId must be a valid UUID." }, { status: 400 });
+    return jsonError(400, "organizationId must be a valid UUID.");
   }
 
   const status = body.status === undefined ? undefined : normalizeStatus(body.status);
   if (body.status !== undefined && !status) {
-    return NextResponse.json(
-      {
-        error: "status must be one of pending_verification, verified, or revoked.",
-      },
-      { status: 400 }
-    );
+    return jsonError(400, "status must be one of pending_verification, verified, or revoked.");
   }
 
   if (normalizedEmail === undefined && organizationId === undefined && status === undefined) {
-    return NextResponse.json({ error: "At least one field must be updated." }, { status: 400 });
+    return jsonError(400, "At least one field must be updated.");
   }
 
   try {
-    const service = createServiceClient();
+    const { service, adminUser } = admin.value;
     const { data: existing, error: existingError } = await service
       .from("user_institution_emails")
       .select("id, email, domain, organization_id, status, verified_at")
@@ -162,7 +140,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     await service.from("admin_action_log").insert({
-      admin_user_id: auth.adminUser.id,
+      admin_user_id: adminUser.id,
       action: "edit_institution_email_identity",
       target_type: "institution_email_identity",
       target_id: institutionEmailId,

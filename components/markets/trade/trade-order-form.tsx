@@ -1,4 +1,5 @@
 import type { ExecuteState, QuoteState, TradeAction, TradeSide } from "./types";
+import { formatCurrency, formatPercent, formatShares } from "./formatters";
 
 type TradeOrderFormProps = {
   selectedSide: TradeSide;
@@ -15,26 +16,6 @@ type TradeOrderFormProps = {
   onSetMaxSlippage: (value: string) => void;
   onExecuteTrade: () => void;
 };
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatShares(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
-}
 
 export function TradeOrderForm(props: TradeOrderFormProps) {
   const {

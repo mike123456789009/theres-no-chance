@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-type ErrorExtras = {
+export type ErrorExtras = {
   detail?: string;
   details?: unknown;
   code?: string;

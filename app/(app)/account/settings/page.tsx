@@ -1,9 +1,10 @@
-import Link from "next/link";
-
+import { AccountLoginRequiredPanel, AccountUnavailablePanel } from "@/components/account/account-state-panels";
 import { PIXEL_AVATAR_OPTIONS, isPixelAvatarUrl } from "@/components/account/avatar-options";
 import { InstitutionAccessPanel } from "@/components/account/institution-access-panel";
 import { ProfileEditor } from "@/components/account/profile-editor";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { displayNameFallback } from "@/lib/account/formatters";
+import { loadAccountPageContext } from "@/lib/account/page-context";
+import { cleanText } from "@/lib/shared/primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -13,57 +14,33 @@ type ProfileRow = {
   ui_style: string | null;
 } | null;
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function fallbackDisplayName(email: string | null | undefined): string {
-  const normalized = clean(email);
-  if (!normalized.includes("@")) return "Trader";
-  const [name] = normalized.split("@");
-  return clean(name) || "Trader";
-}
-
 export default async function AccountSettingsPage() {
-  if (!isSupabaseServerEnvConfigured()) {
-    const missingEnv = getMissingSupabaseServerEnv();
-
+  const context = await loadAccountPageContext();
+  if (!context.ok && context.reason === "env") {
     return (
-      <section className="account-panel account-panel-warning" aria-label="Account settings configuration error">
-        <p className="create-kicker">Settings</p>
-        <h1 className="create-title">Settings Unavailable</h1>
-        <p className="create-copy">Configure Supabase server environment values before loading account settings.</p>
-        <p className="create-copy">
-          Missing env vars: <code>{missingEnv.join(", ")}</code>
-        </p>
-      </section>
+      <AccountUnavailablePanel
+        kicker="Settings"
+        title="Settings Unavailable"
+        copy="Configure Supabase server environment values before loading account settings."
+        missingEnv={context.missingEnv}
+        ariaLabel="Account settings configuration error"
+      />
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!context.ok) {
     return (
-      <section className="account-panel" aria-label="Settings login required">
-        <p className="create-kicker">Settings</p>
-        <h1 className="create-title">Log in to edit settings</h1>
-        <p className="create-copy">Profile edits are saved to your authenticated account.</p>
-        <div className="create-actions account-actions-top">
-          <Link className="create-submit create-submit-muted" href="/login">
-            Log in
-          </Link>
-          <Link className="create-submit" href="/signup">
-            Create account
-          </Link>
-        </div>
-      </section>
+      <AccountLoginRequiredPanel
+        kicker="Settings"
+        title="Log in to edit settings"
+        copy="Profile edits are saved to your authenticated account."
+        ariaLabel="Settings login required"
+        showBackToMarkets={false}
+      />
     );
   }
 
+  const { supabase, user } = context;
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select("display_name, avatar_url, ui_style")
@@ -72,12 +49,12 @@ export default async function AccountSettingsPage() {
 
   const profile = (profileData ?? null) as ProfileRow;
 
-  const metadataDisplayName = clean((user.user_metadata as Record<string, unknown> | undefined)?.display_name);
-  const metadataFullName = clean((user.user_metadata as Record<string, unknown> | undefined)?.full_name);
-  const initialDisplayName = clean(profile?.display_name) || metadataDisplayName || metadataFullName || fallbackDisplayName(user.email);
+  const metadataDisplayName = cleanText((user.user_metadata as Record<string, unknown> | undefined)?.display_name);
+  const metadataFullName = cleanText((user.user_metadata as Record<string, unknown> | undefined)?.full_name);
+  const initialDisplayName = cleanText(profile?.display_name) || metadataDisplayName || metadataFullName || displayNameFallback(user.email);
 
-  const metadataAvatarUrl = clean((user.user_metadata as Record<string, unknown> | undefined)?.avatar_url);
-  const avatarCandidate = clean(profile?.avatar_url) || metadataAvatarUrl;
+  const metadataAvatarUrl = cleanText((user.user_metadata as Record<string, unknown> | undefined)?.avatar_url);
+  const avatarCandidate = cleanText(profile?.avatar_url) || metadataAvatarUrl;
   const initialAvatarUrl = isPixelAvatarUrl(avatarCandidate) ? avatarCandidate : PIXEL_AVATAR_OPTIONS[0].url;
 
   return (

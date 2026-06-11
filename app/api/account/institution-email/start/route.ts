@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { jsonError } from "@/lib/api/http-errors";
+import { parseJsonBody, requireAuthenticatedUser, requireServerEnv } from "@/lib/api/route-primitives";
 import { normalizeInstitutionEmail, isEduDomain } from "@/lib/institutions/access";
 import { startInstitutionEmailVerification } from "@/lib/institutions/challenges";
 import { sendInstitutionVerificationEmail } from "@/lib/institutions/email";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { cleanText, isRecord } from "@/lib/shared/primitives";
 
 function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  return cleanText(value);
 }
 
 function normalizeOrganizationChoice(value: unknown): string | undefined {
@@ -15,58 +17,41 @@ function normalizeOrganizationChoice(value: unknown): string | undefined {
 }
 
 export async function POST(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution verification is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const env = requireServerEnv("Institution verification is unavailable: missing Supabase environment variables.");
+  if (!env.ok) {
+    return env.response;
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) {
+    return parsed.response;
   }
 
-  const body = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : null;
-  if (!body) {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  if (!isRecord(parsed.value)) {
+    return jsonError(400, "Invalid request body.");
   }
 
+  const body = parsed.value;
   const normalizedEmail = normalizeInstitutionEmail(body.email);
   if (!normalizedEmail) {
-    return NextResponse.json({ error: "Institution email must be a valid email address." }, { status: 400 });
+    return jsonError(400, "Institution email must be a valid email address.");
   }
 
   if (!isEduDomain(normalizedEmail.domain)) {
-    return NextResponse.json(
-      {
-        error: "Institution email must use a .edu domain.",
-      },
-      { status: 400 }
-    );
+    return jsonError(400, "Institution email must use a .edu domain.");
   }
 
   const selectedOrganizationId = normalizeOrganizationChoice(body.selectedOrganizationId);
   const newInstitutionName = clean(body.newInstitutionName);
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    const user = await requireAuthenticatedUser();
+    if (!user.ok) {
+      return user.response;
     }
 
     const started = await startInstitutionEmailVerification({
-      userId: user.id,
+      userId: user.value.id,
       email: normalizedEmail.email,
       domain: normalizedEmail.domain,
       selectedOrganizationId,

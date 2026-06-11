@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { parseAdminJsonBody, requireInstitutionAdminService } from "@/lib/admin/institution-route-helpers";
 import { isUuidLike, mapInstitutionAdminRpcError } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { jsonError } from "@/lib/api/http-errors";
+import { cleanText, parseBoolean } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,57 +14,30 @@ type MergeBody = {
   deleteSource?: unknown;
 };
 
-function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function parseBoolean(value: unknown, fallback: boolean): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-  }
-  return fallback;
-}
-
 export async function POST(request: Request) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
+  const admin = await requireInstitutionAdminService("Institution merge is unavailable: missing service role configuration.");
+  if (!admin.ok) return admin.response;
 
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution merge is unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const parsed = await parseAdminJsonBody<MergeBody>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
 
-  let body: MergeBody;
-  try {
-    body = (await request.json()) as MergeBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
-
-  const sourceOrganizationId = clean(body.sourceOrganizationId);
-  const targetOrganizationId = clean(body.targetOrganizationId);
+  const sourceOrganizationId = cleanText(body.sourceOrganizationId);
+  const targetOrganizationId = cleanText(body.targetOrganizationId);
   const deleteSource = parseBoolean(body.deleteSource, true);
 
   if (!isUuidLike(sourceOrganizationId) || !isUuidLike(targetOrganizationId)) {
-    return NextResponse.json({ error: "sourceOrganizationId and targetOrganizationId must be valid UUIDs." }, { status: 400 });
+    return jsonError(400, "sourceOrganizationId and targetOrganizationId must be valid UUIDs.");
   }
 
   if (sourceOrganizationId === targetOrganizationId) {
-    return NextResponse.json({ error: "Source and target institutions must differ." }, { status: 400 });
+    return jsonError(400, "Source and target institutions must differ.");
   }
 
   try {
-    const service = createServiceClient();
+    const { service, adminUser } = admin.value;
     const { data, error } = await service.rpc("admin_merge_institutions", {
-      p_admin_user_id: auth.adminUser.id,
+      p_admin_user_id: adminUser.id,
       p_source_organization_id: sourceOrganizationId,
       p_target_organization_id: targetOrganizationId,
       p_delete_source: deleteSource,

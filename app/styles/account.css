@@ -21,49 +21,6 @@
   margin-top: 0.9rem;
 }
 
-.tnc-table-wrap {
-  overflow-x: auto;
-}
-
-.tnc-data-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 760px;
-  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-}
-
-.tnc-data-table--narrow {
-  min-width: 760px;
-}
-
-.tnc-data-table--wide {
-  min-width: 820px;
-}
-
-.tnc-data-table--ledger {
-  min-width: 860px;
-}
-
-.tnc-data-table th {
-  text-align: left;
-  border-bottom: 2px solid #101010;
-  padding: 0.4rem;
-}
-
-.tnc-data-table td {
-  border-bottom: 1px solid #cccccc;
-  padding: 0.45rem 0.4rem;
-}
-
-.tnc-data-table .is-right {
-  text-align: right;
-}
-
-.tnc-data-table .is-center {
-  text-align: center;
-}
-
 .ledger-market-link {
   text-decoration: underline;
 }
@@ -349,32 +306,6 @@ html[data-ui-style="modern"] .account-mode-link span {
   letter-spacing: 0;
 }
 
-html[data-ui-style="modern"] .account-mode-pane,
-html[data-ui-style="modern"] .account-section-pane,
-html[data-ui-style="modern"] .account-nav-link,
-html[data-ui-style="modern"] .account-mode-link,
-html[data-ui-style="modern"] .account-panel,
-html[data-ui-style="modern"] .account-avatar-fieldset,
-html[data-ui-style="modern"] .account-profile-preview,
-html[data-ui-style="modern"] .create-section,
-html[data-ui-style="modern"] .admin-queue-section,
-html[data-ui-style="modern"] .admin-ai-runs,
-html[data-ui-style="modern"] .admin-queue-card,
-html[data-ui-style="modern"] .admin-ai-run-card,
-html[data-ui-style="modern"] .admin-run-badge,
-html[data-ui-style="modern"] .admin-user-link,
-html[data-ui-style="modern"] .admin-grant-card,
-html[data-ui-style="modern"] .deposit-provider-card,
-html[data-ui-style="modern"] .deposit-status-banner,
-html[data-ui-style="modern"] .institution-focus-card,
-html[data-ui-style="modern"] .institution-merge-preview {
-  border-width: 1px;
-  border-color: var(--border-strong);
-  border-radius: 14px;
-  box-shadow: var(--shadow-soft);
-  background: var(--surface-elevated);
-}
-
 html[data-ui-style="modern"] .account-panel-warning {
   border-color: color-mix(in srgb, var(--negative) 48%, white);
 }
@@ -386,21 +317,6 @@ html[data-ui-style="modern"] .admin-user-link.is-active {
   box-shadow: var(--shadow-soft);
   background: var(--accent-tertiary);
   border-color: color-mix(in srgb, var(--accent-primary) 42%, white);
-}
-
-html[data-ui-style="modern"] .create-submit,
-html[data-ui-style="modern"] .create-source-add,
-html[data-ui-style="modern"] .create-source-remove,
-html[data-ui-style="modern"] .admin-queue-actions button,
-html[data-ui-style="modern"] .auth-submit,
-html[data-ui-style="modern"] .onboarding-submit {
-  border-width: 1px;
-  border-color: var(--border-strong);
-  border-radius: 10px;
-  box-shadow: var(--shadow-soft);
-  font-family: var(--font-modern-ui);
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 html[data-ui-style="modern"] .create-submit {
@@ -442,27 +358,6 @@ html[data-ui-style="modern"] .auth-email {
   border-radius: 10px;
   box-shadow: none;
   background: var(--field-bg);
-}
-
-html[data-ui-style="modern"] .tnc-data-table {
-  font-family: var(--font-modern-mono);
-  font-size: 0.77rem;
-}
-
-html[data-ui-style="modern"] .tnc-data-table th {
-  border-bottom: 1px solid var(--border-strong);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: var(--surface-muted);
-}
-
-html[data-ui-style="modern"] .tnc-data-table td {
-  border-bottom: 1px solid var(--border-soft);
-}
-
-html[data-ui-style="modern"] .tnc-data-table tr:last-child td {
-  border-bottom: 0;
 }
 
 html[data-ui-style="modern"] .admin-history-table {
@@ -537,10 +432,6 @@ html[data-ui-style="modern"] .deposit-status-banner.kind-canceled {
 
   .account-style-toggle {
     width: fit-content;
-  }
-
-  .tnc-data-table {
-    font-size: 0.72rem;
   }
 
   html[data-ui-style="modern"] .account-mode-pane,

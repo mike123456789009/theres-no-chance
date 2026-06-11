@@ -1,9 +1,8 @@
 import { getAdminAllowlistEmails, listPlatformAdminUserIds } from "@/lib/auth/admin";
+import { toUrlSearchParams, type SearchParamsInput } from "@/lib/shared/next-types";
 import { createServiceClient } from "@/lib/supabase/service";
 
-export type SearchParamsRecord = Record<string, string | string[] | undefined>;
-
-export type SearchParamsInput = SearchParamsRecord | Promise<SearchParamsRecord> | undefined;
+export type { SearchParamsInput } from "@/lib/shared/next-types";
 
 export type UserListItem = {
   id: string;
@@ -135,21 +134,6 @@ function clean(value: unknown): string {
 
 function normalizeEmail(value: unknown): string {
   return clean(value).toLowerCase();
-}
-
-function toUrlSearchParams(raw: SearchParamsRecord): URLSearchParams {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(raw)) {
-    if (Array.isArray(value)) {
-      const first = value.find((entry) => typeof entry === "string" && entry.trim().length > 0);
-      if (first) params.set(key, first);
-      continue;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-      params.set(key, value);
-    }
-  }
-  return params;
 }
 
 function normalizeUserList(rawUsers: Array<Record<string, unknown>>): UserListItem[] {

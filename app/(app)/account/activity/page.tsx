@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { AccountLoginRequiredPanel, AccountUnavailablePanel } from "@/components/account/account-state-panels";
+import { formatCurrency, formatDate, formatLabel, formatPercent, formatSignedCurrency, toNumber } from "@/lib/account/formatters";
+import { loadAccountPageContext } from "@/lib/account/page-context";
 
 export const dynamic = "force-dynamic";
 
@@ -23,89 +25,32 @@ type TradeFillRow = {
   created_at: string;
 };
 
-function toNumber(value: number | string | null | undefined, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatSignedCurrency(value: number): string {
-  if (value === 0) return formatCurrency(0);
-  const absolute = formatCurrency(Math.abs(value));
-  return value > 0 ? `+${absolute}` : `-${absolute}`;
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatLabel(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 export default async function AccountActivityPage() {
-  if (!isSupabaseServerEnvConfigured()) {
-    const missingEnv = getMissingSupabaseServerEnv();
-
+  const context = await loadAccountPageContext();
+  if (!context.ok && context.reason === "env") {
     return (
-      <section className="account-panel account-panel-warning" aria-label="Account activity configuration error">
-        <p className="create-kicker">Activity</p>
-        <h1 className="create-title">Activity Unavailable</h1>
-        <p className="create-copy">Configure Supabase server environment values before loading account activity.</p>
-        <p className="create-copy">
-          Missing env vars: <code>{missingEnv.join(", ")}</code>
-        </p>
-      </section>
+      <AccountUnavailablePanel
+        kicker="Activity"
+        title="Activity Unavailable"
+        copy="Configure Supabase server environment values before loading account activity."
+        missingEnv={context.missingEnv}
+        ariaLabel="Account activity configuration error"
+      />
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!context.ok) {
     return (
-      <section className="account-panel" aria-label="Activity login required">
-        <p className="create-kicker">Activity</p>
-        <h1 className="create-title">Log in to view activity</h1>
-        <p className="create-copy">Recent wallet ledger and trade fills are available after authentication.</p>
-        <div className="create-actions account-actions-top">
-          <Link className="create-submit create-submit-muted" href="/login">
-            Log in
-          </Link>
-          <Link className="create-submit" href="/signup">
-            Create account
-          </Link>
-          <Link className="create-submit create-submit-muted" href="/markets">
-            Back to markets
-          </Link>
-        </div>
-      </section>
+      <AccountLoginRequiredPanel
+        kicker="Activity"
+        title="Log in to view activity"
+        copy="Recent wallet ledger and trade fills are available after authentication."
+        ariaLabel="Activity login required"
+      />
     );
   }
 
+  const { supabase, user } = context;
   const [ledgerResult, fillsResult] = await Promise.all([
     supabase
       .from("ledger_entries")

@@ -9,6 +9,7 @@ import {
   type MarketViewerContext,
 } from "@/lib/markets/read-markets";
 import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import type { SearchParamsInput } from "@/lib/shared/next-types";
 import {
   DEFAULT_AVATAR_URL,
   cleanText,
@@ -27,10 +28,7 @@ type ProfileSummaryRow = {
   ui_style: string | null;
 } | null;
 
-export type SearchParamsInput =
-  | Record<string, string | string[] | undefined>
-  | Promise<Record<string, string | string[] | undefined>>
-  | undefined;
+export type { SearchParamsInput } from "@/lib/shared/next-types";
 
 export type DiscoveryMarketCardsResult = Awaited<ReturnType<typeof listDiscoveryMarketCards>>;
 

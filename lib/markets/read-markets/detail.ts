@@ -1,5 +1,3 @@
-import type { MarketAccessRules } from "@/lib/markets/access-rules";
-import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import {
   canViewerAccessMarketDetail,
@@ -10,10 +8,18 @@ import {
 } from "@/lib/markets/view-access";
 
 import {
+  cleanText,
+  isMarketSchemaMissingError,
+  normalizeTags,
+  resolveAmmSnapshot,
+  resolveCardShadowTone,
+  toNumber,
+  toOptionalNumber,
+} from "./mappers";
+import {
   MARKET_DETAIL_CHART_POINTS,
   type ChallengeRow,
   type EvidenceRow,
-  type MarketAmmStateRow,
   type MarketDetailChartPointDTO,
   type MarketDetailDTO,
   type MarketDetailFetchResult,
@@ -30,53 +36,6 @@ import {
   type ViewerChallengeDTO,
   type ViewerResolverBondDTO,
 } from "./types";
-
-function isSchemaMissingError(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return (
-    normalized.includes("could not find the table 'public.markets'") ||
-    normalized.includes('relation "markets" does not exist') ||
-    normalized.includes("schema cache")
-  );
-}
-
-function cleanText(value: string | null | undefined): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toNumber(value: number | string | null | undefined, fallback: number): number {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function toOptionalNumber(value: number | string | null | undefined): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
 
 function parseDateMs(value: string | null | undefined, fallbackMs: number): number {
   if (!value) return fallbackMs;
@@ -105,48 +64,6 @@ export function buildMarketDetailChartPoints(options: {
       priceYes: options.priceYes,
     };
   });
-}
-
-function normalizeAmmState(raw: MarketAmmStateRow | MarketAmmStateRow[] | null): MarketAmmStateRow | null {
-  if (!raw) return null;
-  if (Array.isArray(raw)) return raw[0] ?? null;
-  return raw;
-}
-
-function normalizeTags(raw: string[] | null): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((tag) => typeof tag === "string" && tag.trim().length > 0);
-}
-
-function hashId(value: string): number {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function fallbackCardShadowToneFromId(marketId: string): MarketCardShadowTone {
-  const toneIndex = hashId(marketId) % MARKET_CARD_SHADOW_TONES.length;
-  return MARKET_CARD_SHADOW_TONES[toneIndex];
-}
-
-function toCardShadowTone(value: unknown): MarketCardShadowTone | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.trim().toLowerCase();
-  if ((MARKET_CARD_SHADOW_TONES as readonly string[]).includes(normalized)) {
-    return normalized as MarketCardShadowTone;
-  }
-  return null;
-}
-
-function resolveCardShadowTone(accessRules: MarketAccessRules, marketId: string): MarketCardShadowTone {
-  const explicitTone =
-    toCardShadowTone(accessRules.cardShadowTone) ??
-    toCardShadowTone(accessRules.cardShadowColor);
-
-  return explicitTone ?? fallbackCardShadowToneFromId(marketId);
 }
 
 export function mapEvidenceRows(evidenceRows: EvidenceRow[]): MarketEvidenceDTO[] {
@@ -215,7 +132,7 @@ export async function getMarketDetail(options: {
       return { kind: "not_found" };
     }
 
-    if (isSchemaMissingError(error.message)) {
+    if (isMarketSchemaMissingError(error.message)) {
       return {
         kind: "schema_missing",
         message: error.message,
@@ -344,13 +261,7 @@ export async function getMarketDetail(options: {
     return { kind: "not_found" };
   }
 
-  const ammState = normalizeAmmState(row.market_amm_state);
-  const priceYes = clamp(toNumber(ammState?.last_price_yes, 0.5), 0, 1);
-  const explicitPriceNo = clamp(toNumber(ammState?.last_price_no, 1 - priceYes), 0, 1);
-  const priceNo = clamp(explicitPriceNo || 1 - priceYes, 0, 1);
-  const yesShares = Math.max(0, toNumber(ammState?.yes_shares, 0));
-  const noShares = Math.max(0, toNumber(ammState?.no_shares, 0));
-  const poolShares = yesShares + noShares;
+  const { ammState, priceYes, priceNo, yesShares, noShares, poolShares } = resolveAmmSnapshot(row.market_amm_state);
 
   let evidenceRows: EvidenceRow[] = [];
   let contributionRows: ResolverPrizeContributionRow[] = [];

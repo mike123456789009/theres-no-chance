@@ -1,5 +1,3 @@
-import type { MarketAccessRules } from "@/lib/markets/access-rules";
-import { MARKET_CARD_SHADOW_TONES, type MarketCardShadowTone } from "@/lib/markets/presentation";
 import { createServiceClient, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 import {
   DISCOVERABLE_MARKET_STATUSES,
@@ -12,84 +10,19 @@ import {
 
 import { shouldIncludeForCategory, shouldIncludeForSearch } from "./query";
 import {
+  isMarketSchemaMissingError,
+  normalizeTags,
+  resolveAmmSnapshot,
+  resolveCardShadowTone,
+} from "./mappers";
+import {
   MARKET_DISCOVERY_LIMIT,
-  type MarketAmmStateRow,
   type MarketCardDTO,
   type MarketDiscoveryQuery,
   type MarketDiscoveryRow,
   type MarketViewerContext,
   type SupabaseServerClient,
 } from "./types";
-
-function isSchemaMissingError(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return (
-    normalized.includes("could not find the table 'public.markets'") ||
-    normalized.includes('relation "markets" does not exist') ||
-    normalized.includes("schema cache")
-  );
-}
-
-function toNumber(value: number | string | null | undefined, fallback: number): number {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function normalizeAmmState(raw: MarketAmmStateRow | MarketAmmStateRow[] | null): MarketAmmStateRow | null {
-  if (!raw) return null;
-  if (Array.isArray(raw)) return raw[0] ?? null;
-  return raw;
-}
-
-function normalizeTags(raw: string[] | null): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((tag) => typeof tag === "string" && tag.trim().length > 0);
-}
-
-function hashId(value: string): number {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function fallbackCardShadowToneFromId(marketId: string): MarketCardShadowTone {
-  const toneIndex = hashId(marketId) % MARKET_CARD_SHADOW_TONES.length;
-  return MARKET_CARD_SHADOW_TONES[toneIndex];
-}
-
-function toCardShadowTone(value: unknown): MarketCardShadowTone | null {
-  if (typeof value !== "string") return null;
-  const normalized = value.trim().toLowerCase();
-  if ((MARKET_CARD_SHADOW_TONES as readonly string[]).includes(normalized)) {
-    return normalized as MarketCardShadowTone;
-  }
-  return null;
-}
-
-function resolveCardShadowTone(accessRules: MarketAccessRules, marketId: string): MarketCardShadowTone {
-  const explicitTone =
-    toCardShadowTone(accessRules.cardShadowTone) ??
-    toCardShadowTone(accessRules.cardShadowColor);
-
-  return explicitTone ?? fallbackCardShadowToneFromId(marketId);
-}
 
 function toTimestamp(value: string): number {
   const parsed = Date.parse(value);
@@ -148,7 +81,7 @@ export async function listDiscoveryMarketCards(options: {
     return {
       markets: [],
       error: error.message,
-      schemaMissing: isSchemaMissingError(error.message),
+      schemaMissing: isMarketSchemaMissingError(error.message),
     };
   }
 
@@ -225,12 +158,7 @@ export async function listDiscoveryMarketCards(options: {
         return null;
       }
 
-      const ammState = normalizeAmmState(row.market_amm_state);
-      const priceYes = clamp(toNumber(ammState?.last_price_yes, 0.5), 0, 1);
-      const explicitPriceNo = clamp(toNumber(ammState?.last_price_no, 1 - priceYes), 0, 1);
-      const priceNo = clamp(explicitPriceNo || 1 - priceYes, 0, 1);
-      const yesShares = Math.max(0, toNumber(ammState?.yes_shares, 0));
-      const noShares = Math.max(0, toNumber(ammState?.no_shares, 0));
+      const { priceYes, priceNo, poolShares } = resolveAmmSnapshot(row.market_amm_state);
 
       return {
         id: row.id,
@@ -249,7 +177,7 @@ export async function listDiscoveryMarketCards(options: {
         accessRequiresLogin,
         priceYes,
         priceNo,
-        poolShares: yesShares + noShares,
+        poolShares,
         cardShadowTone: resolveCardShadowTone(accessRules, row.id),
         actionRequired: viewer.isAuthenticated ? "account_ready" : "create_account",
       } as MarketCardDTO;

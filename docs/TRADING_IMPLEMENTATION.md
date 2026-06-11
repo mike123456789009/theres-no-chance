@@ -89,19 +89,19 @@ This document summarizes the comprehensive test suite and trading UI implementat
   - Removed old static calculations
 
 #### Trade Interface Styles
-- **File:** `app/trade-interface.css`
+- **File:** `app/styles/market-detail.css`
 - **Styles:**
-  - Success/error banners (green/red with borders)
+  - Success/error banners using theme tokens
   - Trade tabs (grid layout, active states)
   - Form inputs (focus states, disabled states)
   - Quote display (loading indicators, error messages)
   - Auth/market closed notices
-  - Execute button (primary blue, disabled gray)
+  - Execute button (primary and disabled states)
   - All styles match existing design system
 
 #### Root Layout Update
-- **File:** `app/layout.tsx`
-- **Changes:** Import trade-interface.css
+- **File:** `app/globals.css`
+- **Changes:** Trade styling is loaded through `app/styles/market-detail.css`
 
 ## Package Scripts
 
@@ -275,13 +275,12 @@ All changes have been pushed to the `main` branch following the AGENTS.md workfl
 - `lib/markets/trade-engine.test.ts`
 - `lib/test-helpers/api-mocks.ts`
 - `components/markets/trade-interface.tsx`
-- `app/trade-interface.css`
 - `docs/TRADING_IMPLEMENTATION.md`
 
 ### Modified
 - `package.json` (already had Vitest)
 - `app/(app)/markets/[marketId]/page.tsx`
-- `app/layout.tsx`
+- `app/styles/market-detail.css`
 - `.github/workflows/ci.yml` (already updated)
 
 ## Code Quality

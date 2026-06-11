@@ -29,6 +29,13 @@ import {
   requestWithdrawal,
   validateWithdrawalPayload,
 } from "@/lib/payments/withdrawals";
+import { createRouteRequest } from "@/lib/test-helpers/api-mocks";
+
+const WITHDRAWALS_URL = "http://localhost/api/withdrawals";
+
+function createWithdrawalRequest(body: unknown = { amount: 125 }): Request {
+  return createRouteRequest(WITHDRAWALS_URL, { body });
+}
 
 function createServiceClientMock(options?: {
   kycStatus?: string | null;
@@ -172,10 +179,7 @@ describe("POST /api/withdrawals", () => {
   });
 
   it("returns 201 on happy path when request is accepted", async () => {
-    const request = new Request("http://localhost/api/withdrawals", {
-      method: "POST",
-      body: JSON.stringify({ amount: 125 }),
-    });
+    const request = createWithdrawalRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -212,10 +216,7 @@ describe("POST /api/withdrawals", () => {
       },
     });
 
-    const request = new Request("http://localhost/api/withdrawals", {
-      method: "POST",
-      body: JSON.stringify({ amount: 125 }),
-    });
+    const request = createWithdrawalRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -235,10 +236,7 @@ describe("POST /api/withdrawals", () => {
       },
     } as any);
 
-    const request = new Request("http://localhost/api/withdrawals", {
-      method: "POST",
-      body: JSON.stringify({ amount: 125 }),
-    });
+    const request = createWithdrawalRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -269,10 +267,7 @@ describe("POST /api/withdrawals", () => {
       errors: ["destination.address is required and must be at least 8 characters."],
     });
 
-    const request = new Request("http://localhost/api/withdrawals", {
-      method: "POST",
-      body: JSON.stringify({ amount: 125 }),
-    });
+    const request = createWithdrawalRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -290,10 +285,7 @@ describe("POST /api/withdrawals", () => {
       detail: "Insufficient available balance.",
     });
 
-    const request = new Request("http://localhost/api/withdrawals", {
-      method: "POST",
-      body: JSON.stringify({ amount: 125 }),
-    });
+    const request = createWithdrawalRequest();
 
     const response = await POST(request);
     const json = await response.json();

@@ -1,7 +1,9 @@
-# Theres No Chance — Full Product Build Plan (Decision-Complete)
+# Theres No Chance — Historical Full Product Build Plan
+
+Current runtime architecture lives in `docs/CURRENT_ARCHITECTURE.md`. This file is retained as a historical build plan and should not be treated as the source of truth when it conflicts with current code.
 
 ## Summary
-We will evolve the current static landing page into a full prediction market application in **small, isolated production deployments** (one feature per deploy), keeping the current landing visual style intact.
+The original static landing prototype has been replaced by the Next.js marketing route. Ongoing work ships as small, isolated production deployments.
 
 ## Refactor Program Completion (2026-02-21)
 - The 15-release refactor hardening program has been completed through Release 15.
@@ -15,11 +17,11 @@ Locked decisions:
 - Use **Supabase** for auth, Postgres, RLS, and storage.
 - Use **AMM binary pricing model** for v1 (Yes/No contracts where implied prices sum to 1; winning share settles to 1 unit).
 - Use **Venmo** as the only wallet funding method in v1, with invoice-code-based reconciliation and admin review support.
-- Resolution authority in v1: **Platform Admin Final**.
+- Resolution authority in v1: **Community resolution with admin adjudication/finalization paths**.
 - Market creation flow in v1: **Approval Required** before open trading.
 - Private/institution gating in v1: **email-signup + verified institution domain rules** (e.g., `@college.edu`, `@students.college.edu`).
 - Discovery access model in v1: **guests can view public markets**, **institution/restricted markets require login**, and **all market actions require account authentication**.
-- Community/crowd resolution is explicitly postponed.
+- Community/crowd resolution is active in the current product surface.
 
 ## Architecture & App Structure
 
@@ -34,10 +36,10 @@ Locked decisions:
   - `app/(auth)/reset`
   - `app/(app)/markets`
   - `app/(app)/markets/[marketId]`
-  - `app/(app)/portfolio`
-  - `app/(app)/wallet`
+  - `app/(app)/account/portfolio`
+  - `app/(app)/account/wallet`
   - `app/(app)/create`
-  - `app/(app)/admin` (+ moderation/resolution subpages)
+  - `app/(app)/account/admin` (+ moderation/resolution/institution/payment subpages)
 
 ## Backend
 - Use Next route handlers + Supabase client libraries.

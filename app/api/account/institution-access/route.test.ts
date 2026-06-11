@@ -8,6 +8,8 @@ vi.mock("@/lib/api/env-guards", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
+  getMissingSupabaseServerEnv: vi.fn(() => []),
+  isSupabaseServerEnvConfigured: vi.fn(() => true),
 }));
 
 vi.mock("@/lib/institutions/memberships", () => ({

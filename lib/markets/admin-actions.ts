@@ -1,6 +1,6 @@
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
 
-type QueueAction = "approve" | "reject" | "halt";
+export type QueueAction = "approve" | "reject" | "halt";
 type QueueStatus = "draft" | "review" | "open" | "trading_halted";
 
 type AdminActionConfig = {

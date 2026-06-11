@@ -1,65 +1,55 @@
 import { NextResponse } from "next/server";
 
+import { jsonError } from "@/lib/api/http-errors";
+import { parseJsonBody, requireAuthenticatedUser, requireServerEnv } from "@/lib/api/route-primitives";
 import { verifyInstitutionChallenge } from "@/lib/institutions/challenges";
 import { getInstitutionAccessSnapshot } from "@/lib/institutions/memberships";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { cleanText, isRecord } from "@/lib/shared/primitives";
 
 function clean(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  return cleanText(value);
 }
 
 export async function POST(request: Request) {
-  if (!isSupabaseServerEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution verification is unavailable: missing Supabase environment variables.",
-        missingEnv: getMissingSupabaseServerEnv(),
-      },
-      { status: 503 }
-    );
+  const env = requireServerEnv("Institution verification is unavailable: missing Supabase environment variables.");
+  if (!env.ok) {
+    return env.response;
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) {
+    return parsed.response;
   }
 
-  const body = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : null;
-  if (!body) {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  if (!isRecord(parsed.value)) {
+    return jsonError(400, "Invalid request body.");
   }
 
+  const body = parsed.value;
   const challengeId = clean(body.challengeId);
   const code = clean(body.code).replace(/\s+/g, "");
 
   if (!challengeId) {
-    return NextResponse.json({ error: "challengeId is required." }, { status: 400 });
+    return jsonError(400, "challengeId is required.");
   }
 
   if (!/^\d{6}$/.test(code)) {
-    return NextResponse.json({ error: "code must be a 6-digit numeric value." }, { status: 400 });
+    return jsonError(400, "code must be a 6-digit numeric value.");
   }
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    const user = await requireAuthenticatedUser();
+    if (!user.ok) {
+      return user.response;
     }
 
     const verified = await verifyInstitutionChallenge({
-      userId: user.id,
+      userId: user.value.id,
       challengeId,
       code,
     });
 
-    const snapshot = await getInstitutionAccessSnapshot(user.id);
+    const snapshot = await getInstitutionAccessSnapshot(user.value.id);
 
     return NextResponse.json({
       message: "Institution email verified and active membership updated.",

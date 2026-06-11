@@ -10,6 +10,7 @@
     "verify:public-barrels": "tsc --noEmit -p tsconfig.public-barrels.json",
     "typecheck": "next typegen && node -e \"require('fs').rmSync('.next/dev/types/validator.ts', { force: true })\" && tsc --noEmit",
     "test": "vitest run",
+    "duplicates": "npx --yes jscpd --min-lines 8 --min-tokens 60 --format typescript,javascript,tsx,css --ignore \"public/vendor/**,package-lock.json,docs/intent-verification/**,.next/**\" --reporters console .",
     "verify": "npm run lint && npm run verify:public-barrels && npm run typecheck && npm test && npm run build",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -18,10 +19,10 @@
     "supabase:link": "bash ./scripts/supabase-safe.sh link --project-ref ynuyfchtajpmnbcpbagb",
     "supabase:migration:list": "bash ./scripts/supabase-safe.sh migration list",
     "supabase:db:push": "bash ./scripts/supabase-safe.sh db push --linked --yes",
-    "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit --max=20",
-    "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit --max=10",
-    "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run --max=20",
-    "market:scan:institution:dry": "tsx scripts/market-research-runner.ts --scope=institution --dry-run --max=10"
+    "market:scan:public": "tsx scripts/market-research-runner.ts --scope=public --submit",
+    "market:scan:institution": "tsx scripts/market-research-runner.ts --scope=institution --submit",
+    "market:scan:public:dry": "tsx scripts/market-research-runner.ts --scope=public --dry-run",
+    "market:scan:institution:dry": "tsx scripts/market-research-runner.ts --scope=institution --dry-run"
   },
   "repository": {
     "type": "git",

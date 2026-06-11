@@ -76,82 +76,24 @@ export function requiresAuthenticatedViewer(input: Pick<MarketAccessInput, "visi
   return hasInstitutionAccessRule(input.accessRules);
 }
 
-export function canViewerDiscoverMarket(market: MarketAccessInput, viewer: ViewerAccessInput): ViewerAccessResult {
-  const isCreator = Boolean(viewer.userId && viewer.userId === market.creatorId);
-  const institutionMarket = isInstitutionMarket(market);
-  const requiredOrganizationId = extractRequiredOrganizationId(market.accessRules);
-  const activeOrganizationId = clean(viewer.activeOrganizationId).toLowerCase() || null;
-
-  if (!isDiscoverableMarketStatus(market.status) && !isCreator) {
-    return {
-      allowed: false,
-      reason: "not_discoverable",
-      readOnlyLegacy: false,
-      isInstitutionMarket: institutionMarket,
-      requiredOrganizationId,
-    };
-  }
-
-  if (!institutionMarket) {
-    if (requiresAuthenticatedViewer(market) && !viewer.isAuthenticated) {
-      return {
-        allowed: false,
-        reason: "login_required",
-        readOnlyLegacy: false,
-        isInstitutionMarket: false,
-        requiredOrganizationId,
-      };
-    }
-
-    return {
-      allowed: true,
-      reason: "ok",
-      readOnlyLegacy: false,
-      isInstitutionMarket: false,
-      requiredOrganizationId,
-    };
-  }
-
-  if (!viewer.isAuthenticated) {
-    return {
-      allowed: false,
-      reason: "login_required",
-      readOnlyLegacy: false,
-      isInstitutionMarket: true,
-      requiredOrganizationId,
-    };
-  }
-
-  if (!activeOrganizationId) {
-    return {
-      allowed: true,
-      reason: "ok",
-      readOnlyLegacy: false,
-      isInstitutionMarket: true,
-      requiredOrganizationId,
-    };
-  }
-
-  if (requiredOrganizationId && activeOrganizationId === requiredOrganizationId) {
-    return {
-      allowed: true,
-      reason: "ok",
-      readOnlyLegacy: false,
-      isInstitutionMarket: true,
-      requiredOrganizationId,
-    };
-  }
-
+function accessResult(input: {
+  allowed: boolean;
+  reason: ViewerAccessReason;
+  readOnlyLegacy?: boolean;
+  isInstitutionMarket: boolean;
+  requiredOrganizationId: string | null;
+}): ViewerAccessResult {
   return {
-    allowed: false,
-    reason: "forbidden",
-    readOnlyLegacy: false,
-    isInstitutionMarket: true,
-    requiredOrganizationId,
+    allowed: input.allowed,
+    reason: input.reason,
+    readOnlyLegacy: input.readOnlyLegacy === true,
+    isInstitutionMarket: input.isInstitutionMarket,
+    requiredOrganizationId: input.requiredOrganizationId,
   };
 }
 
-export function canViewerAccessMarketDetail(
+function evaluateViewerMarketAccess(
+  mode: "discovery" | "detail",
   market: MarketAccessInput,
   viewer: ViewerAccessInput,
   options?: { hasLegacyPosition?: boolean }
@@ -163,82 +105,87 @@ export function canViewerAccessMarketDetail(
   const hasLegacyPosition = options?.hasLegacyPosition === true;
 
   if (!isDiscoverableMarketStatus(market.status) && !isCreator) {
-    return {
+    return accessResult({
       allowed: false,
       reason: "not_discoverable",
-      readOnlyLegacy: false,
       isInstitutionMarket: institutionMarket,
       requiredOrganizationId,
-    };
+    });
   }
 
   if (!institutionMarket) {
     if (requiresAuthenticatedViewer(market) && !viewer.isAuthenticated) {
-      return {
+      return accessResult({
         allowed: false,
         reason: "login_required",
-        readOnlyLegacy: false,
         isInstitutionMarket: false,
         requiredOrganizationId,
-      };
+      });
     }
 
-    return {
+    return accessResult({
       allowed: true,
       reason: "ok",
-      readOnlyLegacy: false,
       isInstitutionMarket: false,
       requiredOrganizationId,
-    };
+    });
   }
 
   if (!viewer.isAuthenticated) {
-    return {
+    return accessResult({
       allowed: false,
       reason: "login_required",
-      readOnlyLegacy: false,
       isInstitutionMarket: true,
       requiredOrganizationId,
-    };
+    });
   }
 
   if (!activeOrganizationId) {
-    return {
-      allowed: false,
-      reason: "institution_verification_required",
-      readOnlyLegacy: false,
+    return accessResult({
+      allowed: mode === "discovery",
+      reason: mode === "discovery" ? "ok" : "institution_verification_required",
       isInstitutionMarket: true,
       requiredOrganizationId,
-    };
+    });
   }
 
   if (requiredOrganizationId && activeOrganizationId === requiredOrganizationId) {
-    return {
+    return accessResult({
       allowed: true,
       reason: "ok",
-      readOnlyLegacy: false,
       isInstitutionMarket: true,
       requiredOrganizationId,
-    };
+    });
   }
 
   if (hasLegacyPosition) {
-    return {
+    return accessResult({
       allowed: true,
       reason: "ok",
       readOnlyLegacy: true,
       isInstitutionMarket: true,
       requiredOrganizationId,
-    };
+    });
   }
 
-  return {
+  return accessResult({
     allowed: false,
     reason: "forbidden",
-    readOnlyLegacy: false,
     isInstitutionMarket: true,
     requiredOrganizationId,
-  };
+  });
+}
+
+export function canViewerDiscoverMarket(market: MarketAccessInput, viewer: ViewerAccessInput): ViewerAccessResult {
+  return evaluateViewerMarketAccess("discovery", market, viewer);
+}
+
+export function canViewerAccessMarketDetail(
+  market: MarketAccessInput,
+  viewer: ViewerAccessInput,
+  options?: { hasLegacyPosition?: boolean }
+): ViewerAccessResult {
+  return evaluateViewerMarketAccess("detail", market, viewer, options);
 }
 
 export function canViewerSeeMarket(market: MarketAccessInput, viewer: ViewerAccessInput): ViewerAccessResult {

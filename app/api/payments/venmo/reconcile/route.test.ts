@@ -9,8 +9,27 @@ vi.mock("@/lib/supabase/service", () => ({
 }));
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { createRouteRequest, createVenmoPaymentFixture } from "@/lib/test-helpers/api-mocks";
 
 const ORIGINAL_ENV = { ...process.env };
+const RECONCILE_URL = "http://localhost/api/payments/venmo/reconcile";
+
+function createReconcileRequest(options: { authorized?: boolean; payments?: unknown[] } = {}) {
+  return createRouteRequest(RECONCILE_URL, {
+    headers: options.authorized === false ? undefined : { Authorization: "Bearer test-secret" },
+    body: {
+      payments:
+        options.payments ??
+        [
+          createVenmoPaymentFixture({
+            gmailMessageId: "msg-1",
+            venmoTransactionId: "tx-1",
+            amountUsd: 10,
+          }),
+        ],
+    },
+  });
+}
 
 type QueryResolver = (input: {
   table: string;
@@ -217,22 +236,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     const service = createMockService({ existingCredited: false });
     vi.mocked(createServiceClient).mockReturnValue(service as any);
 
-    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer test-secret",
-      },
-      body: JSON.stringify({
-        payments: [
-          {
-            gmailMessageId: "msg-1",
-            venmoTransactionId: "tx-1",
-            amountUsd: 10,
-            note: "Payment note VC-ABCD23",
-          },
-        ],
-      }),
-    });
+    const request = createReconcileRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -248,22 +252,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     const service = createMockService({ existingCredited: true });
     vi.mocked(createServiceClient).mockReturnValue(service as any);
 
-    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer test-secret",
-      },
-      body: JSON.stringify({
-        payments: [
-          {
-            gmailMessageId: "msg-1",
-            venmoTransactionId: "tx-1",
-            amountUsd: 10,
-            note: "Payment note VC-ABCD23",
-          },
-        ],
-      }),
-    });
+    const request = createReconcileRequest();
 
     const response = await POST(request);
     const json = await response.json();
@@ -278,19 +267,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     const service = createMockService({ existingCredited: false });
     vi.mocked(createServiceClient).mockReturnValue(service as any);
 
-    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
-      method: "POST",
-      body: JSON.stringify({
-        payments: [
-          {
-            gmailMessageId: "msg-1",
-            venmoTransactionId: "tx-1",
-            amountUsd: 10,
-            note: "Payment note VC-ABCD23",
-          },
-        ],
-      }),
-    });
+    const request = createReconcileRequest({ authorized: false });
 
     const response = await POST(request);
     const json = await response.json();
@@ -318,13 +295,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     expect(malformedResponse.status).toBe(400);
     expect(malformedJson.error).toBe("Request body must be valid JSON.");
 
-    const emptyPaymentsRequest = new Request("http://localhost/api/payments/venmo/reconcile", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer test-secret",
-      },
-      body: JSON.stringify({ payments: [] }),
-    });
+    const emptyPaymentsRequest = createReconcileRequest({ payments: [] });
 
     const emptyPaymentsResponse = await POST(emptyPaymentsRequest);
     const emptyPaymentsJson = await emptyPaymentsResponse.json();
@@ -340,22 +311,7 @@ describe("POST /api/payments/venmo/reconcile", () => {
     });
     vi.mocked(createServiceClient).mockReturnValue(service as any);
 
-    const request = new Request("http://localhost/api/payments/venmo/reconcile", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer test-secret",
-      },
-      body: JSON.stringify({
-        payments: [
-          {
-            gmailMessageId: "msg-1",
-            venmoTransactionId: "tx-1",
-            amountUsd: 10,
-            note: "Payment note VC-ABCD23",
-          },
-        ],
-      }),
-    });
+    const request = createReconcileRequest();
 
     const response = await POST(request);
     const json = await response.json();

@@ -1,12 +1,19 @@
 import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { parseBracketedRpcError } from "@/lib/api/rpc-errors";
+import { cleanText, isRecord, parseNumber } from "@/lib/shared/primitives";
+import {
+  TRADE_ACTIONS,
+  TRADE_SIDES,
+  type TradeAction,
+  type TradeExecution,
+  type TradeQuote,
+  type TradeSide,
+} from "@/lib/markets/trade-contract";
 
-export const TRADE_SIDES = ["yes", "no"] as const;
-export const TRADE_ACTIONS = ["buy", "sell"] as const;
+export { TRADE_ACTIONS, TRADE_SIDES } from "@/lib/markets/trade-contract";
+export type { TradeAction, TradeExecution, TradeQuote, TradeSide } from "@/lib/markets/trade-contract";
 
 const DEFAULT_MAX_SLIPPAGE_BPS = 500;
-
-export type TradeSide = (typeof TRADE_SIDES)[number];
-export type TradeAction = (typeof TRADE_ACTIONS)[number];
 
 export type ValidatedTradeQuotePayload = {
   side: TradeSide;
@@ -21,33 +28,8 @@ export type ValidatedTradeExecutePayload = ValidatedTradeQuotePayload & {
 
 export type TradeValidationResult<T> = { ok: true; data: T } | { ok: false; errors: string[] };
 
-export type TradeQuoteRpcResult = {
-  marketId: string;
-  side: TradeSide;
-  action: TradeAction;
-  shares: number;
-  feeBps: number;
-  priceBeforeYes: number;
-  priceAfterYes: number;
-  priceBeforeSide: number;
-  priceAfterSide: number;
-  averagePrice: number;
-  notional: number;
-  feeAmount: number;
-  netCashChange: number;
-  slippageBps: number;
-};
-
-export type TradeExecuteRpcResult = TradeQuoteRpcResult & {
-  reused: boolean;
-  tradeFillId: string;
-  userId: string;
-  walletAvailableBalance: number;
-  positionYesShares: number;
-  positionNoShares: number;
-  positionRealizedPnl: number;
-  executedAt: string;
-};
+export type TradeQuoteRpcResult = TradeQuote;
+export type TradeExecuteRpcResult = TradeExecution;
 
 type ServiceCallError = {
   status: number;
@@ -58,23 +40,8 @@ type ServiceCallError = {
 
 type ServiceCallResult<T> = { ok: true; data: T } | ({ ok: false } & ServiceCallError);
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function cleanText(value: unknown, maxLength: number): string {
-  if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
-}
-
 function isOneOf<T extends readonly string[]>(value: string, allowed: T): value is T[number] {
   return (allowed as readonly string[]).includes(value);
-}
-
-function parseNumber(value: unknown): number | null {
-  const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-  if (!Number.isFinite(numeric)) return null;
-  return numeric;
 }
 
 function parseMaxSlippageBps(raw: unknown, errors: string[]): number {
@@ -97,56 +64,21 @@ function parseMaxSlippageBps(raw: unknown, errors: string[]): number {
 }
 
 function parseRpcError(message: string): ServiceCallError {
-  const trimmed = message.trim();
-  const match = trimmed.match(/^\[(TRADE_[A-Z_]+)\]\s*(.*)$/);
-  if (!match) {
-    return {
+  return parseBracketedRpcError(
+    message,
+    {
+      TRADE_VALIDATION: { status: 400, error: "Trade validation failed." },
+      TRADE_FORBIDDEN: { status: 403, error: "Trade forbidden." },
+      TRADE_NOT_FOUND: { status: 404, error: "Market not found." },
+      TRADE_CONFLICT: { status: 409, error: "Trade cannot be executed." },
+      TRADE_POSITION: { status: 409, error: "Trade cannot be executed." },
+      TRADE_FUNDS: { status: 409, error: "Trade cannot be executed." },
+    },
+    {
       status: 500,
       error: "Trade operation failed.",
-      detail: trimmed,
-    };
-  }
-
-  const code = match[1];
-  const detail = match[2] || "Trade operation failed.";
-
-  if (code === "TRADE_VALIDATION") {
-    return {
-      status: 400,
-      error: "Trade validation failed.",
-      detail,
-    };
-  }
-
-  if (code === "TRADE_FORBIDDEN") {
-    return {
-      status: 403,
-      error: "Trade forbidden.",
-      detail,
-    };
-  }
-
-  if (code === "TRADE_NOT_FOUND") {
-    return {
-      status: 404,
-      error: "Market not found.",
-      detail,
-    };
-  }
-
-  if (code === "TRADE_CONFLICT" || code === "TRADE_POSITION" || code === "TRADE_FUNDS") {
-    return {
-      status: 409,
-      error: "Trade cannot be executed.",
-      detail,
-    };
-  }
-
-  return {
-    status: 500,
-    error: "Trade operation failed.",
-    detail,
-  };
+    }
+  );
 }
 
 function normalizeQuoteResult(raw: unknown): TradeQuoteRpcResult | null {

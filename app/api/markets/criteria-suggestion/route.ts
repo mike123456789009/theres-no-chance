@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { requiredEnv } from "@/lib/env";
+import { createOpenAiResponseWithRetry, extractOpenAiResponseText } from "@/lib/ai/openai-responses";
+import { jsonError } from "@/lib/api/http-errors";
+import { parseJsonBody } from "@/lib/api/route-primitives";
+import { cleanText as cleanTextPrimitive } from "@/lib/shared/primitives";
 
 type CriteriaSuggestionBody = {
   question?: unknown;
@@ -9,38 +12,11 @@ type CriteriaSuggestionBody = {
   visibility?: unknown;
 };
 
-type OpenAiResponse = {
-  output_text?: string;
-  output?: Array<{
-    content?: Array<{
-      type?: string;
-      text?: string;
-    }>;
-  }>;
-};
-
 const DEFAULT_MODEL = process.env.MARKET_CRITERIA_MODEL?.trim() || "gpt-5-mini";
+const CRITERIA_OPENAI_TIMEOUT_MS = 45_000;
 
 function cleanText(value: unknown, maxLength: number): string {
-  if (typeof value !== "string") return "";
-  return value.trim().replace(/\s+/g, " ").slice(0, maxLength);
-}
-
-function extractOutputText(response: OpenAiResponse): string {
-  if (typeof response.output_text === "string" && response.output_text.trim().length > 0) {
-    return response.output_text.trim();
-  }
-
-  const chunks: string[] = [];
-  for (const item of response.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (content.type === "output_text" && typeof content.text === "string") {
-        chunks.push(content.text);
-      }
-    }
-  }
-
-  return chunks.join("\n").trim();
+  return cleanTextPrimitive(value, maxLength).replace(/\s+/g, " ");
 }
 
 function parseCriteriaJson(raw: string): { resolvesYesIf: string; resolvesNoIf: string } | null {
@@ -69,8 +45,6 @@ async function suggestCriteria(input: {
   resolvesYesIf: string;
   resolvesNoIf: string;
 }> {
-  const apiKey = requiredEnv("OPENAI_API_KEY");
-
   const prompt = [
     "You write strict binary market resolution criteria.",
     "Return JSON only with resolvesYesIf and resolvesNoIf.",
@@ -126,22 +100,8 @@ async function suggestCriteria(input: {
     },
   };
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const text = await response.text();
-  if (!response.ok) {
-    throw new Error(`OpenAI criteria request failed (${response.status}): ${text.slice(0, 220)}`);
-  }
-
-  const parsed = JSON.parse(text) as OpenAiResponse;
-  const outputText = extractOutputText(parsed);
+  const parsed = await createOpenAiResponseWithRetry(payload, CRITERIA_OPENAI_TIMEOUT_MS, 1);
+  const outputText = extractOpenAiResponseText(parsed);
   const criteria = parseCriteriaJson(outputText);
 
   if (!criteria) {
@@ -152,12 +112,9 @@ async function suggestCriteria(input: {
 }
 
 export async function POST(request: Request) {
-  let body: CriteriaSuggestionBody;
-  try {
-    body = (await request.json()) as CriteriaSuggestionBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseJsonBody<CriteriaSuggestionBody>(request);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value;
 
   const question = cleanText(body.question, 180);
   const description = cleanText(body.description, 3000);
@@ -176,13 +133,7 @@ export async function POST(request: Request) {
   }
 
   if (validationErrors.length > 0) {
-    return NextResponse.json(
-      {
-        error: "Validation failed.",
-        details: validationErrors,
-      },
-      { status: 400 }
-    );
+    return jsonError(400, "Validation failed.", { details: validationErrors });
   }
 
   try {

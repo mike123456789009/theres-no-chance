@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { isUniqueViolation, isUuidLike, normalizeInstitutionDomain } from "@/lib/admin/institutions-admin";
-import { requireAllowlistedAdmin } from "@/lib/auth/admin-guard";
-import { createServiceClient, getMissingSupabaseServiceEnv, isSupabaseServiceEnvConfigured } from "@/lib/supabase/service";
+import { parseAdminJsonBody, requireInstitutionAdminService, requireUuid } from "@/lib/admin/institution-route-helpers";
+import { isUniqueViolation, normalizeInstitutionDomain } from "@/lib/admin/institutions-admin";
+import { jsonError } from "@/lib/api/http-errors";
+import { parseBoolean } from "@/lib/shared/primitives";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,51 +19,26 @@ type RouteContext = {
   }>;
 };
 
-function parseBoolean(value: unknown, fallback: boolean): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["1", "true", "yes", "on"].includes(normalized)) return true;
-    if (["0", "false", "no", "off"].includes(normalized)) return false;
-  }
-  return fallback;
-}
-
 export async function POST(request: Request, context: RouteContext) {
-  const auth = await requireAllowlistedAdmin();
-  if (!auth.ok) return auth.response;
-
-  if (!isSupabaseServiceEnvConfigured()) {
-    return NextResponse.json(
-      {
-        error: "Institution domain edits are unavailable: missing service role configuration.",
-        missingEnv: getMissingSupabaseServiceEnv(),
-      },
-      { status: 503 }
-    );
-  }
+  const admin = await requireInstitutionAdminService("Institution domain edits are unavailable: missing service role configuration.");
+  if (!admin.ok) return admin.response;
 
   const { institutionId } = await context.params;
-  if (!isUuidLike(institutionId)) {
-    return NextResponse.json({ error: "Invalid institution id." }, { status: 400 });
-  }
+  const institutionUuid = requireUuid(institutionId, "institution id");
+  if (!institutionUuid.ok) return institutionUuid.response;
 
-  let body: DomainCreateBody;
-  try {
-    body = (await request.json()) as DomainCreateBody;
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+  const parsed = await parseAdminJsonBody<DomainCreateBody>(request);
+  if (!parsed.ok) return parsed.response;
 
-  const normalizedDomain = normalizeInstitutionDomain(body.domain);
+  const normalizedDomain = normalizeInstitutionDomain(parsed.value.domain);
   if (!normalizedDomain) {
-    return NextResponse.json({ error: "Domain must be a valid .edu domain." }, { status: 400 });
+    return jsonError(400, "Domain must be a valid .edu domain.");
   }
 
-  const allowSubdomains = parseBoolean(body.allowSubdomains, true);
+  const allowSubdomains = parseBoolean(parsed.value.allowSubdomains, true);
 
   try {
-    const service = createServiceClient();
+    const { service, adminUser } = admin.value;
 
     const { data, error } = await service
       .from("organization_domains")
@@ -76,7 +52,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (!error && data) {
       await service.from("admin_action_log").insert({
-        admin_user_id: auth.adminUser.id,
+        admin_user_id: adminUser.id,
         action: "add_institution_domain",
         target_type: "organization_domain",
         target_id: data.id,

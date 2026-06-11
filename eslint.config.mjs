@@ -27,6 +27,17 @@ const config = [
         {
           patterns: [
             {
+              group: [
+                "@/lib/admin/account-dashboard",
+                "@/lib/institutions/service",
+                "@/lib/payments/stripe",
+                "@/lib/payments/stripe-webhook",
+                "@/lib/payments/coinbase",
+                "@/lib/payments/coinbase-webhook",
+              ],
+              message: "This compatibility or retired-provider module has been removed; import the current split service instead.",
+            },
+            {
               group: ["@/lib/markets/read-markets/*"],
               message: "Import from '@/lib/markets/read-markets' to stay on the public market-read boundary.",
             },

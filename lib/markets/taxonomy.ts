@@ -1,4 +1,5 @@
 import type { MarketCardShadowTone } from "@/lib/markets/presentation";
+import { hashText } from "@/lib/shared/primitives";
 
 export const MARKET_CATEGORY_KEYS = [
   "trending",
@@ -61,15 +62,6 @@ export const CATEGORY_TO_CARD_TONES: Record<MarketCategoryKey, readonly MarketCa
   economy: ["sky", "mint", "lemon"],
   climate_science: ["lemon", "mint", "sky"],
 };
-
-function hashText(value: string): number {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
 
 export function pickCategoryCardTone(category: MarketCategoryKey, seed: string): MarketCardShadowTone {
   const tones = CATEGORY_TO_CARD_TONES[category];

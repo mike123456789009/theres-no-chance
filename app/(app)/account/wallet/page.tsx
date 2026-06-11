@@ -1,19 +1,18 @@
 import Link from "next/link";
 
+import { AccountLoginRequiredPanel, AccountUnavailablePanel } from "@/components/account/account-state-panels";
 import { DepositPanel } from "@/components/wallet/deposit-panel";
 import { DepositStatusBanner } from "@/components/wallet/deposit-status-banner";
 import { LedgerTable } from "@/components/wallet/ledger-table";
+import { formatCurrency, toNumber } from "@/lib/account/formatters";
+import { loadAccountPageContext } from "@/lib/account/page-context";
 import { getDepositConfig } from "@/lib/payments/deposit-config";
 import { getVenmoFeeConfig } from "@/lib/payments/venmo-fees";
 import { getVenmoPayUrl, getVenmoQrImageUrl, getVenmoUsername } from "@/lib/payments/venmo";
-import { createClient, getMissingSupabaseServerEnv, isSupabaseServerEnvConfigured } from "@/lib/supabase/server";
+import { toUrlSearchParams, type SearchParamsInput } from "@/lib/shared/next-types";
+import { cleanText } from "@/lib/shared/primitives";
 
 export const dynamic = "force-dynamic";
-
-type SearchParamsInput =
-  | Record<string, string | string[] | undefined>
-  | Promise<Record<string, string | string[] | undefined>>
-  | undefined;
 
 type WalletAccountRow = {
   available_balance: number | string | null;
@@ -45,42 +44,6 @@ type FundingIntentRow = {
   updated_at: string;
 } | null;
 
-function toUrlSearchParams(raw: Record<string, string | string[] | undefined>): URLSearchParams {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(raw)) {
-    if (Array.isArray(value)) {
-      const first = value.find((item) => typeof item === "string" && item.trim().length > 0);
-      if (first) params.set(key, first);
-      continue;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-      params.set(key, value);
-    }
-  }
-  return params;
-}
-
-function clean(value: string | null | undefined): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toNumber(value: number | string | null | undefined, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 function isFundingIntentSchemaMissing(message: string): boolean {
   const normalized = message.toLowerCase();
   return (
@@ -91,56 +54,38 @@ function isFundingIntentSchemaMissing(message: string): boolean {
 }
 
 export default async function WalletPage({ searchParams }: Readonly<{ searchParams?: SearchParamsInput }>) {
-  if (!isSupabaseServerEnvConfigured()) {
-    const missingEnv = getMissingSupabaseServerEnv();
-
+  const context = await loadAccountPageContext();
+  if (!context.ok && context.reason === "env") {
     return (
-      <section className="account-panel account-panel-warning" aria-label="Wallet configuration error">
-        <p className="create-kicker">Wallet</p>
-        <h1 className="create-title">Wallet Unavailable</h1>
-        <p className="create-copy">Configure Supabase server environment values before loading wallet data.</p>
-        <p className="create-copy">
-          Missing env vars: <code>{missingEnv.join(", ")}</code>
-        </p>
-        <p className="create-copy">
-          Continue to <a href="/">home</a>
-        </p>
-      </section>
+      <AccountUnavailablePanel
+        kicker="Wallet"
+        title="Wallet Unavailable"
+        copy="Configure Supabase server environment values before loading wallet data."
+        missingEnv={context.missingEnv}
+        continueHref="/"
+        continueLabel="home"
+        ariaLabel="Wallet configuration error"
+      />
     );
   }
 
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
   const params = toUrlSearchParams(resolvedSearchParams);
-  const checkoutState = clean(params.get("checkout")).toLowerCase();
-  const fundingIntentId = clean(params.get("funding_intent_id"));
+  const checkoutState = cleanText(params.get("checkout")).toLowerCase();
+  const fundingIntentId = cleanText(params.get("funding_intent_id"));
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!context.ok) {
     return (
-      <section className="account-panel" aria-label="Wallet login required">
-        <p className="create-kicker">Wallet</p>
-        <h1 className="create-title">Log in to view wallet</h1>
-        <p className="create-copy">Wallet balances, deposits, and ledger history require an authenticated account.</p>
-        <div className="create-actions account-actions-top">
-          <Link className="create-submit create-submit-muted" href="/login">
-            Log in
-          </Link>
-          <Link className="create-submit" href="/signup">
-            Create account
-          </Link>
-          <Link className="create-submit create-submit-muted" href="/markets">
-            Back to markets
-          </Link>
-        </div>
-      </section>
+      <AccountLoginRequiredPanel
+        kicker="Wallet"
+        title="Log in to view wallet"
+        copy="Wallet balances, deposits, and ledger history require an authenticated account."
+        ariaLabel="Wallet login required"
+      />
     );
   }
 
+  const { supabase, user } = context;
   const depositConfig = getDepositConfig();
   const venmoFeeConfig = getVenmoFeeConfig();
 
@@ -179,7 +124,7 @@ export default async function WalletPage({ searchParams }: Readonly<{ searchPara
       id: row.id,
       entryType: row.entry_type,
       amount: toNumber(row.amount, 0),
-      currency: clean(row.currency) || "USD",
+      currency: cleanText(row.currency) || "USD",
       createdAt: row.created_at,
       metadata: row.metadata ?? {},
     }));
