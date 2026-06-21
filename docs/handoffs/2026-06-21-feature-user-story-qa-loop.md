@@ -235,6 +235,11 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the new criteria route and wizard tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-criteria-suggestion.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Create-market AI criteria suggestion production deployment:
+  - Commit `ff3fa24` pushed to `main`.
+  - Vercel deployment `dpl_3vJNqys2X7pQ7mxWsTv7UZtsSc2C` (`https://theres-no-chance-r2rmc9wd5-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live validation smoke: unauthenticated `POST /api/markets/criteria-suggestion` with too-short basics and invalid close time -> `400` with validation details for `question`, `description`, and `closeTime`, avoiding OpenAI invocation.
 
 ## Remaining Next Actions
 
