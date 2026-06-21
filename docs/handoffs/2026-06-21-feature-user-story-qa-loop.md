@@ -29,6 +29,7 @@ Continue the active goal:
 - Eighth targeted Vitest pass added admin Venmo manual match/ignore route coverage: 2 test files / 14 tests.
 - Ninth targeted Vitest pass added admin market approve/reject/halt route and service coverage: 4 test files / 16 tests.
 - Tenth targeted Vitest pass added admin market-research manual-run route coverage: 1 test file / 7 tests.
+- Eleventh targeted Vitest pass added admin finalization/resolution/adjudication route coverage: 3 test files / 18 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -76,6 +77,10 @@ Continue the active goal:
 - Updated `docs/qa/feature-user-stories.csv` row `F031` with approve/reject/halt route and service test evidence plus the remaining browser-only gap.
 - Added `app/api/admin/automation/market-research/run/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F032` with manual market-research run route test evidence and remaining browser/live-run gaps.
+- Added `app/api/admin/markets/[marketId]/finalize/route.test.ts`.
+- Added `app/api/admin/markets/[marketId]/resolve/route.test.ts`.
+- Added `app/api/admin/markets/[marketId]/challenges/[challengeId]/adjudicate/route.test.ts`.
+- Updated `docs/qa/feature-user-stories.csv` row `F034` with finalize/resolve/adjudicate route test evidence and the remaining browser-only gap.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -197,6 +202,17 @@ Existing dirty files were already present and were not modified:
   - Vercel deployment `dpl_CzVM3GTChExpC4wSm421hmhhECSu` reached `Ready` for `https://theres-no-chance.com`.
   - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
   - Live route auth smoke: unauthenticated `POST /api/admin/automation/market-research/run` with `{"scope":"public"}` -> `401` with `{"error":"Unauthorized."}`.
+- Admin finalization/resolution/adjudication route tests:
+  - `npm test -- app/api/admin/markets/'[marketId]'/finalize/route.test.ts app/api/admin/markets/'[marketId]'/resolve/route.test.ts app/api/admin/markets/'[marketId]'/challenges/'[challengeId]'/adjudicate/route.test.ts`
+  - Result: 3 test files passed, 18 tests passed.
+- Admin finalization/resolution/adjudication route static gates:
+  - `npx eslint app/api/admin/markets/'[marketId]'/finalize/route.test.ts app/api/admin/markets/'[marketId]'/resolve/route.test.ts app/api/admin/markets/'[marketId]'/challenges/'[challengeId]'/adjudicate/route.test.ts` -> passed with no warnings after replacing loose service-client casts.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/markets/'[marketId]'/finalize/route.test.ts app/api/admin/markets/'[marketId]'/resolve/route.test.ts app/api/admin/markets/'[marketId]'/challenges/'[challengeId]'/adjudicate/route.test.ts` -> no matches.
+  - `git diff --check -- docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/markets/'[marketId]'/finalize/route.test.ts app/api/admin/markets/'[marketId]'/resolve/route.test.ts app/api/admin/markets/'[marketId]'/challenges/'[challengeId]'/adjudicate/route.test.ts` -> passed.
+  - Standalone tracked-files TypeScript gate including the three new admin moderation route tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-resolution-routes.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
@@ -205,8 +221,7 @@ Existing dirty files were already present and were not modified:
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
    - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
    - `F041`: landing, markets, and account surfaces in retro and modern modes, including palette switching.
-2. Add remaining route-level tests for admin mutation handlers:
-   - `F034`: finalization/adjudication routes.
+2. Continue route-level tests for any future admin mutation handlers added after this handoff.
 4. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
    - `F005`: immediate-session redirect branch.
