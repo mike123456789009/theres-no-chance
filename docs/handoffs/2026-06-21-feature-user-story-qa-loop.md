@@ -22,6 +22,7 @@ Continue the active goal:
 - First targeted Vitest pass is green for 34 test files / 150 tests.
 - Second targeted Vitest pass added auth/onboarding coverage: 2 test files / 9 tests.
 - Third targeted Vitest pass added position/resolution/evidence/prize UI coverage: 4 test files / 20 tests.
+- Fourth targeted Vitest pass added account/wallet/institution/portfolio/activity UI coverage: 5 test files / 19 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -41,6 +42,12 @@ Continue the active goal:
 - Added `components/markets/resolver-prize-boost-card.test.tsx`.
 - Updated `components/markets/community-resolve-panel.tsx` to show the exact challenge stake in the challenge form.
 - Updated `docs/qa/feature-user-stories.csv` rows `F012-F016` with position/resolution/evidence/prize UI test evidence and residual browser gaps.
+- Added `components/account/account-nav.test.tsx`.
+- Added `app/(app)/account/account-pages.test.tsx`.
+- Added `components/account/profile-editor.test.tsx`.
+- Added `components/account/institution-access-panel.test.tsx`.
+- Added `components/wallet/ledger-table.test.tsx`.
+- Updated `docs/qa/feature-user-stories.csv` rows `F021-F024` and `F026-F028` with account/wallet/institution/portfolio/activity UI test evidence and residual browser gaps.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -64,15 +71,23 @@ Existing dirty files were already present and were not modified:
 - Position/resolution/evidence/prize UI targeted tests:
   - `npm test -- components/markets/page-sections/market-detail-position-panel.test.tsx components/markets/community-resolve-panel.test.tsx components/markets/evidence-submission-card.test.tsx components/markets/resolver-prize-boost-card.test.tsx`
   - Result: 4 test files passed, 20 tests passed.
+- Account/wallet/institution/portfolio/activity UI targeted tests:
+  - `npm test -- components/account/account-nav.test.tsx app/'(app)'/account/account-pages.test.tsx components/account/profile-editor.test.tsx components/account/institution-access-panel.test.tsx components/wallet/ledger-table.test.tsx`
+  - Result: 5 test files passed, 19 tests passed.
+- Account/wallet/institution/portfolio/activity static gates:
+  - `npx eslint components/account/account-nav.test.tsx app/'(app)'/account/account-pages.test.tsx components/account/profile-editor.test.tsx components/account/institution-access-panel.test.tsx components/wallet/ledger-table.test.tsx` -> passed.
+  - Standalone tracked-files TypeScript gate including the five new QA files (`npx tsc --noEmit --project /tmp/tnc-tsconfig-account-*.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run the next loop over untested UI-only stories:
-   - Account overview/settings/activity and ledger `F021-F028`
    - Admin action UIs `F031`, `F034-F037`
    - Theme toggle and redirects `F041-F042`
 2. Run remaining browser QA for covered-but-not-live-visual stories:
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
+   - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
 3. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
    - `F005`: immediate-session redirect branch.
