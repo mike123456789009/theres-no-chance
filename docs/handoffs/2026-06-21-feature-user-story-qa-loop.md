@@ -23,6 +23,7 @@ Continue the active goal:
 - Second targeted Vitest pass added auth/onboarding coverage: 2 test files / 9 tests.
 - Third targeted Vitest pass added position/resolution/evidence/prize UI coverage: 4 test files / 20 tests.
 - Fourth targeted Vitest pass added account/wallet/institution/portfolio/activity UI coverage: 5 test files / 19 tests.
+- Fifth targeted Vitest pass added admin action UI coverage: 6 test files / 17 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -48,6 +49,13 @@ Continue the active goal:
 - Added `components/account/institution-access-panel.test.tsx`.
 - Added `components/wallet/ledger-table.test.tsx`.
 - Updated `docs/qa/feature-user-stories.csv` rows `F021-F024` and `F026-F028` with account/wallet/institution/portfolio/activity UI test evidence and residual browser gaps.
+- Added `components/admin/admin-review-queue.test.tsx`.
+- Added `components/admin/admin-research-run-controls.test.tsx`.
+- Added `components/admin/admin-resolution-queue.test.tsx`.
+- Added `components/admin/admin-venmo-reconcile-queue.test.tsx`.
+- Added `components/admin/admin-grant-control.test.tsx`.
+- Added `app/(app)/account/admin/users/page-content.test.tsx`.
+- Updated `docs/qa/feature-user-stories.csv` rows `F031-F032` and `F034-F037` with admin action UI test evidence and remaining route/browser gaps.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -79,26 +87,43 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the five new QA files (`npx tsc --noEmit --project /tmp/tnc-tsconfig-account-*.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Admin action UI targeted tests:
+  - `npm test -- components/admin/admin-review-queue.test.tsx components/admin/admin-research-run-controls.test.tsx components/admin/admin-resolution-queue.test.tsx components/admin/admin-venmo-reconcile-queue.test.tsx components/admin/admin-grant-control.test.tsx app/'(app)'/account/admin/users/page-content.test.tsx`
+  - Result: 6 test files passed, 17 tests passed.
+- Admin action UI static gates:
+  - `npx eslint components/admin/admin-review-queue.test.tsx components/admin/admin-research-run-controls.test.tsx components/admin/admin-resolution-queue.test.tsx components/admin/admin-venmo-reconcile-queue.test.tsx components/admin/admin-grant-control.test.tsx app/'(app)'/account/admin/users/page-content.test.tsx` -> passed.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" ...admin QA files... docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> no matches.
+  - `git diff --check -- ...admin QA files... docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> passed.
+  - Standalone tracked-files TypeScript gate including the six new admin QA files (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-*.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files after clearing generated `.next/types/* 2.ts` duplicates: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run the next loop over untested UI-only stories:
-   - Admin action UIs `F031`, `F034-F037`
    - Theme toggle and redirects `F041-F042`
 2. Run remaining browser QA for covered-but-not-live-visual stories:
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
-3. Expand residual auth/onboarding coverage when those surfaces are touched:
+   - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
+3. Add remaining route-level tests for admin mutation handlers:
+   - `F031`: approve/reject/halt routes.
+   - `F032`: market-research manual-run auth and scope validation.
+   - `F034`: finalization/adjudication routes.
+   - `F035`: Venmo manual match/ignore routes.
+   - `F037`: grant-platform-admin route confirmation/auth enforcement.
+4. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
    - `F005`: immediate-session redirect branch.
    - `F006`: invalid recovery, hash-token recovery, and password mismatch branches.
    - `F007`: protected onboarding page auth behavior.
-4. Resolve product/logistical gaps:
+5. Resolve product/logistical gaps:
    - Decide whether `F044` payment provider routes should be removed, documented and completed, or excluded from release.
    - Decide whether `F045` inactive create-market steps should be wired, consolidated, or removed.
    - Decide whether `F029` needs a wallet withdrawal UI or copy adjustment.
-5. For any UX or logistical error fixed, update the CSV row, add/adjust focused tests, rerun the relevant gate, then mark the retest result in the same CSV.
-6. Before any production push, stage only this session's files unless explicitly asked to include pre-existing dirty work.
+6. For any UX or logistical error fixed, update the CSV row, add/adjust focused tests, rerun the relevant gate, then mark the retest result in the same CSV.
+7. Before any production push, stage only this session's files unless explicitly asked to include pre-existing dirty work.
 
 ## Permissions / Approvals
 
