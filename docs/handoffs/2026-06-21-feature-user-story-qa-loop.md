@@ -172,6 +172,12 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the four new admin market action tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-market-actions.json`) -> passed after tightening the missing-env mock return type.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files after clearing generated `.next/types/* 2.ts` duplicates: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Production deployment evidence for commit `1cd97f4`:
+  - Vercel deployment `dpl_4xFwZzPp5QKVQk7uLr4CDFUP9CfH` (`https://theres-no-chance-c8x3n3nr2-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live smoke: `/` -> `200`.
+  - Live approve route auth smoke: unauthenticated `POST /api/admin/markets/test-market/approve` -> `401` with `{"error":"Unauthorized."}`.
+  - Live reject route auth smoke: unauthenticated `POST /api/admin/markets/test-market/reject` -> `401` with `{"error":"Unauthorized."}`.
+  - Live halt route auth smoke: unauthenticated `POST /api/admin/markets/test-market/halt` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
