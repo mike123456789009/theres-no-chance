@@ -26,6 +26,7 @@ Continue the active goal:
 - Fifth targeted Vitest pass added admin action UI coverage: 6 test files / 17 tests.
 - Sixth targeted Vitest pass added theme and legacy redirect coverage: 2 test files / 6 tests.
 - Seventh targeted Vitest pass added grant-platform-admin route coverage: 1 test file / 15 tests.
+- Eighth targeted Vitest pass added admin Venmo manual match/ignore route coverage: 2 test files / 14 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -63,6 +64,9 @@ Continue the active goal:
 - Updated `docs/qa/feature-user-stories.csv` rows `F041-F042` with UI style sync/toggle and legacy redirect test evidence plus remaining browser/live-smoke gaps.
 - Added `app/api/admin/users/[userId]/grant-platform-admin/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F037` with grant-platform-admin route test evidence and remaining browser-only gap.
+- Added `app/api/admin/payments/venmo/match/route.test.ts`.
+- Added `app/api/admin/payments/venmo/ignore/route.test.ts`.
+- Updated `docs/qa/feature-user-stories.csv` row `F035` with manual Venmo match/ignore route test evidence and remaining browser-only gap.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -135,6 +139,17 @@ Existing dirty files were already present and were not modified:
   - Vercel deployment `dpl_8sAxkPNocSTremxCcXRz4McXDFQ7` (`https://theres-no-chance-j7rqbqg2c-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
   - Live smoke: `/` -> `200`; `/account/admin/users` -> `200`.
   - Live grant route auth smoke: unauthenticated `POST /api/admin/users/11111111-1111-4111-8111-111111111111/grant-platform-admin` -> `401` with `{"error":"Unauthorized."}`.
+- Admin Venmo match/ignore route tests:
+  - `npm test -- app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts`
+  - Result: 2 test files passed, 14 tests passed.
+- Admin Venmo match/ignore route static gates:
+  - `npx eslint app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> passed.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> no matches.
+  - `git diff --check -- docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> passed.
+  - Standalone tracked-files TypeScript gate including the two new admin Venmo route tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-venmo-admin.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
@@ -147,7 +162,6 @@ Existing dirty files were already present and were not modified:
    - `F031`: approve/reject/halt routes.
    - `F032`: market-research manual-run auth and scope validation.
    - `F034`: finalization/adjudication routes.
-   - `F035`: Venmo manual match/ignore routes.
 4. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
    - `F005`: immediate-session redirect branch.
