@@ -150,6 +150,11 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the two new admin Venmo route tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-venmo-admin.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Production deployment evidence for commit `7fe91db`:
+  - Vercel deployment `dpl_DP8dPaMwFsfT4Au4LA94EGv7rcuY` (`https://theres-no-chance-gkctqbh15-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live smoke: `/` -> `200`.
+  - Live Venmo match route auth smoke: unauthenticated `POST /api/admin/payments/venmo/match` -> `401` with `{"error":"Unauthorized."}`.
+  - Live Venmo ignore route auth smoke: unauthenticated `POST /api/admin/payments/venmo/ignore` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
