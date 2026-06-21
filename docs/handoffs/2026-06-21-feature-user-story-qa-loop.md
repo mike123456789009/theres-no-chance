@@ -113,6 +113,10 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the two new theme/redirect QA files (`npx tsc --noEmit --project /tmp/tnc-tsconfig-theme-*.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Production deployment evidence for commit `eacf09c`:
+  - Vercel deployment `dpl_421obKynmoFhAJiR7FPdfA2a2iVT` (`https://theres-no-chance-96f1hf2ox-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live smoke: `/` -> `200`.
+  - Live redirect smoke: `/wallet?status=success&invoice=TNC-123` -> `307` to `/account/wallet?status=success&invoice=TNC-123`; `/wallet` -> `/account/wallet`; `/portfolio` -> `/account/portfolio`; `/admin` and `/account/admin` -> `/account/admin/market-maker`; `/account` -> `/account/overview`.
 
 ## Remaining Next Actions
 
@@ -121,9 +125,7 @@ Existing dirty files were already present and were not modified:
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
    - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
    - `F041`: landing, markets, and account surfaces in retro and modern modes, including palette switching.
-2. Verify deployed legacy redirect behavior after the production deploy:
-   - `F042`: `/wallet`, `/wallet?...`, `/portfolio`, `/admin`, `/account/admin`, and `/account` redirect to their current account routes.
-3. Add remaining route-level tests for admin mutation handlers:
+2. Add remaining route-level tests for admin mutation handlers:
    - `F031`: approve/reject/halt routes.
    - `F032`: market-research manual-run auth and scope validation.
    - `F034`: finalization/adjudication routes.
