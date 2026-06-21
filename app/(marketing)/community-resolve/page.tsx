@@ -96,6 +96,7 @@ export default function CommunityResolvePage() {
       const viewportAnchor = window.innerHeight * 0.42;
       let nearestVisible: { id: string; distance: number } | null = null;
       let nearestAny: { id: string; distance: number } | null = null;
+      let lastVisibleId: string | null = null;
       const stageMetrics = new Map<string, { distance: number; isVisible: boolean }>();
 
       for (let index = 0; index < stageRefs.current.length; index += 1) {
@@ -116,12 +117,18 @@ export default function CommunityResolvePage() {
           nearestAny = { id: stageId, distance };
         }
 
-        if (isVisible && (!nearestVisible || distance < nearestVisible.distance)) {
-          nearestVisible = { id: stageId, distance };
+        if (isVisible) {
+          lastVisibleId = stageId;
+          if (!nearestVisible || distance < nearestVisible.distance) {
+            nearestVisible = { id: stageId, distance };
+          }
         }
       }
 
-      const candidateId = nearestVisible?.id ?? nearestAny?.id ?? STAGES[0].id;
+      const pageBottom =
+        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+      const isAtPageBottom = window.scrollY >= pageBottom - 4;
+      const candidateId = (isAtPageBottom && lastVisibleId) || nearestVisible?.id || nearestAny?.id || STAGES[0].id;
       setActiveId((current) => {
         if (current === candidateId) return current;
 

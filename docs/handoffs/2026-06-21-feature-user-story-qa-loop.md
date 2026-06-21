@@ -33,8 +33,10 @@ Continue the active goal:
 - Twelfth targeted Vitest pass added create-market AI criteria suggestion route and wizard coverage: 2 test files / 8 tests.
 - Thirteenth targeted Vitest pass added authenticated create-market page coverage: 1 test file / 3 tests.
 - Fourteenth targeted Vitest pass fixed the public withdrawal-copy mismatch and added landing payments/FAQ regression coverage: 1 test file / 2 tests.
+- Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
+- `F003` UX gap fixed locally: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at page bottom.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
   - `F044`: untracked Stripe/Coinbase payment routes and Coinbase webhook test contradict `docs/CURRENT_ARCHITECTURE.md`, which says Stripe/Coinbase runtime routes are retired and intentionally absent.
@@ -93,6 +95,9 @@ Continue the active goal:
 - Updated `app/(marketing)/page.tsx` withdrawal payment/FAQ copy to avoid implying a self-serve account withdrawal UI exists.
 - Updated `components/landing/marketing-page.test.tsx` with a payments/FAQ copy regression assertion.
 - Updated `docs/qa/feature-user-stories.csv` rows `F002` and `F029` with the public-copy fix evidence plus the remaining withdrawal product decision.
+- Updated `app/(marketing)/community-resolve/page.tsx` so the final visible stage becomes active at page bottom.
+- Added `app/(marketing)/community-resolve/page.test.tsx`.
+- Updated `docs/qa/feature-user-stories.csv` row `F003` with production pre-fix visual QA evidence, the local fix, and pending production retest.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -286,10 +291,32 @@ Existing dirty files were already present and were not modified:
     - `output/playwright/tnc-withdrawal-copy-desktop.png`
     - `output/playwright/tnc-withdrawal-copy-mobile.png`
   - Desktop and mobile screenshots showed the updated payment-copy text wrapped inside the payment cards with no visible overlap or horizontal clipping; FAQ text was verified in live HTML because the FAQ is collapsed by default.
+- Community Resolve production pre-fix visual QA:
+  - `GET https://theres-no-chance.com/community-resolve` -> `200`.
+  - Desktop full-page screenshot showed the 8-stage timeline, sticky rail, active visual, and links with no visible overlap: `output/playwright/tnc-community-resolve-desktop-full.png`.
+  - Mobile full-page screenshot showed responsive single-column layout with no visible horizontal overflow: `output/playwright/tnc-community-resolve-mobile-full.png`.
+  - Bottom-scroll screenshots showed a real F003 bug before the code fix: the Settlement card and `settlement-payouts.svg` were visible, but the sticky rail and active visual stayed on Human Adjudication:
+    - `output/playwright/tnc-community-resolve-desktop-final-label.png`
+    - `output/playwright/tnc-community-resolve-desktop-settlement-copy.png`
+    - `output/playwright/tnc-community-resolve-desktop-settlement-bottom.png`
+  - Direct asset smoke for `public/assets/community-resolve/settlement-payouts.svg` returned `200`; the blank offscreen final image in one mobile full-page capture was a lazy-loading screenshot artifact, not a confirmed app bug.
+- Community Resolve local regression test:
+  - `npm test -- app/'(marketing)'/community-resolve/page.test.tsx`
+  - Result: 1 test file passed, 2 tests passed.
+- Community Resolve static gates:
+  - `npm test -- app/'(marketing)'/community-resolve/page.test.tsx components/landing/engineering-proof.test.tsx` -> 2 test files passed, 3 tests passed.
+  - `npx eslint app/'(marketing)'/community-resolve/page.tsx app/'(marketing)'/community-resolve/page.test.tsx` -> passed with no warnings.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" app/'(marketing)'/community-resolve/page.tsx app/'(marketing)'/community-resolve/page.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> no matches.
+  - `git diff --check -- app/'(marketing)'/community-resolve/page.tsx app/'(marketing)'/community-resolve/page.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> passed.
+  - Standalone tracked-files TypeScript gate for the Community Resolve page and test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-community-resolve.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook` after clearing duplicate generated `.next/types/* 2.ts` artifacts.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
+   - `F003`: push the Community Resolve final-stage activation fix, verify Vercel `Ready`, and retest desktop/mobile bottom-scroll screenshots.
    - `F017`: `/create` signed-in wizard rendering with a real browser/session.
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
