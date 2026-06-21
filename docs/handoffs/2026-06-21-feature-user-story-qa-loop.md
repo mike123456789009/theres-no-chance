@@ -213,6 +213,13 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the three new admin moderation route tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-resolution-routes.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Admin finalization/resolution/adjudication production deployment:
+  - Commit `3b97526` pushed to `main`.
+  - Vercel deployment `dpl_4wrVkRcQV7MJt8J2H2G3z74sDkou` reached `Ready` for `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live finalize route auth smoke: unauthenticated `POST /api/admin/markets/test-market/finalize` -> `401` with `{"error":"Unauthorized."}`.
+  - Live resolve route auth smoke: unauthenticated `POST /api/admin/markets/test-market/resolve` -> `401` with `{"error":"Unauthorized."}`.
+  - Live adjudicate route auth smoke: unauthenticated `POST /api/admin/markets/test-market/challenges/test-challenge/adjudicate` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
