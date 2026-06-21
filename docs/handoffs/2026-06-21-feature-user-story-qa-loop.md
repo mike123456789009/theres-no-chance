@@ -254,11 +254,16 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the `/create` page and page test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-create-page.json`) -> passed.
   - First `npm run typecheck` hit generated `.next/types/routes.d 2.ts` / validator duplicate files plus unrelated untracked Coinbase imports; after deleting only generated duplicate type files and rerunning, `npm run typecheck` remained blocked only by untracked Coinbase files importing missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Authenticated create-market page production deployment:
+  - Commit `c1d1e33` pushed to `main`.
+  - Vercel deployment `dpl_44VXfCyVoqgW96y55mFe9sRG1TyH` (`https://theres-no-chance-7hkbuoadl-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live create-page auth smoke: unauthenticated `GET https://theres-no-chance.com/create` -> `307` to `/login`.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
-   - `F017`: `/create` unauthenticated redirect and signed-in wizard rendering with a real browser/session.
+   - `F017`: `/create` signed-in wizard rendering with a real browser/session.
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
