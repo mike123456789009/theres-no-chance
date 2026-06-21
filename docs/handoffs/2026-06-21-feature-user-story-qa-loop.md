@@ -131,6 +131,10 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the new grant-admin route test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-grant-admin-*.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files after clearing generated `.next/types/* 2.ts` duplicates: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Production deployment evidence for commit `f6ac85e`:
+  - Vercel deployment `dpl_8sAxkPNocSTremxCcXRz4McXDFQ7` (`https://theres-no-chance-j7rqbqg2c-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live smoke: `/` -> `200`; `/account/admin/users` -> `200`.
+  - Live grant route auth smoke: unauthenticated `POST /api/admin/users/11111111-1111-4111-8111-111111111111/grant-platform-admin` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
