@@ -277,6 +277,15 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the marketing page and landing test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-marketing-copy.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Landing payments/FAQ withdrawal-copy production deployment:
+  - Commit `bf53c73` pushed to `main`.
+  - Vercel deployment `dpl_JAjUhKjgimYHByCGeEEj4abzZGWQ` (`https://theres-no-chance-28obnwn9g-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live copy smoke found `self-serve cashouts are not exposed yet`, `Withdrawal requests run through eligibility checks and admin or API workflows`, and `Withdrawals are not a self-serve account-page flow yet`.
+  - Production visual QA screenshots captured:
+    - `output/playwright/tnc-withdrawal-copy-desktop.png`
+    - `output/playwright/tnc-withdrawal-copy-mobile.png`
+  - Desktop and mobile screenshots showed the updated payment-copy text wrapped inside the payment cards with no visible overlap or horizontal clipping; FAQ text was verified in live HTML because the FAQ is collapsed by default.
 
 ## Remaining Next Actions
 
