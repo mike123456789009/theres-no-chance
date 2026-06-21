@@ -96,6 +96,10 @@ export function CommunityResolvePanel({
   const [statusMessage, setStatusMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const voteCapLabel = useMemo(() => formatCurrency(Math.max(1, resolverStakeCap)), [resolverStakeCap]);
+  const challengeStakeLabel = useMemo(
+    () => (viewerResolverBond ? formatCurrency(viewerResolverBond.bondAmount) : null),
+    [viewerResolverBond]
+  );
 
   async function submitVote() {
     setStatusMessage(null);
@@ -274,7 +278,8 @@ export function CommunityResolvePanel({
         <section className="market-detail-inline-form" aria-label="Submit challenge">
           <h3>Challenge provisional outcome</h3>
           <p>
-            Only out-voted resolvers can challenge. Challenge stake is a mandatory exact double-down of your original resolver stake.
+            Only out-voted resolvers can challenge.
+            {challengeStakeLabel ? ` Challenge stake: ${challengeStakeLabel}.` : " Challenge stake is based on your original resolver stake."}
           </p>
           <label>
             Why is the provisional outcome wrong?

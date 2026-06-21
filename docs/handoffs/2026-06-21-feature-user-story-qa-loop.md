@@ -21,6 +21,8 @@ Continue the active goal:
 - First-pass inventory covers marketing, auth, onboarding, markets, trading, resolution, create-market, account, institutions, wallet, portfolio, withdrawals, admin, automation, theme, redirects, and payments.
 - First targeted Vitest pass is green for 34 test files / 150 tests.
 - Second targeted Vitest pass added auth/onboarding coverage: 2 test files / 9 tests.
+- Third targeted Vitest pass added position/resolution/evidence/prize UI coverage: 4 test files / 20 tests.
+- `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
   - `F044`: untracked Stripe/Coinbase payment routes and Coinbase webhook test contradict `docs/CURRENT_ARCHITECTURE.md`, which says Stripe/Coinbase runtime routes are retired and intentionally absent.
@@ -33,6 +35,12 @@ Continue the active goal:
 - Added `components/auth/auth-forms.test.tsx`.
 - Added `components/onboarding/onboarding-form.test.tsx`.
 - Updated `docs/qa/feature-user-stories.csv` rows `F004-F007` with auth/onboarding test evidence and residual gaps.
+- Added `components/markets/page-sections/market-detail-position-panel.test.tsx`.
+- Added `components/markets/community-resolve-panel.test.tsx`.
+- Added `components/markets/evidence-submission-card.test.tsx`.
+- Added `components/markets/resolver-prize-boost-card.test.tsx`.
+- Updated `components/markets/community-resolve-panel.tsx` to show the exact challenge stake in the challenge form.
+- Updated `docs/qa/feature-user-stories.csv` rows `F012-F016` with position/resolution/evidence/prize UI test evidence and residual browser gaps.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -53,25 +61,29 @@ Existing dirty files were already present and were not modified:
 - Auth/onboarding targeted tests:
   - `npm test -- components/auth/auth-forms.test.tsx components/onboarding/onboarding-form.test.tsx`
   - Result: 2 test files passed, 9 tests passed.
+- Position/resolution/evidence/prize UI targeted tests:
+  - `npm test -- components/markets/page-sections/market-detail-position-panel.test.tsx components/markets/community-resolve-panel.test.tsx components/markets/evidence-submission-card.test.tsx components/markets/resolver-prize-boost-card.test.tsx`
+  - Result: 4 test files passed, 20 tests passed.
 
 ## Remaining Next Actions
 
 1. Run the next loop over untested UI-only stories:
-   - Position/evidence/resolution/prize UI `F012-F016`
    - Account overview/settings/activity and ledger `F021-F028`
    - Admin action UIs `F031`, `F034-F037`
    - Theme toggle and redirects `F041-F042`
-2. Expand residual auth/onboarding coverage when those surfaces are touched:
+2. Run remaining browser QA for covered-but-not-live-visual stories:
+   - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
+3. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
    - `F005`: immediate-session redirect branch.
    - `F006`: invalid recovery, hash-token recovery, and password mismatch branches.
    - `F007`: protected onboarding page auth behavior.
-3. Resolve product/logistical gaps:
+4. Resolve product/logistical gaps:
    - Decide whether `F044` payment provider routes should be removed, documented and completed, or excluded from release.
    - Decide whether `F045` inactive create-market steps should be wired, consolidated, or removed.
    - Decide whether `F029` needs a wallet withdrawal UI or copy adjustment.
-4. For any UX or logistical error fixed, update the CSV row, add/adjust focused tests, rerun the relevant gate, then mark the retest result in the same CSV.
-5. Before any production push, stage only this session's files unless explicitly asked to include pre-existing dirty work.
+5. For any UX or logistical error fixed, update the CSV row, add/adjust focused tests, rerun the relevant gate, then mark the retest result in the same CSV.
+6. Before any production push, stage only this session's files unless explicitly asked to include pre-existing dirty work.
 
 ## Permissions / Approvals
 
