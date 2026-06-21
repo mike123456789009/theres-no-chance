@@ -30,6 +30,7 @@ Continue the active goal:
 - Ninth targeted Vitest pass added admin market approve/reject/halt route and service coverage: 4 test files / 16 tests.
 - Tenth targeted Vitest pass added admin market-research manual-run route coverage: 1 test file / 7 tests.
 - Eleventh targeted Vitest pass added admin finalization/resolution/adjudication route coverage: 3 test files / 18 tests.
+- Twelfth targeted Vitest pass added create-market AI criteria suggestion route and wizard coverage: 2 test files / 8 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -81,6 +82,9 @@ Continue the active goal:
 - Added `app/api/admin/markets/[marketId]/resolve/route.test.ts`.
 - Added `app/api/admin/markets/[marketId]/challenges/[challengeId]/adjudicate/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F034` with finalize/resolve/adjudicate route test evidence and the remaining browser-only gap.
+- Added `app/api/markets/criteria-suggestion/route.test.ts`.
+- Added `components/markets/create-market-form.test.tsx`.
+- Updated `docs/qa/feature-user-stories.csv` row `F019` with criteria-suggestion API and wizard generate test evidence plus the remaining browser-only gap.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -220,10 +224,22 @@ Existing dirty files were already present and were not modified:
   - Live finalize route auth smoke: unauthenticated `POST /api/admin/markets/test-market/finalize` -> `401` with `{"error":"Unauthorized."}`.
   - Live resolve route auth smoke: unauthenticated `POST /api/admin/markets/test-market/resolve` -> `401` with `{"error":"Unauthorized."}`.
   - Live adjudicate route auth smoke: unauthenticated `POST /api/admin/markets/test-market/challenges/test-challenge/adjudicate` -> `401` with `{"error":"Unauthorized."}`.
+- Create-market AI criteria suggestion tests:
+  - `npm test -- app/api/markets/criteria-suggestion/route.test.ts components/markets/create-market-form.test.tsx`
+  - Result: 2 test files passed, 8 tests passed.
+- Create-market AI criteria suggestion static gates:
+  - `npx eslint app/api/markets/criteria-suggestion/route.test.ts components/markets/create-market-form.test.tsx` -> passed.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" app/api/markets/criteria-suggestion/route.test.ts components/markets/create-market-form.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-11-theres-no-chance-project-handoff.md docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> no matches.
+  - `git diff --check -- app/api/markets/criteria-suggestion/route.test.ts components/markets/create-market-form.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-11-theres-no-chance-project-handoff.md docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> passed.
+  - Standalone tracked-files TypeScript gate including the new criteria route and wizard tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-criteria-suggestion.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
+   - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
    - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
