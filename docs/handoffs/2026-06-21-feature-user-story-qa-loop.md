@@ -192,6 +192,11 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate including the new admin market-research route test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-market-research-run.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Admin market-research manual-run production deployment:
+  - Commit `70a4ede` pushed to `main`.
+  - Vercel deployment `dpl_CzVM3GTChExpC4wSm421hmhhECSu` reached `Ready` for `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live route auth smoke: unauthenticated `POST /api/admin/automation/market-research/run` with `{"scope":"public"}` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
