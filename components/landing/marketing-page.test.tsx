@@ -25,4 +25,14 @@ describe("MarketingPage", () => {
     expect(within(displayOptions).getByTestId("style-toggle")).toBeInTheDocument();
     expect(document.querySelector('script[src="/script.js"]')).toHaveAttribute("crossorigin", "anonymous");
   });
+
+  it("describes withdrawals as API/admin-assisted until self-serve cashouts ship", () => {
+    render(<MarketingPage />);
+
+    const payments = screen.getByRole("region", { name: /payments and token economy/i });
+    expect(within(payments).getByText(/self-serve cashouts are not exposed yet/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/withdrawal requests run through eligibility checks and admin or api workflows/i),
+    ).toBeInTheDocument();
+  });
 });

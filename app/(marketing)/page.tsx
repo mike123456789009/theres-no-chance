@@ -22,7 +22,7 @@ export default function MarketingPage() {
 
       <div className="scroll-cue" aria-hidden="true">
         <span className="scroll-cue-text">SCROLL</span>
-        <span className="scroll-cue-arrow">↓</span>
+        <span className="scroll-cue-arrow">&darr;</span>
       </div>
 
       <main id="main" className="landing-page">
@@ -85,8 +85,8 @@ export default function MarketingPage() {
                       <span>Wallet credit is posted at gross amount.</span>
                     </li>
                     <li>
-                      <span className="plan-name">Withdrawal fee</span>
-                      <span>Venmo processing fee is applied when cashing out.</span>
+                      <span className="plan-name">Cashout fee</span>
+                      <span>Venmo fee is estimated for withdrawal requests; self-serve cashouts are not exposed yet.</span>
                     </li>
                   </ul>
                 </article>
@@ -105,15 +105,15 @@ export default function MarketingPage() {
                     </li>
                     <li>
                       <span className="plan-name">Ledger visibility</span>
-                      <span>Gross deposits and withdrawal fees are visible in wallet and admin history.</span>
+                      <span>Gross deposits and withdrawal request fees are visible in wallet and admin history.</span>
                     </li>
                   </ul>
                 </article>
               </div>
 
               <p className="redeem-note">
-                Wallet and admin reconciliation views track gross deposit amounts while withdrawal flows apply Venmo fee
-                policy.
+                Wallet and admin reconciliation views track gross deposits. Withdrawal requests run through eligibility
+                checks and admin or API workflows until a self-serve cashout UI ships.
               </p>
             </section>
 
@@ -164,8 +164,9 @@ export default function MarketingPage() {
                   <article className="faq-item">
                     <h3>How do withdrawals work?</h3>
                     <p>
-                      Withdrawals require eligibility checks including KYC status, risk controls, and minimum
-                      thresholds. Requests move through pending, completed, or failed states with reason tracking.
+                      Withdrawals are not a self-serve account-page flow yet. Eligible cashout requests are handled
+                      through the withdrawal API and admin operations, with KYC status, risk controls, minimum
+                      thresholds, pending/completed/failed states, and reason tracking.
                     </p>
                   </article>
 
