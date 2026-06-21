@@ -28,6 +28,7 @@ Continue the active goal:
 - Seventh targeted Vitest pass added grant-platform-admin route coverage: 1 test file / 15 tests.
 - Eighth targeted Vitest pass added admin Venmo manual match/ignore route coverage: 2 test files / 14 tests.
 - Ninth targeted Vitest pass added admin market approve/reject/halt route and service coverage: 4 test files / 16 tests.
+- Tenth targeted Vitest pass added admin market-research manual-run route coverage: 1 test file / 7 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
@@ -73,6 +74,8 @@ Continue the active goal:
 - Added `app/api/admin/markets/[marketId]/reject/route.test.ts`.
 - Added `app/api/admin/markets/[marketId]/halt/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F031` with approve/reject/halt route and service test evidence plus the remaining browser-only gap.
+- Added `app/api/admin/automation/market-research/run/route.test.ts`.
+- Updated `docs/qa/feature-user-stories.csv` row `F032` with manual market-research run route test evidence and remaining browser/live-run gaps.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -178,6 +181,17 @@ Existing dirty files were already present and were not modified:
   - Live approve route auth smoke: unauthenticated `POST /api/admin/markets/test-market/approve` -> `401` with `{"error":"Unauthorized."}`.
   - Live reject route auth smoke: unauthenticated `POST /api/admin/markets/test-market/reject` -> `401` with `{"error":"Unauthorized."}`.
   - Live halt route auth smoke: unauthenticated `POST /api/admin/markets/test-market/halt` -> `401` with `{"error":"Unauthorized."}`.
+- Admin market-research manual-run route tests:
+  - `npm test -- app/api/admin/automation/market-research/run/route.test.ts`
+  - Result: 1 test file passed, 7 tests passed.
+- Admin market-research manual-run route static gates:
+  - `npx eslint app/api/admin/automation/market-research/run/route.test.ts` -> passed.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/automation/market-research/run/route.test.ts` -> no matches.
+  - `git diff --check -- docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md app/api/admin/automation/market-research/run/route.test.ts` -> passed.
+  - Standalone tracked-files TypeScript gate including the new admin market-research route test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-admin-market-research-run.json`) -> passed.
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files: `app/api/payments/coinbase/charge/route.ts`, `app/api/webhooks/coinbase/route.ts`, and `app/api/webhooks/coinbase/route.test.ts` import missing `@/lib/payments/coinbase` / `coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
@@ -187,7 +201,6 @@ Existing dirty files were already present and were not modified:
    - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
    - `F041`: landing, markets, and account surfaces in retro and modern modes, including palette switching.
 2. Add remaining route-level tests for admin mutation handlers:
-   - `F032`: market-research manual-run auth and scope validation.
    - `F034`: finalization/adjudication routes.
 4. Expand residual auth/onboarding coverage when those surfaces are touched:
    - `F004`: password visibility toggle and page-level auth redirect.
