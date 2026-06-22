@@ -11,6 +11,7 @@ const config = [
       "build/**",
       "next-env.d.ts",
       "node_modules/**",
+      "output/**",
       "public/**",
       "coverage/**",
       "dist/**",

@@ -43,9 +43,34 @@ Continue the active goal:
 - `F003` UX gap fixed and deployed: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at true page bottom, and post-deploy desktop/mobile CDP checks confirmed Settlement as the active stage.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
-  - `F044`: untracked Stripe/Coinbase payment routes and Coinbase webhook test contradict `docs/CURRENT_ARCHITECTURE.md`, which says Stripe/Coinbase runtime routes are retired and intentionally absent.
+  - `F044`: fixed on 2026-06-22 by quarantining untracked Stripe/Coinbase payment routes/test out of the active Next.js tree, adding a retired-provider boundary regression test, and restoring full lint/typecheck/build.
   - `F045`: untracked create-market split steps exist but are not wired into `WIZARD_STEPS` or `CreateMarketForm`.
 - `F029` is API-only: withdrawals are implemented as `/api/withdrawals`, but no user-facing withdrawal form was found while landing copy mentions withdrawals.
+
+## 2026-06-22 F044 Retired Provider Boundary Update
+
+Failure:
+
+- `docs/CURRENT_ARCHITECTURE.md` says Stripe/Coinbase runtime routes and provider libraries are retired and intentionally absent.
+- The worktree contained untracked Stripe/Coinbase route files under `app/api`, which made them part of the active Next.js route surface if left in place.
+- The Coinbase route/test files imported missing retired modules (`@/lib/payments/coinbase` and `@/lib/payments/coinbase-webhook`), blocking full `npm run typecheck` and `npm run build`.
+- `npm run lint` was also blocked by ignored QA evidence under `output/playwright` because ESLint did not ignore `output/**`.
+
+Fix:
+
+- Moved the untracked Stripe/Coinbase route/test files out of `app/api` and preserved them as `.txt` QA evidence under `docs/qa/quarantined-provider-routes/2026-06-22/`.
+- Added `lib/payments/retired-provider-boundary.test.ts` to assert retired Stripe/Coinbase route/provider-library paths remain absent.
+- Added `output/**` to `eslint.config.mjs` ignores so generated screenshot/spec evidence does not block repository lint.
+- Updated canonical tracker row `F044` in `docs/qa/feature-user-stories.csv`.
+
+Post-fix verification:
+
+- `npm test -- lib/payments/retired-provider-boundary.test.ts` -> passed, 1 test.
+- `npx eslint eslint.config.mjs lib/payments/retired-provider-boundary.test.ts` -> passed.
+- `npm run lint` -> passed with existing warnings only.
+- `npm run typecheck` -> passed.
+- `npm run build` -> passed; route manifest includes Venmo payment routes and does not include Stripe/Coinbase payment or webhook routes.
+- `npm test -- lib/payments/retired-provider-boundary.test.ts app/api/payments/venmo/intent/route.test.ts app/api/payments/venmo/reconcile/route.test.ts app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> passed, 5 files / 22 tests.
 
 ## Files Changed This Session
 
@@ -111,6 +136,10 @@ Continue the active goal:
 - Updated `docs/qa/feature-user-stories.csv` row `F038` with institution CRUD/merge route test evidence and remaining signed-in browser QA gap.
 - Added `app/api/automation/market-research/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F039` with public/institution cron route test evidence, read-only DB-state smoke evidence, and the remaining live-scan caution.
+- Updated `eslint.config.mjs` to ignore `output/**` QA artifacts.
+- Added `lib/payments/retired-provider-boundary.test.ts`.
+- Added `docs/qa/quarantined-provider-routes/2026-06-22/` with preserved retired Stripe/Coinbase route/test evidence.
+- Updated `docs/qa/feature-user-stories.csv` row `F044` with the retired-provider boundary fix and post-fix gate evidence.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
