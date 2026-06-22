@@ -45,4 +45,13 @@ describe("MarketingPage", () => {
     expect(heroRule).toContain("width: calc(100% + var(--stage-pad) + var(--stage-pad));");
     expect(heroRule).not.toContain("width: 100vw");
   });
+
+  it("hides the fixed mini logo after the hero scroll stage finishes", () => {
+    const script = readFileSync(join(process.cwd(), "public/script.js"), "utf8");
+
+    expect(script).toContain("const showStageChrome = progress < 0.995;");
+    expect(script).toContain("const showLogo = progress > 0.05 && showStageChrome;");
+    expect(script).toContain('logo.classList.toggle("is-visible", showLogo);');
+    expect(script).toContain('styleToggle.classList.toggle("is-hidden-after-hero", !showStageChrome);');
+  });
 });

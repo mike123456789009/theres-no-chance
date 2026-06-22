@@ -5,6 +5,16 @@
   z-index: 1002;
 }
 
+.style-toggle-floating-marketing {
+  transition: opacity 180ms linear, transform 180ms linear;
+}
+
+.style-toggle-floating-marketing.is-hidden-after-hero {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
+}
+
 html[data-ui-style="retro"] .style-toggle-floating {
   top: clamp(0.8rem, 2vw, 1.4rem);
 }

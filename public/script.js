@@ -6,6 +6,7 @@ import { SVGRenderer } from "/vendor/three/examples/jsm/renderers/SVGRenderer.js
 
 const stage = document.querySelector("[data-stage]");
 const logo = document.querySelector(".tnc-logo");
+const styleToggle = document.querySelector(".style-toggle-floating-marketing");
 const scrollCue = document.querySelector(".scroll-cue");
 const heroTransitionCta = document.querySelector(".hero-transition-cta");
 const canvas = document.getElementById("hero-canvas");
@@ -1072,7 +1073,12 @@ function queueSmoothScrollRender() {
 }
 
 function applyScroll(progress) {
-  logo.classList.toggle("is-visible", progress > 0.05);
+  const showStageChrome = progress < 0.995;
+  const showLogo = progress > 0.05 && showStageChrome;
+  logo.classList.toggle("is-visible", showLogo);
+  if (styleToggle) {
+    styleToggle.classList.toggle("is-hidden-after-hero", !showStageChrome);
+  }
   if (scrollCue) {
     scrollCue.classList.toggle("is-hidden", progress > 0.06);
   }
