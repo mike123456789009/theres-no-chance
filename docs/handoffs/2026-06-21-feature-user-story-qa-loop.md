@@ -381,6 +381,12 @@ Existing dirty files were already present and were not modified:
   - Standalone route-surface TypeScript gate (`npx tsc --noEmit --project /tmp/tnc-tsconfig-institution-routes.json`) -> passed.
   - `npm run lint` -> blocked outside this F038 change by pre-existing/untracked retired Coinbase route imports restricted by ESLint and existing `output/playwright/tnc-community-resolve-live.spec.js` CommonJS `require()` usage.
   - Full `npm run typecheck` and `npm run build` remain blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
+- Admin institution CRUD/merge production deployment:
+  - Commit `aabe7bf` pushed to `main`.
+  - Vercel deployment `dpl_5W4UHksx6sfDwZSGyD7WXLDfJcNE` (`https://theres-no-chance-m1qf7yzq9-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live institution list route auth smoke: unauthenticated `GET /api/admin/institutions` -> `401` with `{"error":"Unauthorized."}`.
+  - Live institution merge route auth smoke: unauthenticated `POST /api/admin/institutions/merge` -> `401` with `{"error":"Unauthorized."}`.
 
 ## Remaining Next Actions
 
