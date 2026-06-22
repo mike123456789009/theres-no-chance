@@ -95,6 +95,8 @@ Post-fix verification:
 - `npm run lint` -> passed with existing warnings only.
 - `npm run typecheck` -> passed.
 - `npm run build` -> passed.
+- Production deployment for commit `053b129`: Vercel deployment `dpl_H9xVZQP3GJ3WVQiWeoXCBtzfWorJ` (`https://theres-no-chance-nf7dx0j34-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+- Live production retest after `053b129`: `/` -> `200`; unauthenticated `/create` -> `307` to `/login`.
 
 ## Files Changed This Session
 
