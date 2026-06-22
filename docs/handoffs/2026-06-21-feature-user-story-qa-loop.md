@@ -71,6 +71,8 @@ Post-fix verification:
 - `npm run typecheck` -> passed.
 - `npm run build` -> passed; route manifest includes Venmo payment routes and does not include Stripe/Coinbase payment or webhook routes.
 - `npm test -- lib/payments/retired-provider-boundary.test.ts app/api/payments/venmo/intent/route.test.ts app/api/payments/venmo/reconcile/route.test.ts app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> passed, 5 files / 22 tests.
+- Production deployment for commit `cd68af8`: Vercel deployment `dpl_3iicJ73345XT7diBcnJxDhNCoAT5` (`https://theres-no-chance-3xddgpfzm-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+- Live production retest after `cd68af8`: `/` -> `200`; `POST /api/payments/venmo/intent` with empty JSON -> `400` validation response; retired paths `POST /api/payments/coinbase/charge`, `POST /api/payments/stripe/checkout`, `POST /api/webhooks/coinbase`, and `POST /api/webhooks/stripe` -> `404`.
 
 ## Files Changed This Session
 
