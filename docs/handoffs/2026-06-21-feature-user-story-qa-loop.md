@@ -44,7 +44,7 @@ Continue the active goal:
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
   - `F044`: fixed on 2026-06-22 by quarantining untracked Stripe/Coinbase payment routes/test out of the active Next.js tree, adding a retired-provider boundary regression test, and restoring full lint/typecheck/build.
-  - `F045`: untracked create-market split steps exist but are not wired into `WIZARD_STEPS` or `CreateMarketForm`.
+  - `F045`: fixed on 2026-06-22 by quarantining inactive create-market split-step files out of the active component tree, adding a six-step wizard boundary test, and restoring a clean local release gate.
 - `F029` is API-only: withdrawals are implemented as `/api/withdrawals`, but no user-facing withdrawal form was found while landing copy mentions withdrawals.
 
 ## 2026-06-22 F044 Retired Provider Boundary Update
@@ -73,6 +73,28 @@ Post-fix verification:
 - `npm test -- lib/payments/retired-provider-boundary.test.ts app/api/payments/venmo/intent/route.test.ts app/api/payments/venmo/reconcile/route.test.ts app/api/admin/payments/venmo/match/route.test.ts app/api/admin/payments/venmo/ignore/route.test.ts` -> passed, 5 files / 22 tests.
 - Production deployment for commit `cd68af8`: Vercel deployment `dpl_3iicJ73345XT7diBcnJxDhNCoAT5` (`https://theres-no-chance-3xddgpfzm-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
 - Live production retest after `cd68af8`: `/` -> `200`; `POST /api/payments/venmo/intent` with empty JSON -> `400` validation response; retired paths `POST /api/payments/coinbase/charge`, `POST /api/payments/stripe/checkout`, `POST /api/webhooks/coinbase`, and `POST /api/webhooks/stripe` -> `404`.
+
+## 2026-06-22 F045 Create-Market Step Boundary Update
+
+Failure:
+
+- The active create-market wizard is defined as six canonical steps in `WIZARD_STEPS`: Rules, Economics + policy, Basics, Criteria, References, and Review.
+- Three untracked components (`listing-fee-step.tsx`, `rake-step.tsx`, and `resolvable-step.tsx`) existed under the active step directory, but they were not exported, typed, or rendered by `CreateMarketForm`.
+- The inactive files duplicated copy already covered by the active Rules/Economics + policy flow and added release-scope confusion.
+
+Fix:
+
+- Moved the untracked split-step files out of `components/markets/create-market/steps` and preserved them as `.txt` QA evidence under `docs/qa/quarantined-create-market-steps/2026-06-22/`.
+- Added `components/markets/create-market/create-market-step-boundary.test.ts` to assert the six canonical wizard steps, barrel exports, and absence of inactive split-step files.
+- Updated canonical tracker rows `F018` and `F045` in `docs/qa/feature-user-stories.csv`.
+
+Post-fix verification:
+
+- `npm test -- components/markets/create-market/create-market-step-boundary.test.ts components/markets/create-market-form.test.tsx lib/markets/create-market-client-validation.test.ts` -> passed, 3 files / 15 tests.
+- `npx eslint components/markets/create-market/create-market-step-boundary.test.ts` -> passed.
+- `npm run lint` -> passed with existing warnings only.
+- `npm run typecheck` -> passed.
+- `npm run build` -> passed.
 
 ## Files Changed This Session
 
@@ -142,6 +164,9 @@ Post-fix verification:
 - Added `lib/payments/retired-provider-boundary.test.ts`.
 - Added `docs/qa/quarantined-provider-routes/2026-06-22/` with preserved retired Stripe/Coinbase route/test evidence.
 - Updated `docs/qa/feature-user-stories.csv` row `F044` with the retired-provider boundary fix and post-fix gate evidence.
+- Added `components/markets/create-market/create-market-step-boundary.test.ts`.
+- Added `docs/qa/quarantined-create-market-steps/2026-06-22/` with preserved inactive create-market split-step evidence.
+- Updated `docs/qa/feature-user-stories.csv` rows `F018` and `F045` with the create-market step-boundary fix and post-fix gate evidence.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
