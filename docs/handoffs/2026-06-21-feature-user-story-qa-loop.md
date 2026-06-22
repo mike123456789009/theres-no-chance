@@ -114,6 +114,8 @@ Verification:
 - `npm run lint` -> passed with existing warnings only.
 - `npm run typecheck` -> passed.
 - `npm run build` -> passed.
+- Production deployment for commit `5fa8854`: Vercel deployment `dpl_6WE6eaPmBNJjJSX4vkHtzebLtrXp` (`https://theres-no-chance-o1nargwt6-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+- Live production retest after `5fa8854`: `/` -> `200`; unauthenticated `/create` -> `307` to `/login`.
 
 ## Files Changed This Session
 
