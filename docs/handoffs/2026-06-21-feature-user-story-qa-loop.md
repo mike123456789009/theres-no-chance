@@ -36,7 +36,7 @@ Continue the active goal:
 - Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
-- `F003` UX gap fixed locally: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at page bottom.
+- `F003` UX gap fixed and deployed: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at true page bottom, and post-deploy desktop/mobile CDP checks confirmed Settlement as the active stage.
 - Several features have API coverage but still need UI/component/browser coverage.
 - Two implementation-drift items are explicitly tracked:
   - `F044`: untracked Stripe/Coinbase payment routes and Coinbase webhook test contradict `docs/CURRENT_ARCHITECTURE.md`, which says Stripe/Coinbase runtime routes are retired and intentionally absent.
@@ -97,7 +97,7 @@ Continue the active goal:
 - Updated `docs/qa/feature-user-stories.csv` rows `F002` and `F029` with the public-copy fix evidence plus the remaining withdrawal product decision.
 - Updated `app/(marketing)/community-resolve/page.tsx` so the final visible stage becomes active at page bottom.
 - Added `app/(marketing)/community-resolve/page.test.tsx`.
-- Updated `docs/qa/feature-user-stories.csv` row `F003` with production pre-fix visual QA evidence, the local fix, and pending production retest.
+- Updated `docs/qa/feature-user-stories.csv` row `F003` with production pre-fix visual QA evidence, the shipped fix, and post-deploy production retest evidence.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -312,11 +312,23 @@ Existing dirty files were already present and were not modified:
   - Standalone tracked-files TypeScript gate for the Community Resolve page and test (`npx tsc --noEmit --project /tmp/tnc-tsconfig-community-resolve.json`) -> passed.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook` after clearing duplicate generated `.next/types/* 2.ts` artifacts.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Community Resolve production deployment and post-fix visual QA:
+  - Commit `5ebf693` pushed to `main`.
+  - Vercel deployment `dpl_CFCKaYYtXc8eJNheR3gXMBhgf1zh` (`https://theres-no-chance-puxwtb2am-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live route smoke: `GET https://theres-no-chance.com/community-resolve` -> `200`.
+  - Live CDP page-bottom retest at desktop `1440x1000`: active rail `Settlement`, active caption `Final payouts and treasury split`, active image `/assets/community-resolve/settlement-payouts.svg`, settlement card active, no horizontal overflow, `scrollY=2102`.
+  - Live CDP page-bottom retest at mobile `390x844`: active rail `Settlement`, active caption `Final payouts and treasury split`, active image `/assets/community-resolve/settlement-payouts.svg`, settlement card active, no horizontal overflow, `scrollY=3682`.
+  - Production visual QA screenshots captured:
+    - `output/playwright/tnc-community-resolve-fixed-cdp-desktop-default.png`
+    - `output/playwright/tnc-community-resolve-fixed-cdp-desktop-bottom.png`
+    - `output/playwright/tnc-community-resolve-fixed-cdp-desktop-link-states.png`
+    - `output/playwright/tnc-community-resolve-fixed-cdp-mobile-default.png`
+    - `output/playwright/tnc-community-resolve-fixed-cdp-mobile-bottom.png`
+  - Desktop default, desktop link focus/hover, desktop bottom active state, mobile default, and mobile bottom screenshots showed coherent spacing, readable text, expected active highlighting, responsive wrapping, and no visible overlap or horizontal clipping.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
-   - `F003`: push the Community Resolve final-stage activation fix, verify Vercel `Ready`, and retest desktop/mobile bottom-scroll screenshots.
    - `F017`: `/create` signed-in wizard rendering with a real browser/session.
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
