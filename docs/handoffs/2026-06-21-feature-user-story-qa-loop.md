@@ -98,6 +98,23 @@ Post-fix verification:
 - Production deployment for commit `053b129`: Vercel deployment `dpl_H9xVZQP3GJ3WVQiWeoXCBtzfWorJ` (`https://theres-no-chance-nf7dx0j34-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
 - Live production retest after `053b129`: `/` -> `200`; unauthenticated `/create` -> `307` to `/login`.
 
+## 2026-06-22 Create-Market Behavior Coverage Update
+
+Scope:
+
+- Closed additional tracker gaps for `F018` and `F020`.
+- Added component-level coverage for create-market wizard keyboard/button navigation, optional reference validation, review-step listing fee/rake copy, draft submission payloads/messages, and submit-for-review payloads/messages.
+- This was test/tracker coverage only; no runtime create-market behavior changed.
+
+Verification:
+
+- First focused run exposed a brittle test matcher for the nested rake label; the matcher was corrected to the actual rendered text.
+- `npm test -- components/markets/create-market-form.test.tsx components/markets/create-market/create-market-step-boundary.test.ts lib/markets/create-market-client-validation.test.ts app/api/markets/route.test.ts` -> passed, 4 files / 21 tests.
+- `npx eslint components/markets/create-market-form.test.tsx` -> passed.
+- `npm run lint` -> passed with existing warnings only.
+- `npm run typecheck` -> passed.
+- `npm run build` -> passed.
+
 ## Files Changed This Session
 
 - Added `docs/qa/feature-user-stories.csv`.
@@ -169,6 +186,8 @@ Post-fix verification:
 - Added `components/markets/create-market/create-market-step-boundary.test.ts`.
 - Added `docs/qa/quarantined-create-market-steps/2026-06-22/` with preserved inactive create-market split-step evidence.
 - Updated `docs/qa/feature-user-stories.csv` rows `F018` and `F045` with the create-market step-boundary fix and post-fix gate evidence.
+- Updated `components/markets/create-market-form.test.tsx` with navigation, optional-reference validation, and draft/review submission coverage.
+- Updated `docs/qa/feature-user-stories.csv` rows `F018` and `F020` with the new create-market behavior coverage evidence.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
