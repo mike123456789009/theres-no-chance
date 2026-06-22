@@ -405,6 +405,12 @@ Existing dirty files were already present and were not modified:
   - Latest public run: `8450376a-60ea-43d5-ac62-1addcee4c730`, status `completed`, generated `11`, submitted `8`, skipped quality `3`, submit failed `0`.
   - Latest institution run: `367a3792-689a-4e97-81d8-c8b94d859bbe`, status `completed`, generated `31`, submitted `11`, skipped quality `20`, submit failed `0`, failures by institution `0`.
   - Live scan invocation was intentionally not run because scheduled/manual scans can create proposals; use explicit operational intent before invoking them.
+- Market research automation production deployment:
+  - Commit `59c2d4d` pushed to `main`.
+  - Vercel deployment `dpl_8cafAxwior5DUzeze1Cg72Y7mH1y` (`https://theres-no-chance-pea4zh91h-mike123456789009s-projects.vercel.app`) reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
+  - Live public cron route auth smoke: unauthenticated `GET /api/automation/market-research/public` -> `401` with `{"error":"Unauthorized cron request."}`.
+  - Live institution cron route auth smoke: unauthenticated `GET /api/automation/market-research/institution` -> `401` with `{"error":"Unauthorized cron request."}`.
 
 ## Remaining Next Actions
 
