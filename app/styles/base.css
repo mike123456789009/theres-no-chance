@@ -61,7 +61,7 @@ body {
 }
 
 .hero-3d-wrap {
-  width: 100vw;
+  width: calc(100% + var(--stage-pad) + var(--stage-pad));
   max-width: none;
   height: min(86vh, 760px);
   position: relative;

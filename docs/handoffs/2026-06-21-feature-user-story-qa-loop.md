@@ -34,6 +34,8 @@ Continue the active goal:
 - Thirteenth targeted Vitest pass added authenticated create-market page coverage: 1 test file / 3 tests.
 - Fourteenth targeted Vitest pass fixed the public withdrawal-copy mismatch and added landing payments/FAQ regression coverage: 1 test file / 2 tests.
 - Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
+- Sixteenth targeted Vitest pass fixed the landing hero horizontal-overflow mismatch and added CSS regression coverage for the full-bleed hero wrapper: 3 test files / 5 tests.
+- `F001` UX gap fixed locally: production browser QA found the root landing page had desktop horizontal overflow because `.hero-3d-wrap` used scrollbar-inclusive `100vw`; the wrapper now uses the padded parent width and local CDP retest confirms no overflow at desktop and mobile widths.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
 - `F003` UX gap fixed and deployed: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at true page bottom, and post-deploy desktop/mobile CDP checks confirmed Settlement as the active stage.
@@ -98,6 +100,9 @@ Continue the active goal:
 - Updated `app/(marketing)/community-resolve/page.tsx` so the final visible stage becomes active at page bottom.
 - Added `app/(marketing)/community-resolve/page.test.tsx`.
 - Updated `docs/qa/feature-user-stories.csv` row `F003` with production pre-fix visual QA evidence, the shipped fix, and post-deploy production retest evidence.
+- Updated `app/styles/base.css` so the landing hero wrapper uses `calc(100% + var(--stage-pad) + var(--stage-pad))` instead of scrollbar-inclusive `100vw`.
+- Updated `components/landing/marketing-page.test.tsx` with a regression assertion for the landing hero width rule.
+- Updated `docs/qa/feature-user-stories.csv` row `F001` with production pre-fix overflow evidence, the local fix, and pending production retest.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -325,10 +330,28 @@ Existing dirty files were already present and were not modified:
     - `output/playwright/tnc-community-resolve-fixed-cdp-mobile-default.png`
     - `output/playwright/tnc-community-resolve-fixed-cdp-mobile-bottom.png`
   - Desktop default, desktop link focus/hover, desktop bottom active state, mobile default, and mobile bottom screenshots showed coherent spacing, readable text, expected active highlighting, responsive wrapping, and no visible overlap or horizontal clipping.
+- Landing hero F001 production pre-fix visual QA:
+  - Production CDP check at `https://theres-no-chance.com/` found desktop horizontal overflow: `documentElement.scrollWidth=1440`, `clientWidth=1425`.
+  - Overflow source was `.hero-3d-wrap` with `width: 100vw`, plus the SVG fallback host, extending 15px past the client width because `100vw` included the vertical scrollbar gutter.
+- Landing hero F001 local fix/retest:
+  - `npm test -- components/landing/marketing-page.test.tsx components/landing/hero-boot-fallback.test.tsx components/landing/engineering-proof.test.tsx` -> 3 test files passed, 5 tests passed.
+  - `npx eslint components/landing/marketing-page.test.tsx` -> passed.
+  - CSV validator -> 45 feature rows, 11 columns, unique IDs.
+  - `LC_ALL=C rg -n "[^\\x00-\\x7F]" app/styles/base.css components/landing/marketing-page.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> no matches.
+  - `git diff --check -- app/styles/base.css components/landing/marketing-page.test.tsx docs/qa/feature-user-stories.csv docs/handoffs/2026-06-21-feature-user-story-qa-loop.md` -> passed.
+  - Standalone tracked-files TypeScript gate for the landing page/tests (`npx tsc --noEmit --project /tmp/tnc-tsconfig-landing-f001.json`) -> passed.
+  - Local CDP retest against `http://127.0.0.1:3001/` at desktop `1440x1000`: `scrollWidth=1425`, `clientWidth=1425`, no horizontal overflow, hero wrapper left `0`, right `1425.015625`.
+  - Local CDP retest against `http://127.0.0.1:3001/` at mobile `390x844`: `scrollWidth=390`, `clientWidth=390`, no horizontal overflow, hero wrapper left `0`, right `390.015625`.
+  - Local screenshots captured:
+    - `output/playwright/tnc-landing-f001-local-desktop-default.png`
+    - `output/playwright/tnc-landing-f001-local-mobile-default.png`
+  - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
+  - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
+   - `F001`: push the landing hero horizontal-overflow fix, verify Vercel `Ready`, and retest production desktop/mobile/default/FAQ/reduced-motion/SVG-fallback screenshots.
    - `F017`: `/create` signed-in wizard rendering with a real browser/session.
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.

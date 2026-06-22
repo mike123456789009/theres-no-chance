@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,5 +36,13 @@ describe("MarketingPage", () => {
     expect(
       screen.getByText(/withdrawal requests run through eligibility checks and admin or api workflows/i),
     ).toBeInTheDocument();
+  });
+
+  it("keeps the full-bleed hero from using scrollbar-inclusive viewport width", () => {
+    const css = readFileSync(join(process.cwd(), "app/styles/base.css"), "utf8");
+    const heroRule = css.match(/\.hero-3d-wrap\s*{[^}]+}/)?.[0] ?? "";
+
+    expect(heroRule).toContain("width: calc(100% + var(--stage-pad) + var(--stage-pad));");
+    expect(heroRule).not.toContain("width: 100vw");
   });
 });
