@@ -35,6 +35,7 @@ Continue the active goal:
 - Fourteenth targeted Vitest pass fixed the public withdrawal-copy mismatch and added landing payments/FAQ regression coverage: 1 test file / 2 tests.
 - Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
 - Sixteenth targeted Vitest pass fixed the landing hero horizontal-overflow mismatch plus post-hero stage-chrome overlap and added regression coverage for the full-bleed hero wrapper and stage chrome visibility: 3 test files / 6 tests.
+- Seventeenth targeted Vitest pass added admin institution route coverage for guard/service config, list summaries, rename, domain add/edit, email identity update/list, merge RPC success/error mapping, and invalid merge checks: 1 test file / 12 tests.
 - `F001` UX gaps fixed and deployed: production browser QA found the root landing page had desktop horizontal overflow because `.hero-3d-wrap` used scrollbar-inclusive `100vw`, and the first post-deploy retest exposed the fixed mini logo/style toggle covering post-hero content. The hero wrapper now uses the padded parent width, the fixed logo/style toggle are hidden after the hero stage, and production retest confirmed no F001-specific visual gap remains.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
@@ -105,6 +106,8 @@ Continue the active goal:
 - Updated `components/landing/marketing-page.test.tsx` with a regression assertion for the landing hero width rule.
 - Updated `components/landing/marketing-page.test.tsx` with a regression assertion for the landing stage-chrome visibility rule.
 - Updated `docs/qa/feature-user-stories.csv` row `F001` with production pre-fix overflow evidence, the deployed overflow fix, the local stage-chrome overlap fix, and pending production retest.
+- Added `app/api/admin/institutions/route.test.ts`.
+- Updated `docs/qa/feature-user-stories.csv` row `F038` with institution CRUD/merge route test evidence and remaining signed-in browser QA gap.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -370,6 +373,14 @@ Existing dirty files were already present and were not modified:
   - Desktop and mobile screenshots showed coherent spacing, readable text, expected hero-stage chrome behavior, reduced-motion and SVG fallback coverage, and no visible overlap or horizontal clipping.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
+- Admin institution CRUD/merge route tests:
+  - `npm test -- app/api/admin/institutions/route.test.ts`
+  - Result: 1 test file passed, 12 tests passed.
+- Admin institution CRUD/merge route static gates:
+  - `npx eslint app/api/admin/institutions/route.test.ts` -> passed.
+  - Standalone route-surface TypeScript gate (`npx tsc --noEmit --project /tmp/tnc-tsconfig-institution-routes.json`) -> passed.
+  - `npm run lint` -> blocked outside this F038 change by pre-existing/untracked retired Coinbase route imports restricted by ESLint and existing `output/playwright/tnc-community-resolve-live.spec.js` CommonJS `require()` usage.
+  - Full `npm run typecheck` and `npm run build` remain blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
 
 ## Remaining Next Actions
 
@@ -378,7 +389,7 @@ Existing dirty files were already present and were not modified:
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
    - `F021-F028`: account shell/theme toggle, overview responsive grid, profile avatar focus states, institution verification loading/focus states, wallet deposit copy/QR/status banner, portfolio empty states, and activity empty states.
-   - `F031-F037`: admin review, research-run, moderation, Venmo reconciliation, users directory, and grant-admin pages with a signed-in admin session.
+   - `F031-F038`: admin review, research-run, moderation, Venmo reconciliation, users directory, grant-admin, and institution manager pages with a signed-in admin session.
    - `F041`: landing, markets, and account surfaces in retro and modern modes, including palette switching.
 2. Continue route-level tests for any future admin mutation handlers added after this handoff.
 4. Expand residual auth/onboarding coverage when those surfaces are touched:
