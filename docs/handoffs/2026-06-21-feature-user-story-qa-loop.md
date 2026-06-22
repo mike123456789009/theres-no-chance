@@ -35,7 +35,7 @@ Continue the active goal:
 - Fourteenth targeted Vitest pass fixed the public withdrawal-copy mismatch and added landing payments/FAQ regression coverage: 1 test file / 2 tests.
 - Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
 - Sixteenth targeted Vitest pass fixed the landing hero horizontal-overflow mismatch plus post-hero stage-chrome overlap and added regression coverage for the full-bleed hero wrapper and stage chrome visibility: 3 test files / 6 tests.
-- `F001` UX gaps fixed locally: production browser QA found the root landing page had desktop horizontal overflow because `.hero-3d-wrap` used scrollbar-inclusive `100vw`, and the first post-deploy retest exposed the fixed mini logo/style toggle covering post-hero content. The hero wrapper now uses the padded parent width, and the fixed logo/style toggle are hidden after the hero stage so long-form content is unobstructed.
+- `F001` UX gaps fixed and deployed: production browser QA found the root landing page had desktop horizontal overflow because `.hero-3d-wrap` used scrollbar-inclusive `100vw`, and the first post-deploy retest exposed the fixed mini logo/style toggle covering post-hero content. The hero wrapper now uses the padded parent width, the fixed logo/style toggle are hidden after the hero stage, and production retest confirmed no F001-specific visual gap remains.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
 - `F003` UX gap fixed and deployed: production visual QA found the final Settlement card could be visible while the sticky rail and active visual stayed on Human Adjudication; the scroll logic now activates the last visible stage at true page bottom, and post-deploy desktop/mobile CDP checks confirmed Settlement as the active stage.
@@ -356,13 +356,24 @@ Existing dirty files were already present and were not modified:
     - `output/playwright/tnc-landing-f001-stagechrome-local-desktop-hero-mid.png`
     - `output/playwright/tnc-landing-f001-stagechrome-local-desktop-after-faq.png`
     - `output/playwright/tnc-landing-f001-stagechrome-local-mobile-after-faq.png`
+  - Follow-up F001 production deployment `2d269c2` / `dpl_CcqYVgcxNPLtL9KZzqBJHKjP47Fk` reached `Ready` and was aliased to `https://theres-no-chance.com`.
+  - Live root smoke after `2d269c2`: `GET https://theres-no-chance.com/` -> `200`.
+  - Production CDP retest after `2d269c2` verified desktop `1440x1000` and mobile `390x844` states: no horizontal overflow, logo hidden at initial hero top, logo and style toggle visible during hero transition, logo/style toggle hidden after FAQ/post-hero content is active, reduced-motion reveal behavior correct, and forced WebGL failure renders SVG fallback.
+  - Production visual QA screenshots captured:
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-desktop-default.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-desktop-hero-mid.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-desktop-after-faq.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-mobile-default.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-mobile-after-faq.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-desktop-reduced-motion.png`
+    - `output/playwright/tnc-landing-f001-stagechrome-prod-desktop-svg-fallback.png`
+  - Desktop and mobile screenshots showed coherent spacing, readable text, expected hero-stage chrome behavior, reduced-motion and SVG fallback coverage, and no visible overlap or horizontal clipping.
   - `npm run typecheck` -> blocked by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
   - `npm run build` -> blocked by the same unrelated untracked Coinbase route imports.
 
 ## Remaining Next Actions
 
 1. Run remaining browser QA for covered-but-not-live-visual stories:
-   - `F001`: push the landing stage-chrome overlap fix, verify Vercel `Ready`, and retest production desktop/mobile/default/FAQ/reduced-motion/SVG-fallback screenshots.
    - `F017`: `/create` signed-in wizard rendering with a real browser/session.
    - `F019`: create-market wizard criteria generation loading, success, error, focus, and responsive states with an authenticated session.
    - `F012-F016`: detail-page composition with real/seeded positions, out-voted resolver challenge state, evidence feed layout, and contribution feed/wallet failure state.
