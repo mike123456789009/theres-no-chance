@@ -36,6 +36,7 @@ Continue the active goal:
 - Fifteenth targeted Vitest pass fixed the Community Resolve final-stage scroll mismatch and added `/community-resolve` render plus page-bottom Settlement activation coverage: 1 test file / 2 tests.
 - Sixteenth targeted Vitest pass fixed the landing hero horizontal-overflow mismatch plus post-hero stage-chrome overlap and added regression coverage for the full-bleed hero wrapper and stage chrome visibility: 3 test files / 6 tests.
 - Seventeenth targeted Vitest pass added admin institution route coverage for guard/service config, list summaries, rename, domain add/edit, email identity update/list, merge RPC success/error mapping, and invalid merge checks: 1 test file / 12 tests.
+- Eighteenth targeted Vitest pass added public/institution market-research cron route coverage for cron auth, service-role config, max/model env parsing, submit/timeout wiring, fallback counts, and route-specific 500 mapping: 1 test file / 6 tests.
 - `F001` UX gaps fixed and deployed: production browser QA found the root landing page had desktop horizontal overflow because `.hero-3d-wrap` used scrollbar-inclusive `100vw`, and the first post-deploy retest exposed the fixed mini logo/style toggle covering post-hero content. The hero wrapper now uses the padded parent width, the fixed logo/style toggle are hidden after the hero stage, and production retest confirmed no F001-specific visual gap remains.
 - `F014` UX gap fixed: challenge copy now shows the exact additional stake from the viewer resolver bond instead of vague double-down copy.
 - `F002`/`F029` UX/logistical gap fixed: landing payment/FAQ copy now states withdrawals are API/admin-assisted until self-serve cashouts ship instead of implying an account-page withdrawal UI exists.
@@ -108,6 +109,8 @@ Continue the active goal:
 - Updated `docs/qa/feature-user-stories.csv` row `F001` with production pre-fix overflow evidence, the deployed overflow fix, the local stage-chrome overlap fix, and pending production retest.
 - Added `app/api/admin/institutions/route.test.ts`.
 - Updated `docs/qa/feature-user-stories.csv` row `F038` with institution CRUD/merge route test evidence and remaining signed-in browser QA gap.
+- Added `app/api/automation/market-research/route.test.ts`.
+- Updated `docs/qa/feature-user-stories.csv` row `F039` with public/institution cron route test evidence, read-only DB-state smoke evidence, and the remaining live-scan caution.
 - Added this handoff packet.
 
 Existing dirty files were already present and were not modified:
@@ -387,6 +390,21 @@ Existing dirty files were already present and were not modified:
   - Live root smoke: `GET https://theres-no-chance.com/` -> `200`.
   - Live institution list route auth smoke: unauthenticated `GET /api/admin/institutions` -> `401` with `{"error":"Unauthorized."}`.
   - Live institution merge route auth smoke: unauthenticated `POST /api/admin/institutions/merge` -> `401` with `{"error":"Unauthorized."}`.
+- Market research automation cron route tests:
+  - `npm test -- app/api/automation/market-research/route.test.ts`
+  - Result: 1 test file passed, 6 tests passed.
+- Market research automation cron route static gates:
+  - `npx eslint app/api/automation/market-research/route.test.ts` -> passed.
+  - Standalone route-surface TypeScript gate (`npx tsc --noEmit --project /tmp/tnc-tsconfig-market-research-cron.json`) -> passed.
+  - `npm run lint` -> blocked outside this F039 change by pre-existing/untracked retired Coinbase route imports restricted by ESLint and existing `output/playwright/tnc-community-resolve-live.spec.js` CommonJS `require()` usage.
+  - `npm run typecheck` -> blocked outside this F039 change by unrelated untracked Coinbase files importing missing `@/lib/payments/coinbase` / `@/lib/payments/coinbase-webhook`.
+  - `npm run build` -> blocked outside this F039 change by the same unrelated untracked Coinbase route imports.
+- Market research automation read-only DB smoke:
+  - Read-only `tsx` inspection loaded `market_research_runs` and counted `market_research_proposals` through the service client without invoking scans.
+  - Result: `MARKET_RESEARCH_ENABLED=true`, `recentRunCount=8`, `totalProposalCount=4730`, `runningRunCount=0`.
+  - Latest public run: `8450376a-60ea-43d5-ac62-1addcee4c730`, status `completed`, generated `11`, submitted `8`, skipped quality `3`, submit failed `0`.
+  - Latest institution run: `367a3792-689a-4e97-81d8-c8b94d859bbe`, status `completed`, generated `31`, submitted `11`, skipped quality `20`, submit failed `0`, failures by institution `0`.
+  - Live scan invocation was intentionally not run because scheduled/manual scans can create proposals; use explicit operational intent before invoking them.
 
 ## Remaining Next Actions
 
@@ -407,6 +425,7 @@ Existing dirty files were already present and were not modified:
    - Decide whether `F044` payment provider routes should be removed, documented and completed, or excluded from release.
    - Decide whether `F045` inactive create-market steps should be wired, consolidated, or removed.
    - Decide whether `F029` should stay API/admin-assisted or get a self-serve wallet withdrawal UI.
+   - Invoke `F039` live market-research scans only when explicitly testing/operating automation; otherwise prefer focused route tests and read-only DB smoke.
 6. For any UX or logistical error fixed, update the CSV row, add/adjust focused tests, rerun the relevant gate, then mark the retest result in the same CSV.
 7. Before any production push, stage only this session's files unless explicitly asked to include pre-existing dirty work.
 
