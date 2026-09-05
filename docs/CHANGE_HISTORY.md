@@ -1,5 +1,27 @@
 # Change History
 
+## 2026-09-04 - Public Social Metadata and Crawler Routes
+Status: completed
+
+Short description:
+- Added OpenGraph website metadata and Twitter summary metadata while preserving the current campus-focused site title and description.
+- Added static `/robots.txt` and `/sitemap.xml` responses for the public homepage, markets, and community-resolution content.
+- Added `npm run verify:public-metadata` to check the served HTML, canonical URL, robots policy, and exact sitemap URL set without database credentials.
+
+Files/areas touched:
+- `app/layout.tsx`, `app/robots.ts`, `app/sitemap.ts`, and `lib/site-metadata.ts`.
+- `scripts/verify-public-metadata.mjs`, `package.json`, and `README.md`.
+
+User-visible change:
+- Crawlers and link-preview clients can read the public site metadata and crawler endpoints. Navigation, authentication, market, payment, and database behavior are unchanged.
+
+Verification and release:
+- `npm run verify` passed: lint, public-barrel verification, typecheck, 423 tests, and production build.
+- The metadata verifier passed against the local production server and `https://theres-no-chance.com`.
+- Feature commit: `0bae0981a02302eaad72cebb4595713fa0eac32e`.
+- Vercel production deployment `dpl_AbX1bofA1M14i4WpYesMm6ALwoEc` reached Ready and served the canonical domain. `/robots.txt` and `/sitemap.xml` each returned HTTP 200.
+- This history entry was recorded immediately after the feature deployment; the initial commit included the deployment description but omitted this checklist entry.
+
 ## 2026-06-11 - Refactor Cleanup + Runtime Surface Consolidation
 Status: completed
 
