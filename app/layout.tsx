@@ -11,13 +11,26 @@ import {
 } from "@/lib/theme/constants";
 import { resolveInitialUiPalette, resolveInitialUiStyle } from "@/lib/theme/server";
 import { resolveSupabasePublicConfigFromEnv } from "@/lib/supabase/config";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-metadata";
 
 export const metadata: Metadata = {
-  title: "Theres No Chance",
-  description:
-    "Campus-gated prediction markets with institution access, wallet flows, AI-assisted market research, and community resolution.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
   alternates: {
-    canonical: "https://theres-no-chance.com/",
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
   },
 };
 

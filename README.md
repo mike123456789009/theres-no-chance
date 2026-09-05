@@ -45,6 +45,12 @@ npm run duplicates
 npm run build
 ```
 
+To verify the public crawler responses after a build, start the app with `npm start`
+and run `npm run verify:public-metadata` in another terminal. It checks the served
+homepage social tags and canonical URL, `/robots.txt`, and `/sitemap.xml` using a
+crawler user agent. No Supabase credentials are needed for this check. Set
+`TNC_VERIFY_BASE_URL` if the server runs on a different local port or preview URL.
+
 ## Supabase CLI workflow
 
 This repo keeps Supabase CLI usage separate from the main app `.env` so multiline secrets do not break CLI parsing.

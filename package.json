@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "verify:public-barrels": "tsc --noEmit -p tsconfig.public-barrels.json",
+    "verify:public-metadata": "node scripts/verify-public-metadata.mjs",
     "typecheck": "next typegen && node -e \"require('fs').rmSync('.next/dev/types/validator.ts', { force: true })\" && tsc --noEmit",
     "test": "vitest run",
     "duplicates": "npx --yes jscpd --min-lines 8 --min-tokens 60 --format typescript,javascript,tsx,css --ignore \"public/vendor/**,package-lock.json,docs/intent-verification/**,.next/**\" --reporters console .",
